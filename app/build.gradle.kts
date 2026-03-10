@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile: File? = rootProject.file("local.properties")
+if (localPropertiesFile?.exists() == true) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+
+}
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -19,6 +27,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        val baseUrl = localProperties.getProperty("BASE_URL")
+        buildConfigField("String","BASE_URL",baseUrl)
     }
 
     buildTypes {
@@ -36,7 +47,9 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig=true
     }
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
@@ -52,6 +65,7 @@ dependencies {
     implementation(libs.converter.gson)
     implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.material.icons.extended)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
