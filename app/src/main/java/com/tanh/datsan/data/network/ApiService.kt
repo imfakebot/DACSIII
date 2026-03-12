@@ -1,6 +1,6 @@
 package com.tanh.datsan.data.network
 
-import com.tanh.datsan.ui.FieldModel
+import com.tanh.datsan.data.model.FieldModel
 import retrofit2.http.GET
 
 data class FieldResponse(

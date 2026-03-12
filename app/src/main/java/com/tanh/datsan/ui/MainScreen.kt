@@ -1,104 +1,122 @@
 package com.tanh.datsan.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.tanh.datsan.data.model.FieldModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun MainScreen() {
     var isSportMenuExpanded by remember { mutableStateOf(false) }
-    var selectedSport by remember { mutableStateOf("Chọn môn thể thao") }
+    var selectedSport by remember { mutableStateOf("Môn thể thao") }
     val sports = listOf("Bóng đá", "Tennis", "Cầu lông", "Bóng bàn")
 
+    // Tạm thời bỏ dữ liệu giả vào đây để app khỏi bị trống trơn ở dưới cùng
+    val fieldList = remember {
+        listOf(
+            FieldModel("Sân VIP Pro 2", "Địa điểm chưa rõ", 4.5),
+            FieldModel("Sân Bóng Hải Anh", "Quận Hải Châu", 4.8)
+        )
+    }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Đặt sân",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }, actions = {
-                    TextButton(
-                        onClick = {
-                            /* TODO: Chuyển sang màn hình login */
-                        }) {
-                        // Nút đăng nhập
-                        Text("Đăng nhập", fontWeight = FontWeight.Bold)
-                    }
-                }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        }) { paddingValues ->
+        containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .background(Color(0xFFF8F9FA))
         ) {
-            // Phần tìm kiếm và dropdown
-            Card(
-                modifier = Modifier.padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            // 1. KHỐI HEADER MÀU XANH (Hero Banner giống Web)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color(0xFF0056B3), // Xanh đậm ở trên
+                                Color(0xFF00A2FF)  // Xanh nhạt ở dưới
+                            )
+                        )
+                    )
             ) {
+                // Các nút góc trên cùng
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Datsan", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { }) {
+                            Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                        ) {
+                            Text("Đăng ký", color = Color(0xFF007BFF), fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Chữ Slogan lớn ở giữa
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .align(Alignment.CenterStart)
+                        .offset(y = (-20).dp) // Đẩy lên xíu cho cân đối
                 ) {
                     Text(
-                        "Tìm kiếm sân chơi",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "Sport - Đặt sân",
+                        color = Color(0xFFFFD700), // Màu vàng nổi bật
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Text(
+                        text = "thể thao nhanh chóng",
+                        color = Color.White,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
 
+            // 2. KHỐI TÌM KIẾM NỔI (Nằm đè lên viền xanh)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .offset(y = (-40).dp), // Kéo thẻ này chìm vào khối xanh 40dp
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     // Dropdown chọn môn thể thao
                     Box {
                         OutlinedButton(
@@ -112,74 +130,87 @@ fun MainScreen() {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(selectedSport, color = Color.Gray)
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
                             }
                         }
                         DropdownMenu(
                             expanded = isSportMenuExpanded,
-                            onDismissRequest = { isSportMenuExpanded = false },
-                            modifier = Modifier.fillMaxWidth((0.8f))
+                            onDismissRequest = { isSportMenuExpanded = false }
                         ) {
-                            sports.forEach { sports ->
-                                DropdownMenuItem(text = { Text(sports) }, onClick = {
-                                    selectedSport = sports
-                                    isSportMenuExpanded = false
-                                })
+                            sports.forEach { sport ->
+                                DropdownMenuItem(
+                                    text = { Text(sport) },
+                                    onClick = {
+                                        selectedSport = sport
+                                        isSportMenuExpanded = false
+                                    }
+                                )
                             }
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Ô nhập địa điểm, tên sân
-                        OutlinedTextField(
-                            value = "",
-                            onValueChange = {},
-                            placeholder = { Text("Nhập tên sân...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Ô nhập địa điểm, tên sân
+                    OutlinedTextField(
+                        value = "",
+                        onValueChange = {},
+                        placeholder = { Text("Nhập địa điểm hoặc tên sân...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color.LightGray,
+                            unfocusedContainerColor = Color(0xFFF8F9FA)
                         )
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { /* TODO: Xử lý tìm kiếm */ },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
+                    ) {
+                        Text("Tìm kiếm", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
             }
+
+            // 3. KHỐI PROMO
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .height(100.dp),
+                    .offset(y = (-20).dp)
+                    .height(110.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Trải nghiệm tốt hơn", fontWeight = FontWeight.Bold)
-                        Text(
-                            "Đăng nhập để lưu sân yêu thích",
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Text("Tặng 1 giờ đá free", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0056B3))
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Áp dụng cho khách hàng mới", style = MaterialTheme.typography.bodySmall)
                     }
-                    Button(
-                        onClick = {},
-                    ) {
-                        Text("Đăng kí ngay")
+                    Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107))) {
+                        Text("Đặt ngay", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
             }
-            SectionTitle(title = "Sân bóng nổi bật")
-            FieldListHorizontal()
+
+            // 4. DANH SÁCH SÂN BÓNG
+            SectionTitle(title = "Sân tập gần bạn")
+            FieldListHorizontal(fieldList)
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Composable
 fun SectionTitle(title: String, subtitle: String = "") {
-    Column(modifier = Modifier.padding(16.dp, vertical = 8.dp)) {
-        Text(
-            text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold
-        )
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         if (subtitle.isNotEmpty()) {
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
@@ -195,43 +226,21 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
         items(fieldList.size) { index ->
             val field = fieldList[index]
             Card(
-                modifier = Modifier
-                    .width(180.dp)
-                    .height(220.dp),
+                modifier = Modifier.width(180.dp).height(220.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .background(color = Color.LightGray)
-                    )
+                    Box(modifier = Modifier.fillMaxWidth().height(120.dp).background(color = Color.LightGray))
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            field.name,
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Text(field.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            field.address,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-
+                        Text(field.address, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1)
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.rounded.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFFFC107),
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            // Lay so diem danh gia that
                             Text(field.rating.toString(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                         }
                     }
