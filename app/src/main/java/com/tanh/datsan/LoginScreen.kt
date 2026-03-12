@@ -1,5 +1,7 @@
 package com.tanh.datsan
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -7,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,7 +28,7 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo chữ Facebook
+        // Logo chữ Facebook (có thể sau này đổi thành logo app Đặt Sân của bạn)
         Text(
             text = "Đăng nhập",
             color = Color(0xFF1877F2),
@@ -41,7 +44,7 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
             onValueChange = { email = it },
             label = { Text("Số điện thoại hoặc email") },
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp), // Bo góc ô nhập liệu
+            shape = RoundedCornerShape(12.dp),
             singleLine = true
         )
 
@@ -54,19 +57,19 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
             label = { Text("Mật khẩu") },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp), // Bo góc ô nhập liệu
+            shape = RoundedCornerShape(12.dp),
             singleLine = true
         )
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Nút Đăng nhập bo góc mạnh
+        // Nút Đăng nhập
         Button(
             onClick = { /* Xử lý đăng nhập */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
-            shape = RoundedCornerShape(12.dp), // Bo góc nút bấm
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))
         ) {
             Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold)
@@ -76,26 +79,63 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
             Text("Quên mật khẩu?", color = Color.Black)
         }
 
+        // Thanh phân cách "Hoặc"
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+            Text(
+                text = "Hoặc",
+                color = Color.Gray,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                fontSize = 14.sp
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
+        }
+
+        // Nút Đăng nhập bằng Google ĐÃ CÓ ICON
+        OutlinedButton(
+            onClick = { /* Xử lý logic gọi Google Sign-In */ },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            // Fix lỗi BorderStroke ở đây
+            border = BorderStroke(width = 1.dp, color = Color.LightGray)
+        ) {
+            // Gọi logo Google từ file xml vừa tạo
+            Image(
+                painter = painterResource(id = R.drawable.ic_google),
+                contentDescription = "Google Logo",
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
+        }
+
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Nút Tạo tài khoản mới (thường nằm dưới cùng)
+        // Nút Tạo tài khoản mới
         OutlinedButton(
             onClick = onNavigateToRegister,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
+            // Fix lỗi BorderStroke ở đây luôn cho an toàn
+            border = BorderStroke(width = 1.dp, color = Color.LightGray)
         ) {
             Text("Tạo tài khoản mới", color = Color(0xFF1877F2))
         }
     }
 }
 
-// --- ĐOẠN CODE ĐỂ XEM TRƯỚC GIAO DIỆN ---
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginPreview() {
-    // Gọi hàm LoginScreen ở đây, onNavigateToRegister để trống vì chỉ là xem trước
-    LoginScreen(onNavigateToRegister = {})
-}
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun LoginPreview() {
+//    LoginScreen(onNavigateToRegister = {})
+//}

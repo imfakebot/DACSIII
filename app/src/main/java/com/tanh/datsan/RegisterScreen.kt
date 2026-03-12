@@ -24,7 +24,9 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-
+    var expanded by remember{ mutableStateOf(false)}
+    var genderOptions = listOf("nam","nữ","khác")
+    var selectedGender by remember {mutableStateOf("")}
     // Định nghĩa màu xanh biển chủ đạo
     val primaryBlue = Color(0xFF1877F2)
 
@@ -43,7 +45,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
             color = primaryBlue,
-            modifier = Modifier.padding(top = 20.dp)
+            modifier = Modifier.padding(top = 50.dp)
         )
 
         Text(
@@ -64,6 +66,19 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // 3. Trường Email (Bật bàn phím hỗ trợ nhập email)
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email liên hệ") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // 2. Trường Số điện thoại (Bật bàn phím số)
         OutlinedTextField(
             value = phoneNumber,
@@ -77,16 +92,43 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 3. Trường Email (Bật bàn phím hỗ trợ nhập email)
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email liên hệ") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true
-        )
+
+// 4. Trường Giới tính (Dropdown Menu)
+        @OptIn(ExperimentalMaterial3Api::class)
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+        ) {
+            OutlinedTextField(
+                // Nếu chưa chọn gì thì hiển thị "--Giới tính--", ngược lại hiện giá trị đã chọn
+                value = if (selectedGender.isEmpty()) "--Giới tính--" else selectedGender,
+                onValueChange = {},
+                readOnly = true, // Không cho phép gõ phím vào đây
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            // Danh sách xổ xuống
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                genderOptions.forEach { selectionOption ->
+                    DropdownMenuItem(
+                        text = { Text(selectionOption) },
+                        onClick = {
+                            selectedGender = selectionOption
+                            expanded = false // Chọn xong thì đóng menu lại
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
