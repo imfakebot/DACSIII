@@ -1,15 +1,15 @@
 package com.tanh.datsan.data.network
 
-import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.data.model.FieldResponse
 import retrofit2.http.GET
-
-data class FieldResponse(
-    val success: Boolean,
-    val data : List<FieldModel>
-)
+import retrofit2.http.Query
 
 interface ApiService {
     @GET("fields")
-    suspend fun getAllField(): FieldResponse
+    suspend fun getAllFields(
+        @Query("latitude") lat: String? = null,
+        @Query("longitude") lng: String? = null,
+        @Query("radius") radius: Int? = 10, // Mặc định bán kính 10km
+        @Query("cityId") cityId: Int? = null
+    ): List<FieldResponse>
 }
-

@@ -1,10 +1,13 @@
 package com.tanh.datsan.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,32 +18,95 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.google.android.gms.location.LocationServices
 import com.tanh.datsan.data.model.FieldModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun MainScreen() {
+fun MainScreen(viewModel: HomeViewModel = viewModel()) {
+    val context = LocalContext.current
+
+    // Công cụ lấy tọa độ GPS
+    val fusedLocalClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
+    // Khởi tạo bộ xin quyền
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions -> // Đã thêm chữ "permissions ->" vào đây để sửa lỗi 'get' operator
+        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+
+        if (isGranted) {
+            // ĐƯỢC CẤP QUYỀN -> Lấy GPS rồi gọi API có tọa độ
+
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+                fusedLocalClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        viewModel.fetchField(
+                            location.latitude.toString(),
+                            location.longitude.toString()
+                        )
+                    } else {
+                        // Bật gps nhưng chưa có sóng
+                        viewModel.fetchField() // Lấy dữ liệu mặc định nếu không lấy được GPS
+                    }
+                }.addOnFailureListener {
+                    viewModel.fetchField() // Lấy dữ liệu mặc định nếu có lỗi
+                }
+            } else {
+                viewModel.fetchField() // Lấy dữ liệu mặc định nếu không có quyền
+            }
+        } else {
+            // Sửa lỗi: Thêm trường hợp người dùng TỪ CHỐI cấp quyền
+            viewModel.fetchField()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            fusedLocalClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    viewModel.fetchField(
+                        location.latitude.toString(),
+                        location.longitude.toString()
+                    )
+                } else {
+                    viewModel.fetchField()
+                }
+            }
+        } else {
+            permissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
+    }
+
+
+    val fieldList by viewModel.fieldList.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
     var selectedSport by remember { mutableStateOf("Môn thể thao") }
     val sports = listOf("Bóng đá", "Tennis", "Cầu lông", "Bóng bàn")
 
-    // Tạm thời bỏ dữ liệu giả vào đây để app khỏi bị trống trơn ở dưới cùng
-    val fieldList = remember {
-        listOf(
-            FieldModel("Sân VIP Pro 2", "Địa điểm chưa rõ", 4.5),
-            FieldModel("Sân Bóng Hải Anh", "Quận Hải Châu", 4.8)
-        )
-    }
-
-    Scaffold(
+   Scaffold(
         containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
     ) { paddingValues ->
         Column(
@@ -49,7 +115,7 @@ fun MainScreen() {
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 1. KHỐI HEADER MÀU XANH (Hero Banner giống Web)
+            // 1. KHỐI HEADER MÀU XANH
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -65,11 +131,18 @@ fun MainScreen() {
             ) {
                 // Các nút góc trên cùng
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Datsan", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(
+                        "Datsan",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = { }) {
                             Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
@@ -130,7 +203,11 @@ fun MainScreen() {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(selectedSport, color = Color.Gray)
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+                                Icon(
+                                    Icons.Default.ArrowDropDown,
+                                    contentDescription = null,
+                                    tint = Color.Gray
+                                )
                             }
                         }
                         DropdownMenu(
@@ -156,7 +233,13 @@ fun MainScreen() {
                         placeholder = { Text("Nhập địa điểm hoặc tên sân...") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color.Gray
+                            )
+                        },
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = Color.LightGray,
                             unfocusedContainerColor = Color(0xFFF8F9FA)
@@ -169,7 +252,11 @@ fun MainScreen() {
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
                     ) {
-                        Text("Tìm kiếm", fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp))
+                        Text(
+                            "Tìm kiếm",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
                     }
                 }
             }
@@ -184,15 +271,28 @@ fun MainScreen() {
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
             ) {
                 Row(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Tặng 1 giờ đá free", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF0056B3))
+                        Text(
+                            "Tặng 1 giờ đá free",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = Color(0xFF0056B3)
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Áp dụng cho khách hàng mới", style = MaterialTheme.typography.bodySmall)
+                        Text(
+                            "Áp dụng cho khách hàng mới",
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
-                    Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107))) {
+                    Button(
+                        onClick = {},
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107))
+                    ) {
                         Text("Đặt ngay", color = Color.Black, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -210,7 +310,11 @@ fun MainScreen() {
 @Composable
 fun SectionTitle(title: String, subtitle: String = "") {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+        )
         if (subtitle.isNotEmpty()) {
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
@@ -226,22 +330,48 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
         items(fieldList.size) { index ->
             val field = fieldList[index]
             Card(
-                modifier = Modifier.width(180.dp).height(220.dp),
+                modifier = Modifier
+                    .width(180.dp)
+                    .height(220.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column {
-                    Box(modifier = Modifier.fillMaxWidth().height(120.dp).background(color = Color.LightGray))
+                    AsyncImage(
+                        model = field.imageUrl,
+                        contentDescription = "Hình ảnh sân bóng",
+                        modifier = Modifier.fillMaxWidth().height(120.dp).background(Color.LightGray),
+                        contentScale = ContentScale.Crop
+                    )
                     Column(modifier = Modifier.padding(12.dp)) {
-                        Text(field.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                        Text(
+                            field.name,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1
+                        )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(field.address, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 1)
+                        Text(
+                            field.address,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            maxLines = 1
+                        )
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(16.dp))
+                            Icon(
+                                Icons.Rounded.Star,
+                                contentDescription = null,
+                                tint = Color(0xFFFFC107),
+                                modifier = Modifier.size(16.dp)
+                            )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(field.rating.toString(), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                field.rating.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
