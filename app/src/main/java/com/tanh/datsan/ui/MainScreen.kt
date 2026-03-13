@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,6 +23,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
 import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,8 +54,15 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
         if (isGranted) {
             // ĐƯỢC CẤP QUYỀN -> Lấy GPS rồi gọi API có tọa độ
 
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
 
                 fusedLocalClient.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
@@ -95,7 +105,10 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
             }
         } else {
             permissionLauncher.launch(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
             )
         }
     }
@@ -106,7 +119,7 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
     var selectedSport by remember { mutableStateOf("Môn thể thao") }
     val sports = listOf("Bóng đá", "Tennis", "Cầu lông", "Bóng bàn")
 
-   Scaffold(
+    Scaffold(
         containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
     ) { paddingValues ->
         Column(
@@ -129,20 +142,23 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
                         )
                     )
             ) {
+
+
                 // Các nút góc trên cùng
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(16.dp)
+                        .align(Alignment.TopCenter),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Datsan",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_app_logo),
+                        contentDescription = "Logo app",
+                        modifier = Modifier.size(80.dp)
                     )
+
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         TextButton(onClick = { }) {
                             Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
@@ -151,7 +167,11 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
                             onClick = { },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
-                            Text("Đăng ký", color = Color(0xFF007BFF), fontWeight = FontWeight.Bold)
+                            Text(
+                                "Đăng ký",
+                                color = Color(0xFF007BFF),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -162,7 +182,7 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .align(Alignment.CenterStart)
-                        .offset(y = (-20).dp) // Đẩy lên xíu cho cân đối
+                        .offset(y = (-20).dp)
                 ) {
                     Text(
                         text = "Sport - Đặt sân",
@@ -341,7 +361,10 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
                     AsyncImage(
                         model = field.imageUrl,
                         contentDescription = "Hình ảnh sân bóng",
-                        modifier = Modifier.fillMaxWidth().height(120.dp).background(Color.LightGray),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(Color.LightGray),
                         contentScale = ContentScale.Crop
                     )
                     Column(modifier = Modifier.padding(12.dp)) {

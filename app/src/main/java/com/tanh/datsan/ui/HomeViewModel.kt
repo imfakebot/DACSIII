@@ -24,7 +24,7 @@ class HomeViewModel : ViewModel() {
                     val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl?:"Hình ảnh không xác định"
 
                     val fixedUrl = rawUrl.replace("localhost", BuildConfig.API_HOST)
-                    android.util.Log.d("TEST_LINK_ANH", "Link sau khi sửa: $fixedUrl")
+                    Log.d("TEST_LINK_ANH", "Link sau khi sửa: $fixedUrl")
                     FieldModel(
                         name = jsonItem.name,
                         address = jsonItem.branch?.address?.street ?: "Địa chỉ không xác định",

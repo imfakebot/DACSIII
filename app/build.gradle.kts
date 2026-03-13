@@ -2,7 +2,7 @@ import java.util.Properties
 
 val localProperties = Properties()
 val localPropertiesFile: File? = rootProject.file("local.properties")
-if (localPropertiesFile?.exists() == true) {
+if (localPropertiesFile?.exists() ==true ) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 
 }
@@ -28,9 +28,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val baseUrl = localProperties.getProperty("BASE_URL")
+        val baseUrl = localProperties.getProperty("API_BASE_URL")
         val apiHost = localProperties.getProperty("API_HOST")
-        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
+
         buildConfigField("String", "API_HOST", "\"$apiHost\"")
     }
 

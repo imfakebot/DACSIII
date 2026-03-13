@@ -7,7 +7,9 @@ data class FieldResponse(
     val id: String,
     val name: String,
     val images: List<FieldImage>?,
-    val branch: FieldBranch?
+    val branch: FieldBranch?,
+    val averageRating: Double? = null,
+    val reviewCount: Int? = null
 )
 
 data class FieldModel(
