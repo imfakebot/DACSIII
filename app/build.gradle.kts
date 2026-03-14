@@ -3,7 +3,7 @@ import java.io.File // Thêm import File nếu bị thiếu
 
 val localProperties = Properties()
 val localPropertiesFile: File? = rootProject.file("local.properties")
-if (localPropertiesFile?.exists() == true) {
+if (localPropertiesFile?.exists() ==true ) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
@@ -29,9 +29,17 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+
         // Đọc BASE_URL từ local.properties, nếu không có thì dùng mặc định là localhost
         val baseUrl = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:3000/"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+
+        val baseUrl = localProperties.getProperty("API_BASE_URL")
+        val apiHost = localProperties.getProperty("API_HOST")
+        buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
+
+        buildConfigField("String", "API_HOST", "\"$apiHost\"")
+
     }
 
     buildTypes {
@@ -73,6 +81,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.play.services.location)
+    implementation(libs.logging.interceptor)
+    implementation(libs.coil.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

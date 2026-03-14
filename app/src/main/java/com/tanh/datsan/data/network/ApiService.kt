@@ -1,5 +1,6 @@
 package com.tanh.datsan // Nhớ sửa đúng tên package của bạn
 
+
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -14,8 +15,14 @@ data class LoginResponse(
     val account_id: String? = null
 )
 
+import com.tanh.datsan.data.model.FieldResponse
+import retrofit2.http.GET
+import retrofit2.http.Query
+
+
 // --- 2. Danh sách các "món ăn" (API) có thể gọi ---
 interface ApiService {
+
     @FormUrlEncoded
     @POST("datsan_api/login.php")
     suspend fun login(
@@ -46,4 +53,13 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
+
+    @GET("fields")
+    suspend fun getAllFields(
+        @Query("latitude") lat: String? = null,
+        @Query("longitude") lng: String? = null,
+        @Query("radius") radius: Int? = 10, // Mặc định bán kính 10km
+        @Query("cityId") cityId: Int? = null
+    ): List<FieldResponse>
+
 }
