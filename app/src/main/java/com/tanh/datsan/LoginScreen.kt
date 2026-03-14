@@ -1,25 +1,38 @@
 package com.tanh.datsan
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onNavigateToRegister: () -> Unit) {
+fun LoginScreen(
+    onNavigateToRegister: () -> Unit,
+    onNavigateToHome: (String) -> Unit // Thêm tham số này để chuyển hướng và truyền tên
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) } // Trạng thái ẩn/hiện mật khẩu
+
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -28,7 +41,7 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Logo chữ Facebook (có thể sau này đổi thành logo app Đặt Sân của bạn)
+        // Tiêu đề
         Text(
             text = "Đăng nhập",
             color = Color(0xFF1877F2),
@@ -50,12 +63,21 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Ô nhập Mật khẩu
+        // Ô nhập Mật khẩu (Có icon con mắt)
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Mật khẩu") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(
+                        imageVector = image,
+                        contentDescription = if (passwordVisible) "Ẩn mật khẩu" else "Hiện mật khẩu"
+                    )
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true
@@ -63,16 +85,40 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Nút Đăng nhập
+        // Nút Đăng nhập chính thức (Đã gọi API và xử lý chuyển màn hình)
         Button(
-            onClick = { /* Xử lý đăng nhập */ },
+            onClick = {
+                if (email.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(context, "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                scope.launch {
+                    try {
+                        val response = RetrofitClient.instance.login(email, password)
+                        if (response.isSuccessful && response.body() != null) {
+                            val result = response.body()!!
+                            if (result.status == "success") {
+                                Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
+
+                                // Chuyển sang màn hình Home và truyền tên người dùng (từ result.message)
+                                onNavigateToHome(result.message)
+                            } else {
+                                Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Lỗi kết nối: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2))
         ) {
-            Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Đăng nhập", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
 
         TextButton(onClick = { /* Quên mật khẩu */ }) {
@@ -96,17 +142,15 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
             HorizontalDivider(modifier = Modifier.weight(1f), color = Color.LightGray)
         }
 
-        // Nút Đăng nhập bằng Google ĐÃ CÓ ICON
+        // Nút Đăng nhập bằng Google
         OutlinedButton(
             onClick = { /* Xử lý logic gọi Google Sign-In */ },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            // Fix lỗi BorderStroke ở đây
             border = BorderStroke(width = 1.dp, color = Color.LightGray)
         ) {
-            // Gọi logo Google từ file xml vừa tạo
             Image(
                 painter = painterResource(id = R.drawable.ic_google),
                 contentDescription = "Google Logo",
@@ -126,16 +170,9 @@ fun LoginScreen(onNavigateToRegister: () -> Unit) {
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            // Fix lỗi BorderStroke ở đây luôn cho an toàn
             border = BorderStroke(width = 1.dp, color = Color.LightGray)
         ) {
             Text("Tạo tài khoản mới", color = Color(0xFF1877F2))
         }
     }
 }
-
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun LoginPreview() {
-//    LoginScreen(onNavigateToRegister = {})
-//}

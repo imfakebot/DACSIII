@@ -1,43 +1,55 @@
 package com.tanh.datsan
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(onBackToLogin: () -> Unit) {
-    // Khai báo các biến lưu trữ trạng thái người dùng nhập
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var expanded by remember{ mutableStateOf(false)}
-    var genderOptions = listOf("nam","nữ","khác")
-    var selectedGender by remember {mutableStateOf("")}
-    // Định nghĩa màu xanh biển chủ đạo
-    val primaryBlue = Color(0xFF1877F2)
+    var expanded by remember { mutableStateOf(false) }
+    val genderOptions = listOf("Nam", "Nữ", "Khác")
+    var selectedGender by remember { mutableStateOf("") }
 
-    // Biến trạng thái để hỗ trợ cuộn màn hình
-    val scrollState = rememberScrollState()
+    // Thêm 2 biến trạng thái cho con mắt
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    val primaryBlue = Color(0xFF1877F2)
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(20.dp)
-            .verticalScroll(scrollState), // Cho phép cuộn khi form quá dài
+            .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -54,7 +66,6 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
             modifier = Modifier.padding(bottom = 30.dp, top = 8.dp)
         )
 
-        // 1. Trường nhập Họ tên
         OutlinedTextField(
             value = fullName,
             onValueChange = { fullName = it },
@@ -66,7 +77,6 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 3. Trường Email (Bật bàn phím hỗ trợ nhập email)
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -79,7 +89,6 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 2. Trường Số điện thoại (Bật bàn phím số)
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
@@ -92,28 +101,18 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-
-// 4. Trường Giới tính (Dropdown Menu)
-        @OptIn(ExperimentalMaterial3Api::class)
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
         ) {
             OutlinedTextField(
-                // Nếu chưa chọn gì thì hiển thị "--Giới tính--", ngược lại hiện giá trị đã chọn
                 value = if (selectedGender.isEmpty()) "--Giới tính--" else selectedGender,
                 onValueChange = {},
-                readOnly = true, // Không cho phép gõ phím vào đây
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth(),
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor().fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-
-            // Danh sách xổ xuống
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
@@ -123,7 +122,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
                         text = { Text(selectionOption) },
                         onClick = {
                             selectedGender = selectionOption
-                            expanded = false // Chọn xong thì đóng menu lại
+                            expanded = false
                         }
                     )
                 }
@@ -132,13 +131,19 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 4. Trường Mật khẩu (Chuyển text thành dấu sao/chấm tròn)
+        // Ô Mật khẩu đã thêm Icon ẩn/hiện
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Mật khẩu") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Ẩn/Hiện mật khẩu")
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true
@@ -146,13 +151,19 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 5. Trường Xác nhận mật khẩu
+        // Ô Xác nhận mật khẩu đã thêm Icon ẩn/hiện
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = { Text("Xác nhận mật khẩu") },
-            visualTransformation = PasswordVisualTransformation(),
+            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                    Icon(imageVector = image, contentDescription = "Ẩn/Hiện mật khẩu")
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             singleLine = true
@@ -160,12 +171,40 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Nút Đăng ký
         Button(
-            onClick = { /* Xử lý logic đăng ký ở đây */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
+            onClick = {
+                if (fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                    Toast.makeText(context, "Vui lòng nhập đủ các trường bắt buộc", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+                if (password != confirmPassword) {
+                    Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                scope.launch {
+                    try {
+                        val res = RetrofitClient.instance.register(
+                            fullName = fullName,
+                            email = email,
+                            phone = phoneNumber,
+                            gender = selectedGender,
+                            password = password
+                        )
+
+                        if (res.isSuccessful && res.body()?.status == "success") {
+                            Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_LONG).show()
+                            onBackToLogin()
+                        } else {
+                            val msg = res.body()?.message ?: "Lỗi đăng ký không xác định"
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Lỗi kết nối: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
         ) {
@@ -174,17 +213,10 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // Nút quay lại Đăng nhập
         TextButton(onClick = onBackToLogin) {
-            Text(
-                text = "Đã có tài khoản? Đăng nhập ngay",
-                color = primaryBlue,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text(text = "Đã có tài khoản? Đăng nhập ngay", color = primaryBlue)
         }
 
-        // Thêm khoảng trống nhỏ ở cuối để cuộn không bị dính sát mép dưới
         Spacer(modifier = Modifier.height(20.dp))
     }
 }
-
