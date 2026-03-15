@@ -95,13 +95,19 @@ fun LoginScreen(
 
                 scope.launch {
                     try {
-                        val response = RetrofitClient.instance.login(email, password)
+                        // BỌC DỮ LIỆU VÀO ĐÚNG KHUÔN MẪU CỦA NESTJS
+                        val requestBody = LoginRequest(
+                            loginIdentifier = email,
+                            password = password
+                        )
+
+                        // Gửi đi 1 cục requestBody thay vì 2 biến rời
+                        val response = RetrofitClient.instance.login(requestBody)
+
                         if (response.isSuccessful && response.body() != null) {
                             val result = response.body()!!
                             if (result.status == "success") {
                                 Toast.makeText(context, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show()
-
-                                // Chuyển sang màn hình Home và truyền tên người dùng (từ result.message)
                                 onNavigateToHome(result.message)
                             } else {
                                 Toast.makeText(context, result.message, Toast.LENGTH_SHORT).show()

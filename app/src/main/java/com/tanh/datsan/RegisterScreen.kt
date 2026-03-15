@@ -184,13 +184,17 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
                 scope.launch {
                     try {
-                        val res = RetrofitClient.instance.register(
-                            fullName = fullName,
+                        // BỌC DỮ LIỆU VÀO ĐÚNG KHUÔN MẪU (Lưu ý tên biến phải khớp với NestJS)
+                        val requestBody = RegisterRequest(
+                            full_name = fullName,
                             email = email,
-                            phone = phoneNumber,
+                            phone_number = phoneNumber,
                             gender = selectedGender,
                             password = password
                         )
+
+                        // Gửi cái hộp dữ liệu đi
+                        val res = RetrofitClient.instance.register(requestBody)
 
                         if (res.isSuccessful && res.body()?.status == "success") {
                             Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_LONG).show()
