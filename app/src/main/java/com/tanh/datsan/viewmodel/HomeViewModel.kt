@@ -1,4 +1,4 @@
-package com.tanh.datsan.ui
+package com.tanh.datsan.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -9,7 +9,6 @@ import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-
 
 class HomeViewModel : ViewModel() {
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
@@ -29,7 +28,7 @@ class HomeViewModel : ViewModel() {
                         name = jsonItem.name,
                         address = jsonItem.branch?.address?.street ?: "Địa chỉ không xác định",
                         rating = 5.0,
-                        imageUrl=fixedUrl
+                        imageUrl = fixedUrl
                     )
                 }
 

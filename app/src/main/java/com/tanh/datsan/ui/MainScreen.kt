@@ -34,11 +34,16 @@ import coil.compose.AsyncImage
 import com.google.android.gms.location.LocationServices
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.R
+import com.tanh.datsan.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
-fun MainScreen(viewModel: HomeViewModel = viewModel()) {
+fun MainScreen(
+    viewModel: HomeViewModel = viewModel(),
+    onLoginClick: ()->Unit = {},
+    onRegisterClick :() -> Unit ={}
+    ) {
     val context = LocalContext.current
 
     // Công cụ lấy tọa độ GPS
@@ -47,7 +52,7 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
     // Khởi tạo bộ xin quyền
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions -> // Đã thêm chữ "permissions ->" vào đây để sửa lỗi 'get' operator
+    ) { permissions ->
         val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
@@ -160,11 +165,11 @@ fun MainScreen(viewModel: HomeViewModel = viewModel()) {
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { }) {
+                        TextButton(onClick = {onLoginClick() }) {
                             Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         Button(
-                            onClick = { },
+                            onClick = { onRegisterClick()},
                             colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                         ) {
                             Text(

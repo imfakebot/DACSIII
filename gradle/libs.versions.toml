@@ -13,6 +13,7 @@ retrofit="3.0.0"
 playServicesLocation = "21.3.0"
 loggingInterceptor = "5.3.2"
 coilCompose = "2.7.0"
+navigationCompose = "2.10.0-alpha01"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,7 @@ retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = 
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "loggingInterceptor" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coilCompose" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 
 [plugins]
