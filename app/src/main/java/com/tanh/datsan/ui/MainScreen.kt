@@ -1,4 +1,3 @@
-
 package com.tanh.datsan.ui
 
 import android.Manifest
@@ -403,4 +402,3 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
         }
     }
 }
-
