@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -41,9 +43,9 @@ import com.tanh.datsan.viewmodel.HomeViewModel
 @Preview
 fun MainScreen(
     viewModel: HomeViewModel = viewModel(),
-    onLoginClick: ()->Unit = {},
-    onRegisterClick :() -> Unit ={}
-    ) {
+    onLoginClick: () -> Unit = {},
+    onRegisterClick: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     // Công cụ lấy tọa độ GPS
@@ -53,27 +55,23 @@ fun MainScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val isGranted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true || permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
         if (isGranted) {
             // ĐƯỢC CẤP QUYỀN -> Lấy GPS rồi gọi API có tọa độ
 
             if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    context, Manifest.permission.ACCESS_FINE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+                    context, Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
 
                 fusedLocalClient.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
                         viewModel.fetchField(
-                            location.latitude.toString(),
-                            location.longitude.toString()
+                            location.latitude.toString(), location.longitude.toString()
                         )
                     } else {
                         // Bật gps nhưng chưa có sóng
@@ -93,16 +91,14 @@ fun MainScreen(
 
     LaunchedEffect(Unit) {
         val hasPermission = ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
         if (hasPermission) {
             fusedLocalClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     viewModel.fetchField(
-                        location.latitude.toString(),
-                        location.longitude.toString()
+                        location.latitude.toString(), location.longitude.toString()
                     )
                 } else {
                     viewModel.fetchField()
@@ -118,11 +114,11 @@ fun MainScreen(
         }
     }
 
-
     val fieldList by viewModel.fieldList.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
     var selectedSport by remember { mutableStateOf("Môn thể thao") }
     val sports = listOf("Bóng đá", "Tennis", "Cầu lông", "Bóng bàn")
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
@@ -164,19 +160,29 @@ fun MainScreen(
                         modifier = Modifier.size(80.dp)
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = {onLoginClick() }) {
-                            Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
-                        }
-                        Button(
-                            onClick = { onRegisterClick()},
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-                        ) {
-                            Text(
-                                "Đăng ký",
-                                color = Color(0xFF007BFF),
-                                fontWeight = FontWeight.Bold
-                            )
+                    if (isLoggedIn) {
+                        AsyncImage(
+                            model = "",
+                            contentDescription ="Avatar người dùng",
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                        )
+                    } else {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TextButton(onClick = { onLoginClick() }) {
+                                Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                            Button(
+                                onClick = { onRegisterClick() },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                            ) {
+                                Text(
+                                    "Đăng ký",
+                                    color = Color(0xFF007BFF),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }
@@ -190,10 +196,8 @@ fun MainScreen(
                         .offset(y = (-20).dp)
                 ) {
                     Text(
-                        text = "Sport - Đặt sân",
-                        color = Color(0xFFFFD700), // Màu vàng nổi bật
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        text = "Sport - Đặt sân", color = Color(0xFFFFD700), // Màu vàng nổi bật
+                        fontSize = 28.sp, fontWeight = FontWeight.ExtraBold
                     )
                     Text(
                         text = "thể thao nhanh chóng",
@@ -237,16 +241,12 @@ fun MainScreen(
                         }
                         DropdownMenu(
                             expanded = isSportMenuExpanded,
-                            onDismissRequest = { isSportMenuExpanded = false }
-                        ) {
+                            onDismissRequest = { isSportMenuExpanded = false }) {
                             sports.forEach { sport ->
-                                DropdownMenuItem(
-                                    text = { Text(sport) },
-                                    onClick = {
-                                        selectedSport = sport
-                                        isSportMenuExpanded = false
-                                    }
-                                )
+                                DropdownMenuItem(text = { Text(sport) }, onClick = {
+                                    selectedSport = sport
+                                    isSportMenuExpanded = false
+                                })
                             }
                         }
                     }
@@ -260,9 +260,7 @@ fun MainScreen(
                         shape = RoundedCornerShape(8.dp),
                         leadingIcon = {
                             Icon(
-                                Icons.Default.Search,
-                                contentDescription = null,
-                                tint = Color.Gray
+                                Icons.Default.Search, contentDescription = null, tint = Color.Gray
                             )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
@@ -310,8 +308,7 @@ fun MainScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Áp dụng cho khách hàng mới",
-                            style = MaterialTheme.typography.bodySmall
+                            "Áp dụng cho khách hàng mới", style = MaterialTheme.typography.bodySmall
                         )
                     }
                     Button(
@@ -336,9 +333,7 @@ fun MainScreen(
 fun SectionTitle(title: String, subtitle: String = "") {
     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold
         )
         if (subtitle.isNotEmpty()) {
             Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
@@ -369,7 +364,8 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(120.dp)
-                            .background(Color.LightGray),
+                            .background(Color.LightGray)
+                            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
                         contentScale = ContentScale.Crop
                     )
                     Column(modifier = Modifier.padding(12.dp)) {

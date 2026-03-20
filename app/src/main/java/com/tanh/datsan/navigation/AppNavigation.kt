@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.MainScreen
+import com.tanh.datsan.ui.RegisterScreen
 
 @Composable
 fun AppNavigation(){
@@ -22,7 +24,7 @@ fun AppNavigation(){
             )
         }
 
-        composable("Login"){
+        composable("login"){
             LoginScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -30,7 +32,7 @@ fun AppNavigation(){
             )
         }
 
-        composable("Register"){
+        composable("register"){
             RegisterScreen(
                 onBackClick = {
                     navController.popBackStack()

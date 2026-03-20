@@ -1,19 +1,32 @@
 package com.tanh.datsan.viewmodel
 
+import android.app.Application
 import android.util.Log
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.BuildConfig
+import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val tokenManager = TokenManager(application)
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
+    val isLoggedIn : StateFlow<Boolean> = tokenManager.getToken.map{ token -> !token.isNullOrEmpty()}
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
     fun fetchField(lat: String? = null, lng: String? = null) {
         viewModelScope.launch {
             try {
