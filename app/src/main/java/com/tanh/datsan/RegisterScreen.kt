@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(onBackToLogin: () -> Unit) {
+fun RegisterScreen(onBackToLogin: () -> Unit,onNavigateToOtp: (String) -> Unit ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -36,12 +36,13 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var expanded by remember { mutableStateOf(false) }
+
     val genderOptions = listOf("Nam", "Nữ", "Khác")
     var selectedGender by remember { mutableStateOf("") }
 
-    // Thêm 2 biến trạng thái cho con mắt
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val primaryBlue = Color(0xFF1877F2)
 
@@ -92,7 +93,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
         OutlinedTextField(
             value = phoneNumber,
             onValueChange = { phoneNumber = it },
-            label = { Text("Số điện thoại") },
+            label = { Text("Số điện thoại (Ví dụ: 0912345678)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -131,11 +132,10 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Ô Mật khẩu đã thêm Icon ẩn/hiện
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Mật khẩu") },
+            label = { Text("Mật khẩu (Tối thiểu 8 ký tự)") },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
@@ -151,7 +151,6 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Ô Xác nhận mật khẩu đã thêm Icon ẩn/hiện
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -173,7 +172,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
 
         Button(
             onClick = {
-                if (fullName.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || phoneNumber.isEmpty()) {
                     Toast.makeText(context, "Vui lòng nhập đủ các trường bắt buộc", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -181,38 +180,54 @@ fun RegisterScreen(onBackToLogin: () -> Unit) {
                     Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
+                if (password.length < 8) {
+                    Toast.makeText(context, "Mật khẩu phải có ít nhất 8 ký tự", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
 
+                // Map giới tính sang format Backend (NestJS)
+                val genderMap = mapOf("Nam" to "male", "Nữ" to "female", "Khác" to "other")
+                val genderApi = genderMap[selectedGender] ?: "other"
+
+                isLoading = true
                 scope.launch {
                     try {
-                        // BỌC DỮ LIỆU VÀO ĐÚNG KHUÔN MẪU (Lưu ý tên biến phải khớp với NestJS)
                         val requestBody = RegisterRequest(
-                            full_name = fullName,
-                            email = email,
-                            phone_number = phoneNumber,
-                            gender = selectedGender,
+                            full_name = fullName.trim(),
+                            email = email.trim(),
+                            phone_number = phoneNumber.trim(),
+                            gender = genderApi,
                             password = password
                         )
 
-                        // Gửi cái hộp dữ liệu đi
-                        val res = RetrofitClient.instance.register(requestBody)
+                        val res = RetrofitClient.instance.registerInitiate(requestBody)
 
-                        if (res.isSuccessful && res.body()?.status == "success") {
+                        if (res.isSuccessful && res.body() != null) {
                             Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_LONG).show()
-                            onBackToLogin()
+                            onNavigateToOtp(email.trim())
                         } else {
-                            val msg = res.body()?.message ?: "Lỗi đăng ký không xác định"
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            // Xử lý lỗi từ phía server (ví dụ lỗi validation từ NestJS)
+                            val errorBody = res.errorBody()?.string()
+                            android.util.Log.e("REGISTER_ERROR", "Lỗi từ server: $errorBody")
+                            Toast.makeText(context, "Lỗi: $errorBody", Toast.LENGTH_LONG).show()
                         }
                     } catch (e: Exception) {
                         Toast.makeText(context, "Lỗi kết nối: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isLoading = false
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue)
+            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+            enabled = !isLoading
         ) {
-            Text("Đăng ký", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+            } else {
+                Text("Đăng ký", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))

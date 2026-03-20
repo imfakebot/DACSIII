@@ -1,9 +1,10 @@
 import java.util.Properties
-import java.io.File // Thêm import File nếu bị thiếu
+import java.io.File
 
+// Đọc file local.properties
 val localProperties = Properties()
-val localPropertiesFile: File? = rootProject.file("local.properties")
-if (localPropertiesFile?.exists() == true) {
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
@@ -14,23 +15,21 @@ plugins {
 
 android {
     namespace = "com.tanh.datsan"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 36 // Đã sửa lại cho đúng cú pháp
 
     defaultConfig {
         applicationId = "com.tanh.datsan"
-        minSdk = 26
+        minSdk = 33
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Đọc BASE_URL từ local.properties, nếu không có thì dùng mặc định là localhost
+        // Đọc BASE_URL từ local.properties, nếu không có thì dùng mặc định là localhost của máy ảo
         val baseUrl = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:3000/"
+
+        // Tạo biến BuildConfig.BASE_URL
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
@@ -41,6 +40,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Nếu có server thật (Production), bạn có thể ghi đè URL ở đây
+            // buildConfigField("String", "BASE_URL", "\"https://api.domain-thuc-te-cua-ban.com/\"")
         }
     }
 
@@ -51,14 +52,13 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
+        buildConfig = true // Bắt buộc phải có dòng này để sinh ra file BuildConfig
     }
 
-    buildToolsVersion = "36.1.0"
+    // Xóa dòng buildToolsVersion vì Gradle tự động quản lý phiên bản phù hợp
 }
 
 dependencies {
-    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -67,12 +67,19 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+
+    // Icons
+    implementation(libs.androidx.material.icons.extended)
+
+    // Retrofit & Coroutines (Sử dụng version catalog, đã xóa các dòng hardcode bị trùng ở dưới)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
-    implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.kotlinx.coroutines.android)
+
+    // ViewModel & Navigation cho Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.material.icons.extended)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -80,7 +87,9 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
+    // Thư viện Đăng nhập Google thế hệ mới (Credential Manager)
+    implementation("androidx.credentials:credentials:1.2.2")
+    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 }
