@@ -40,7 +40,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     FieldModel(
                         name = jsonItem.name,
                         address = jsonItem.branch?.address?.street ?: "Địa chỉ không xác định",
-                        rating = 5.0,
+                        rating = jsonItem.reviewCount,
                         imageUrl = fixedUrl
                     )
                 }

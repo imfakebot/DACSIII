@@ -10,7 +10,11 @@ object RetrofitClient {
     private const val BASE_URL = BuildConfig.API_BASE_URL
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY // Bắt  in ra TẤT CẢ mọi thứ (Body, Header, URL)
+        level = if(BuildConfig.DEBUG){
+            HttpLoggingInterceptor.Level.BODY // Bắt in ra TẤT CẢ mọi thứ (Body, Header, URL)
+        }else{
+            HttpLoggingInterceptor.Level.NONE
+        }
     }
 
     private val okHttpClient = OkHttpClient.Builder()

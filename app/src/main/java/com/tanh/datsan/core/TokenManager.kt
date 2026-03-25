@@ -9,9 +9,8 @@ import kotlinx.coroutines.flow.map
 
 val Context.dataStorage by preferencesDataStore(name = "user_prefs")
 
-class TokenManager (private val context: Context) {
+class TokenManager (context: Context) {
     private val dataStore = context.dataStorage
-
     companion object {
         val TOKEN_KEY = stringPreferencesKey("jwt_token")
     }

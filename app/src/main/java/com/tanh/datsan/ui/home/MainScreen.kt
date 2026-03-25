@@ -1,4 +1,4 @@
-package com.tanh.datsan.ui
+package com.tanh.datsan.ui.home
 
 import android.Manifest
 import android.content.pm.PackageManager
