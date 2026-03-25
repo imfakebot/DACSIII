@@ -21,14 +21,18 @@
             android:theme="@style/Theme.Datsan">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                    <category android:name="android.intent.category.DEFAULT"/>
+                        <category android:name="android.intent.category.BROWSABLE"/>
+                            <data
+                                android:host="login-callback"
+                                android:scheme="dacsii"/>
+            </intent-filter>
 
-                <data
-                    android:host="login-callback"
-                    android:scheme="dacsiii" />
-        </intent-filter>
-    </activity>
-</application>
+        </activity>
+    </application>
 
-    </manifest>
+</manifest>
