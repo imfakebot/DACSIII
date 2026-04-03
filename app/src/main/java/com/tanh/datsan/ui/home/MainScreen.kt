@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,7 +45,8 @@ import com.tanh.datsan.viewmodel.HomeViewModel
 fun MainScreen(
     viewModel: HomeViewModel = viewModel(),
     onLoginClick: () -> Unit = {},
-    onRegisterClick: () -> Unit = {}
+    onRegisterClick: () -> Unit = {},
+    onNavigateToDetail:(String) -> Unit ={}
 ) {
     val context = LocalContext.current
 
@@ -119,6 +121,7 @@ fun MainScreen(
     var selectedSport by remember { mutableStateOf("Môn thể thao") }
     val sports = listOf("Bóng đá", "Tennis", "Cầu lông", "Bóng bàn")
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    var locationName by rememberSaveable() {mutableStateOf("") }
 
     Scaffold(
         containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
@@ -253,8 +256,8 @@ fun MainScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     // Ô nhập địa điểm, tên sân
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = {},
+                        value = locationName,
+                        onValueChange = {locationName = it},
                         placeholder = { Text("Nhập địa điểm hoặc tên sân...") },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
@@ -322,7 +325,12 @@ fun MainScreen(
 
             // 4. DANH SÁCH SÂN BÓNG
             SectionTitle(title = "Sân tập gần bạn")
-            FieldListHorizontal(fieldList)
+            FieldListHorizontal(
+                fieldList,
+                onFieldClick = {fieldId->
+                    onNavigateToDetail(fieldId)
+                }
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -342,7 +350,7 @@ fun SectionTitle(title: String, subtitle: String = "") {
 }
 
 @Composable
-fun FieldListHorizontal(fieldList: List<FieldModel>) {
+fun FieldListHorizontal(fieldList: List<FieldModel>,onFieldClick: (String) -> Unit) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -355,7 +363,8 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
                     .height(220.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                onClick =  {onFieldClick(field.id)}
             ) {
                 Column {
                     AsyncImage(
@@ -376,12 +385,14 @@ fun FieldListHorizontal(fieldList: List<FieldModel>) {
                             maxLines = 1
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            field.address,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            maxLines = 1
-                        )
+                        field.address?.let {
+                            Text(
+                                it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                maxLines = 1
+                            )
+                        }
                         Spacer(modifier = Modifier.weight(1f))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(

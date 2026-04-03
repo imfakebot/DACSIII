@@ -38,9 +38,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     val fixedUrl = rawUrl.replace("localhost", BuildConfig.API_HOST)
                     Log.d("TEST_LINK_ANH", "Link sau khi sửa: $fixedUrl")
                     FieldModel(
+                        id = jsonItem.id,
+                        status = jsonItem.status,
                         name = jsonItem.name,
-                        address = jsonItem.branch?.address?.street ?: "Địa chỉ không xác định",
-                        rating = jsonItem.reviewCount,
+                        address = jsonItem.branch.address?.street ?: "Địa chỉ không xác định",
+                        rating = jsonItem.averageRating,
                         imageUrl = fixedUrl
                     )
                 }
