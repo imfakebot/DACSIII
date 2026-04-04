@@ -1,5 +1,10 @@
-package com.tanh.datsan
+package com.tanh.datsan.navigation
 
+
+import com.tanh.datsan.ui.auth.LoginScreen
+import com.tanh.datsan.ui.auth.RegisterScreen
+import com.tanh.datsan.ui.auth.ResetPasswordScreen
+import com.tanh.datsan.ui.auth.VerifyOtpScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -77,20 +82,20 @@ fun AppNavigation() {
         }
 
         // 4. Màn hình Home
-        composable(
-            route = "home/{userName}",
-            arguments = listOf(navArgument("userName") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val userName = backStackEntry.arguments?.getString("userName") ?: "Khách"
-            HomeScreen(
-                userName = userName,
-                onLogout = {
-                    navController.navigate("login") {
-                        popUpTo(0)
-                    }
-                }
-            )
-        }
+//        composable(
+//            route = "home/{userName}",
+//            arguments = listOf(navArgument("userName") { type = NavType.StringType })
+//        ) { backStackEntry ->
+//            val userName = backStackEntry.arguments?.getString("userName") ?: "Khách"
+//            HomeScreen(
+//                userName = userName,
+//                onLogout = {
+//                    navController.navigate("login") {
+//                        popUpTo(0)
+//                    }
+//                }
+//            )
+//        }
 
         // 5. Màn hình Đặt lại mật khẩu (Nhập OTP của Quên mật khẩu)
         composable(

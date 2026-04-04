@@ -1,11 +1,15 @@
-package com.tanh.datsan
+package com.tanh.datsan.data.network
 
 import com.google.gson.annotations.SerializedName
+import com.tanh.datsan.BuildConfig // Tùy thuộc cấu hình dự án, dòng này có thể tự động import
+import com.tanh.datsan.data.model.FieldResponse
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Query
 
 // --- 1. Khuôn mẫu nhận kết quả ---
 data class LoginResponse(
@@ -41,8 +45,8 @@ data class OtpRequest(
 data class ForgotPasswordRequest(val email: String)
 
 data class ResetPasswordRequest(
-  val token: String,
-    var newPassword:String
+    val token: String,
+    var newPassword: String
 )
 
 data class GoogleLoginRequest(
@@ -55,6 +59,22 @@ data class ForgotRequest(
 
 // --- 3. Danh sách API ---
 interface ApiService {
+
+    // ==========================================
+    // API TỪ NHÁNH MAIN (Quản lý sân bóng)
+    // ==========================================
+    @GET("fields")
+    suspend fun getAllFields(
+        @Query("latitude") lat: String? = null,
+        @Query("longitude") lng: String? = null,
+        @Query("radius") radius: Int? = 10, // Mặc định bán kính 10km
+        @Query("cityId") cityId: Int? = null
+    ): List<FieldResponse>
+
+    // ==========================================
+    // API CỦA BẠN (Xác thực & Người dùng)
+    // ==========================================
+
     // BƯỚC 1: Gọi cửa (Initiate)
     @POST("auth/login/initiate")
     suspend fun loginInitiate(@Body request: LoginRequest): Response<LoginResponse>
@@ -81,20 +101,9 @@ interface ApiService {
     @POST("auth/google/mobile")
     suspend fun loginWithGoogle(@Body request: GoogleLoginRequest): Response<LoginResponse>
 
+    // (Ghi chú: Trong code của bạn có 2 hàm forgotPassword với request khác nhau, tui vẫn giữ nguyên cả 2 nhé)
     @POST("auth/forgot-password") // Đổi lại đường dẫn này cho khớp với Backend của bạn nếu cần
     suspend fun forgotPassword(@Body request: ForgotRequest): Response<Any>
-
 }
 
 // --- 4. Bộ máy kết nối mạng ---
-object RetrofitClient {
-    private val BASE_URL = BuildConfig.BASE_URL
-
-    val instance: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
-    }
-}

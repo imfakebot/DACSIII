@@ -1,10 +1,9 @@
 import java.util.Properties
-import java.io.File
+import java.io.File // Thêm import File nếu bị thiếu
 
-// Đọc file local.properties
 val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
+val localPropertiesFile: File? = rootProject.file("local.properties")
+if (localPropertiesFile?.exists() == true) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 
@@ -27,10 +26,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Đọc BASE_URL từ local.properties, nếu không có thì dùng mặc định là localhost của máy ảo
-        val baseUrl = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:3000/"
+        // Nếu không có trong file local.properties, tự động lấy "http://10.0.2.2:3000/"
+        val baseUrl = localProperties.getProperty("API_BASE_URL") ?: "http://10.0.2.2:3000/"
 
-        // Tạo biến BuildConfig.BASE_URL
-        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+        // Tương tự, tự động lấy "10.0.2.2" nếu không tìm thấy
+        val apiHost = localProperties.getProperty("API_HOST") ?: "10.0.2.2"
+
+        buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
+        buildConfigField("String", "API_HOST", "\"$apiHost\"")
     }
 
     buildTypes {
@@ -40,8 +43,6 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Nếu có server thật (Production), bạn có thể ghi đè URL ở đây
-            // buildConfigField("String", "BASE_URL", "\"https://api.domain-thuc-te-cua-ban.com/\"")
         }
     }
 
@@ -52,13 +53,13 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true // Bắt buộc phải có dòng này để sinh ra file BuildConfig
+        buildConfig=true
     }
-
-    // Xóa dòng buildToolsVersion vì Gradle tự động quản lý phiên bản phù hợp
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -75,6 +76,13 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.material.icons.extended)
+    implementation(libs.play.services.location)
+    implementation(libs.logging.interceptor)
+    implementation(libs.coil.compose)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
 
     // ViewModel & Navigation cho Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose.android)

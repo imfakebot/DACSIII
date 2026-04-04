@@ -1,4 +1,4 @@
-package com.tanh.datsan
+package com.tanh.datsan.ui.auth
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -20,6 +20,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.data.network.ResetPasswordRequest
+import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
@@ -131,7 +133,7 @@ fun ResetPasswordScreen(
                             token = cleanToken,
                             newPassword = newPassword
                         )
-                        val response = RetrofitClient.instance.resetPassword(request)
+                        val response = RetrofitClient.apiService.resetPassword(request)
 
                         if (response.isSuccessful) {
                             Toast.makeText(context, "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show()

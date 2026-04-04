@@ -1,5 +1,6 @@
-package com.tanh.datsan
+package com.tanh.datsan.ui.auth
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +22,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.data.network.RegisterRequest
+import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -200,7 +203,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit,onNavigateToOtp: (String) -> Unit )
                             password = password
                         )
 
-                        val res = RetrofitClient.instance.registerInitiate(requestBody)
+                        val res = RetrofitClient.apiService.registerInitiate(requestBody)
 
                         if (res.isSuccessful && res.body() != null) {
                             Toast.makeText(context, "Đăng ký thành công!", Toast.LENGTH_LONG).show()
@@ -208,7 +211,7 @@ fun RegisterScreen(onBackToLogin: () -> Unit,onNavigateToOtp: (String) -> Unit )
                         } else {
                             // Xử lý lỗi từ phía server (ví dụ lỗi validation từ NestJS)
                             val errorBody = res.errorBody()?.string()
-                            android.util.Log.e("REGISTER_ERROR", "Lỗi từ server: $errorBody")
+                            Log.e("REGISTER_ERROR", "Lỗi từ server: $errorBody")
                             Toast.makeText(context, "Lỗi: $errorBody", Toast.LENGTH_LONG).show()
                         }
                     } catch (e: Exception) {

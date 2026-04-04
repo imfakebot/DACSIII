@@ -1,6 +1,7 @@
-package com.tanh.datsan
+package com.tanh.datsan.ui.auth
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -26,6 +27,11 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.tanh.datsan.R
+import com.tanh.datsan.data.network.ForgotRequest
+import com.tanh.datsan.data.network.GoogleLoginRequest
+import com.tanh.datsan.data.network.LoginRequest
+import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
@@ -112,7 +118,7 @@ fun LoginScreen(
                 isLoadingLogin = true
                 scope.launch {
                     try {
-                        val response = RetrofitClient.instance.loginInitiate(
+                        val response = RetrofitClient.apiService.loginInitiate(
                             LoginRequest(email = validEmail, password = password)
                         )
 
@@ -151,12 +157,15 @@ fun LoginScreen(
             onClick = {
                 scope.launch {
                     try {
+
                         val idToken = signInWithGoogle(context)
                         if (idToken != null) {
                             Toast.makeText(context, "Đang xác thực với server...", Toast.LENGTH_SHORT).show()
 
                             // Gọi API lên Backend
-                            val response = RetrofitClient.instance.loginWithGoogle(GoogleLoginRequest(idToken))
+                            val response = RetrofitClient.apiService.loginWithGoogle(
+                                GoogleLoginRequest(idToken)
+                            )
 
                             if (response.isSuccessful && response.body() != null) {
                                 val result = response.body()!!
@@ -168,7 +177,7 @@ fun LoginScreen(
                                 }
                             } else {
                                 val errorBody = response.errorBody()?.string()
-                                android.util.Log.e("GOOGLE_API", "Lỗi Backend: $errorBody")
+                                Log.e("GOOGLE_API", "Lỗi Backend: $errorBody")
                                 Toast.makeText(context, "Lỗi server hoặc chưa có API Backend!", Toast.LENGTH_SHORT).show()
                             }
                         } else {
@@ -233,7 +242,11 @@ fun LoginScreen(
                         scope.launch {
                             try {
                                 // Gọi API quên mật khẩu
-                                val response = RetrofitClient.instance.forgotPassword(ForgotRequest(email = validEmail))
+                                val response = RetrofitClient.apiService.forgotPassword(
+                                    ForgotRequest(
+                                        email = validEmail
+                                    )
+                                )
                                 if (response.isSuccessful) {
                                     Toast.makeText(context, "Mã OTP đã được gửi!", Toast.LENGTH_LONG).show()
                                     showForgotDialog = false
@@ -296,7 +309,7 @@ suspend fun signInWithGoogle(context: Context): String? {
             null
         }
     } catch (e: Exception) {
-        android.util.Log.e("GOOGLE_SIGN_IN", "Lỗi: ${e.message}")
+        Log.e("GOOGLE_SIGN_IN", "Lỗi: ${e.message}")
         null
     }
 }

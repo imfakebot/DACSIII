@@ -1,5 +1,6 @@
-package com.tanh.datsan
+package com.tanh.datsan.ui.auth
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.data.network.OtpRequest
+import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
 
 @Composable
@@ -73,9 +76,9 @@ fun VerifyOtpScreen(
 
                         // Gọi API tương ứng dựa vào việc user đang đăng nhập hay đăng ký
                         val response = if (isLoginMode) {
-                            RetrofitClient.instance.loginComplete(request)
+                            RetrofitClient.apiService.loginComplete(request)
                         } else {
-                            RetrofitClient.instance.registerComplete(request)
+                            RetrofitClient.apiService.registerComplete(request)
                         }
 
                         if (response.isSuccessful && response.body() != null) {
@@ -93,7 +96,7 @@ fun VerifyOtpScreen(
                             }
                         } else {
                             val errorBody = response.errorBody()?.string()
-                            android.util.Log.e("OTP_ERROR", "Lỗi: $errorBody")
+                            Log.e("OTP_ERROR", "Lỗi: $errorBody")
                             Toast.makeText(context, "Mã OTP không đúng hoặc đã hết hạn!", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
