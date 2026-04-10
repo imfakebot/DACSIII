@@ -1,6 +1,8 @@
 package com.tanh.datsan.ui.auth
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -27,9 +29,9 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.R
 import com.tanh.datsan.data.network.ForgotRequest
-import com.tanh.datsan.data.network.GoogleLoginRequest
 import com.tanh.datsan.data.network.LoginRequest
 import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
@@ -155,44 +157,21 @@ fun LoginScreen(
         // --- NÚT ĐĂNG NHẬP GOOGLE ---
         OutlinedButton(
             onClick = {
-                scope.launch {
-                    try {
+                val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
+                // Thay url này bằng domain thật của backend bạn (nhớ truyền ?platform=mobile)
+                val backendGoogleAuthUrl = "$baseUrl/auth/google?platform=mobile"
 
-                        val idToken = signInWithGoogle(context)
-                        if (idToken != null) {
-                            Toast.makeText(context, "Đang xác thực với server...", Toast.LENGTH_SHORT).show()
-
-                            // Gọi API lên Backend
-                            val response = RetrofitClient.apiService.loginWithGoogle(
-                                GoogleLoginRequest(idToken)
-                            )
-
-                            if (response.isSuccessful && response.body() != null) {
-                                val result = response.body()!!
-                                if (result.accessToken != null) {
-                                    Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
-                                    onNavigateToHome("Người dùng Google")
-                                } else {
-                                    Toast.makeText(context, "Lỗi: Không nhận được Token từ server", Toast.LENGTH_SHORT).show()
-                                }
-                            } else {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e("GOOGLE_API", "Lỗi Backend: $errorBody")
-                                Toast.makeText(context, "Lỗi server hoặc chưa có API Backend!", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "Đã hủy đăng nhập Google", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(backendGoogleAuthUrl))
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Không thể mở trình duyệt web", Toast.LENGTH_SHORT).show()
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(width = 1.dp, color = Color.LightGray)
         ) {
-            // Lưu ý: Nếu máy bạn không có file ic_google, hãy tạm xóa dòng Image này hoặc đổi icon
             Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = "Google", modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.width(12.dp))
             Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
