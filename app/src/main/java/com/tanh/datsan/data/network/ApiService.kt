@@ -3,6 +3,8 @@ package com.tanh.datsan.data.network
 import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.FieldResponse
+import com.tanh.datsan.data.model.Review
+import com.tanh.datsan.data.model.ReviewPaginateResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -24,4 +26,11 @@ interface ApiService {
     suspend fun createBooking(
         @Body bookingRequest: CreateBookingDto
     ): BookingResponse
+
+    @GET("review/field/{fieldId}")
+    suspend fun getFieldReview(
+        @Path("fieldId") fieldId: String,
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50
+    ): ReviewPaginateResponse
 }

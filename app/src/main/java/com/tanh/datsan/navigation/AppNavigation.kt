@@ -1,14 +1,13 @@
 package com.tanh.datsan.navigation
 
 import android.util.Log
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tanh.datsan.ui.home.AllReviewScreen
 import com.tanh.datsan.ui.home.DetailScreen
 //import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.home.MainScreen
@@ -41,17 +40,32 @@ fun AppNavigation() {
                     type = NavType.StringType
                 }
             )
-        ) {backStackEntry->
+        ) { backStackEntry ->
             val fieldID = backStackEntry.arguments?.getString("fieldId") ?: return@composable
             Log.d("AppNavigation", "Điều hướng đến DetailScreen với fieldId: $fieldID")
             DetailScreen(
-                fieldID,
+                fieldId = fieldID,
                 onBackClick = {
                     navController.popBackStack()
                 },
-                modifier = Modifier.fillMaxSize()
+                onNavigateToReview = { fieldId ->
+                    navController.navigate("reviews/$fieldId")
+                }
             )
         }
+
+        composable("reviews/{fieldId}") { backStageEntry ->
+            val fieldId = backStageEntry.arguments?.getString("fieldId") ?: return@composable
+            Log.d("AppNavigation", "Điều hướng đến AllReviewsScreen với fieldId: $fieldId")
+            AllReviewScreen(
+                fieldId = fieldId,
+                onBackCLick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+    }
+}
 
 //        composable("login"){
 //            LoginScreen(
@@ -68,5 +82,3 @@ fun AppNavigation() {
 //                }
 //            )
 //        }
-    }
-}

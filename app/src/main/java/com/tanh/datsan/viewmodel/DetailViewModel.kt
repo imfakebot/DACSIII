@@ -8,12 +8,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.runtime.State
 import com.tanh.datsan.data.model.CreateBookingDto
+import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.data.repository.ReviewRepository
 import kotlinx.coroutines.launch
 
 class DetailViewModel : ViewModel() {
 
-    private val repository = FieldRepository()
+    private val fieldRepository = FieldRepository()
 
     // 1. Kho chứa trạng thái UI (Mặc định là đang Loading)
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -24,7 +26,7 @@ class DetailViewModel : ViewModel() {
             _uiState.value = DetailUiState.Loading
             try {
                 // Gọi API lấy chi tiết 1 sân theo ID
-                val response = repository.getFieldDetail(fieldId)
+                val response = fieldRepository.getFieldDetail(fieldId)
                 _uiState.value = DetailUiState.Success(response)
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(e.message ?: "Lỗi không xác định")
@@ -39,8 +41,8 @@ class DetailViewModel : ViewModel() {
         viewModelScope.launch {
             _bookingState.value = BookingUiState.Loading
             try {
-                // Gọi API POST /bookings với DTO khớp Swagger
-                val response = repository.createBooking(
+                // Gọi API POST /bookings với DTO
+                val response = fieldRepository.createBooking(
                     CreateBookingDto(
                         fieldId = fieldId,
                         startTime = startTime,

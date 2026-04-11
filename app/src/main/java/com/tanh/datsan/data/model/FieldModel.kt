@@ -70,7 +70,9 @@ data class FieldResponse(
 
     @SerializedName("averageRating") val averageRating: Float?,
 
-    @SerializedName("reviewCount") val reviewCount: Int?
+    @SerializedName("reviewCount") val reviewCount: Int?,
+
+    val reviews : List<Review>?= null
 )
 
 data class FieldModel(
@@ -87,4 +89,26 @@ data class FieldModel(
     val utilities: List<Utility>? = emptyList(),
 
     @SerializedName("fieldType") val fieldType: FieldType? = null
+)
+
+data class ReviewPaginateResponse(
+    val data: List<Review>
+)
+
+data class ReviewUser(
+    @SerializedName("full_name")
+    val fullName:String?,
+
+    @SerializedName("avatar_url")
+    val avatarUrl : String?
+)
+
+data class Review(
+    val id:String,
+    val rating:Int,
+    val comment:String?,
+    val createdAt: String,
+
+    @SerializedName("user")
+    val user: ReviewUser?
 )
