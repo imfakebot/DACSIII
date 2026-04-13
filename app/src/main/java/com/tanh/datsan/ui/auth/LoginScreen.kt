@@ -1,8 +1,6 @@
 package com.tanh.datsan.ui.auth
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
@@ -31,10 +29,15 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.R
-import com.tanh.datsan.data.network.ForgotRequest
+import com.tanh.datsan.data.network.ForgotPasswordRequest
+import com.tanh.datsan.data.network.GoogleLoginRequest
 import com.tanh.datsan.data.network.LoginRequest
 import com.tanh.datsan.data.network.RetrofitClient
 import kotlinx.coroutines.launch
+import androidx.credentials.CustomCredential
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import com.tanh.datsan.core.TokenManager
 
 @Composable
 fun LoginScreen(
@@ -55,6 +58,7 @@ fun LoginScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val primaryBlue = Color(0xFF1877F2)
+    val tokenManager = remember { TokenManager(context) }
 
     Column(
         modifier = Modifier
@@ -154,29 +158,74 @@ fun LoginScreen(
         Text("HOẶC", color = Color.Gray, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
+
         // --- NÚT ĐĂNG NHẬP GOOGLE ---
         OutlinedButton(
             onClick = {
-                val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
-                // Thay url này bằng domain thật của backend bạn (nhớ truyền ?platform=mobile)
-                val backendGoogleAuthUrl = "$baseUrl/auth/google?platform=mobile"
+                if (isLoadingLogin) return@OutlinedButton
+                isLoadingLogin = true
 
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(backendGoogleAuthUrl))
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Không thể mở trình duyệt web", Toast.LENGTH_SHORT).show()
+                scope.launch {
+                    try {
+                        // 1. Gọi hàm native để lấy idToken từ Google
+                        val idToken = signInWithGoogle(context)
+
+                        // Nếu code chạy qua được dòng trên nghĩa là đã có Token
+                        Toast.makeText(context, "Đang kết nối với Server...", Toast.LENGTH_SHORT).show()
+
+                        // 2. Gửi idToken lên Backend
+                        val response = RetrofitClient.apiService.googleAuthNative(
+                            GoogleLoginRequest(idToken = idToken)
+                        )
+
+                        if (response.isSuccessful && response.body() != null) {
+                            val result = response.body()!!
+                            if (result.accessToken != null) {
+                                val refreshToken = result.refreshToken ?: ""
+                                tokenManager.saveTokens(
+                                    accessToken = result.accessToken,
+                                    refreshToken = refreshToken
+                                )
+                                Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
+                                onNavigateToHome("Thành công")
+                            } else {
+                                Toast.makeText(context, "Lỗi Server: Không cấp phát Token", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e("GOOGLE_AUTH", "Lỗi Backend: $errorBody")
+                            Toast.makeText(context, "Server từ chối yêu cầu (Lỗi ${response.code()})", Toast.LENGTH_LONG).show()
+                        }
+
+                        // --- BẮT ĐẦU CHIA NHỎ CÁC LỖI TỪ GOOGLE SDK ĐỂ BÁO CHO USER ---
+                    } catch (e: GetCredentialCancellationException) {
+                        Toast.makeText(context, "Bạn đã đóng hộp thoại chọn tài khoản.", Toast.LENGTH_SHORT).show()
+                    } catch (e: NoCredentialException) {
+                        Toast.makeText(context, "Không tìm thấy tài khoản Google nào trên thiết bị.", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Log.e("GOOGLE_AUTH", "Lỗi Exception: ${e.message}")
+                        Toast.makeText(context, "Lỗi đăng nhập: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                    } finally {
+                        isLoadingLogin = false
+                    }
                 }
             },
+            // ... (Phần UI giữ nguyên)
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(width = 1.dp, color = Color.LightGray)
+            border = BorderStroke(width = 1.dp, color = Color.LightGray),
+            enabled = !isLoadingLogin // Disable nút khi đang loading
         ) {
-            Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = "Google", modifier = Modifier.size(24.dp))
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
+            if (isLoadingLogin) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryBlue, strokeWidth = 2.dp)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Đang xử lý...", color = Color.Gray, fontWeight = FontWeight.SemiBold)
+            } else {
+                Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = "Google", modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
+            }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
 
         // --- CHUYỂN SANG ĐĂNG KÝ ---
@@ -222,7 +271,7 @@ fun LoginScreen(
                             try {
                                 // Gọi API quên mật khẩu
                                 val response = RetrofitClient.apiService.forgotPassword(
-                                    ForgotRequest(
+                                    ForgotPasswordRequest(
                                         email = validEmail
                                     )
                                 )
@@ -259,13 +308,12 @@ fun LoginScreen(
     }
 }
 
-// =========================================================================
-// HÀM HỖ TRỢ ĐĂNG NHẬP GOOGLE NẰM NGOÀI @Composable ĐỂ TRÁNH LỖI CRASH
-// =========================================================================
-suspend fun signInWithGoogle(context: Context): String? {
-    val credentialManager = CredentialManager.create(context)
 
-    // ĐIỀN ĐÚNG WEB CLIENT ID CỦA BẠN VÀO ĐÂY NHÉ:
+// =========================================================================
+// HÀM HỖ TRỢ ĐĂNG NHẬP GOOGLE NẰM NGOÀI @Composable
+// =========================================================================
+suspend fun signInWithGoogle(context: Context): String {
+    val credentialManager = CredentialManager.create(context)
     val webClientId = context.getString(R.string.web_client_id)
 
     val googleIdOption = GetGoogleIdOption.Builder()
@@ -278,17 +326,15 @@ suspend fun signInWithGoogle(context: Context): String? {
         .addCredentialOption(googleIdOption)
         .build()
 
-    return try {
-        val result = credentialManager.getCredential(context, request)
-        val credential = result.credential
+    // Hàm getCredential sẽ tự động ném ra Exception nếu user hủy hoặc có lỗi
+    val result = credentialManager.getCredential(context, request)
+    val credential = result.credential
 
-        if (credential is GoogleIdTokenCredential) {
-            credential.idToken
-        } else {
-            null
-        }
-    } catch (e: Exception) {
-        Log.e("GOOGLE_SIGN_IN", "Lỗi: ${e.message}")
-        null
+    // XỬ LÝ CHUẨN: Bóc tách CustomCredential để lấy GoogleIdTokenCredential
+    if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
+        return googleIdTokenCredential.idToken
+    } else {
+        throw RuntimeException("Định dạng tài khoản trả về không được hỗ trợ.")
     }
 }

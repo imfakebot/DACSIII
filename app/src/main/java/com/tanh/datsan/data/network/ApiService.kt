@@ -1,109 +1,70 @@
 package com.tanh.datsan.data.network
 
 import com.google.gson.annotations.SerializedName
-import com.tanh.datsan.BuildConfig // Tùy thuộc cấu hình dự án, dòng này có thể tự động import
 import com.tanh.datsan.data.model.FieldResponse
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
 
-// --- 1. Khuôn mẫu nhận kết quả ---
+// --- DATA MODELS ---
 data class LoginResponse(
     val status: String? = null,
     val message: String? = null,
     val account_id: String? = null,
-
-    // Ép Android phải đọc đúng tên biến accessToken từ Backend trả về
     @SerializedName("accessToken")
-    val accessToken: String? = null
+    val accessToken: String? = null,
+    val refreshToken: String? = null
 )
 
-// --- 2. Khuôn mẫu gói dữ liệu gửi đi ---
-data class LoginRequest(
-    val email: String,
-    val password: String
-)
-
-data class RegisterRequest(
-    val full_name: String,
-    val email: String,
-    val phone_number: String,
-    val gender: String,
-    val password: String
-)
-
-// MỚI: Dành cho bước 2 (Gửi mã OTP lên để hoàn tất)
-data class OtpRequest(
-    val email: String,
-    val verificationCode: String // Tên biến khớp với Backend của bạn
-)
-
+data class LoginRequest(val email: String, val password: String)
+data class RegisterRequest(val full_name: String, val email: String, val phone_number: String, val gender: String, val password: String)
+data class OtpRequest(val email: String, val verificationCode: String)
 data class ForgotPasswordRequest(val email: String)
+data class ResetPasswordRequest(val token: String, var newPassword: String)
 
-data class ResetPasswordRequest(
-    val token: String,
-    var newPassword: String
-)
-
+// Model gửi Token Google lên
 data class GoogleLoginRequest(
     val idToken: String
 )
 
-data class ForgotRequest(
-    val email: String
-)
-
-// --- 3. Danh sách API ---
+// --- INTERFACE API ---
 interface ApiService {
 
-    // ==========================================
-    // API TỪ NHÁNH MAIN (Quản lý sân bóng)
-    // ==========================================
+    // 1. Nhóm Sân Bóng
     @GET("fields")
     suspend fun getAllFields(
         @Query("latitude") lat: String? = null,
         @Query("longitude") lng: String? = null,
-        @Query("radius") radius: Int? = 10, // Mặc định bán kính 10km
+        @Query("radius") radius: Int? = 10,
         @Query("cityId") cityId: Int? = null
     ): List<FieldResponse>
 
-    // ==========================================
-    // API CỦA BẠN (Xác thực & Người dùng)
-    // ==========================================
-
-    // BƯỚC 1: Gọi cửa (Initiate)
+    // 2. Nhóm Đăng nhập/Đăng ký truyền thống
     @POST("auth/login/initiate")
     suspend fun loginInitiate(@Body request: LoginRequest): Response<LoginResponse>
 
     @POST("auth/register/initiate")
     suspend fun registerInitiate(@Body request: RegisterRequest): Response<LoginResponse>
 
-    // BƯỚC 2: Nhập OTP (Complete)
     @POST("auth/login/complete")
     suspend fun loginComplete(@Body request: OtpRequest): Response<LoginResponse>
 
-    // Lưu ý: Tùy Backend của bạn cấu hình là register/complete hay verify-email. Thường là register/complete
     @POST("auth/register/complete")
     suspend fun registerComplete(@Body request: OtpRequest): Response<LoginResponse>
 
-    // Quên mật khẩu
+    // 3. ĐĂNG NHẬP GOOGLE NATIVE (Đã cập nhật tên cho khớp Backend)
+    // Khớp với @Post('google/mobile') trong auth.controller.ts
+    @POST("auth/google/mobile")
+    suspend fun googleAuthNative(
+        @Body request: GoogleLoginRequest
+    ): Response<LoginResponse>
+
+    // 4. Quên mật khẩu
     @POST("auth/forgot-password")
     suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<LoginResponse>
 
     @POST("auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<LoginResponse>
-
-    // API gửi Token Google lên Backend (Tên đường dẫn có thể đổi sau khi Backend viết xong)
-    @POST("auth/google/mobile")
-    suspend fun loginWithGoogle(@Body request: GoogleLoginRequest): Response<LoginResponse>
-
-    // (Ghi chú: Trong code của bạn có 2 hàm forgotPassword với request khác nhau, tui vẫn giữ nguyên cả 2 nhé)
-    @POST("auth/forgot-password") // Đổi lại đường dẫn này cho khớp với Backend của bạn nếu cần
-    suspend fun forgotPassword(@Body request: ForgotRequest): Response<Any>
 }
-
-// --- 4. Bộ máy kết nối mạng ---
