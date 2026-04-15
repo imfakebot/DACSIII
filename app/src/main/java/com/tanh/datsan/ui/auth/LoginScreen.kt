@@ -24,223 +24,154 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
-import androidx.credentials.GetCredentialRequest
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.tanh.datsan.BuildConfig
-import com.tanh.datsan.R
-import com.tanh.datsan.data.network.ForgotPasswordRequest
-import com.tanh.datsan.data.network.GoogleLoginRequest
-import com.tanh.datsan.data.network.LoginRequest
-import com.tanh.datsan.data.network.RetrofitClient
-import kotlinx.coroutines.launch
 import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
-import com.tanh.datsan.core.TokenManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.tanh.datsan.R
+import com.tanh.datsan.viewmodel.AuthUiEvent
+import com.tanh.datsan.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
+    viewModel: AuthViewModel,
     onNavigateToRegister: () -> Unit,
-    onNavigateToOtp: (String) -> Unit,
+    onNavigateToOtp: (String, Boolean) -> Unit,
     onNavigateToResetPassword: (String) -> Unit,
     onNavigateToHome: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val primaryBlue = Color(0xFF1877F2)
+
+    // Quan sát State
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     var showForgotDialog by remember { mutableStateOf(false) }
     var forgotEmail by remember { mutableStateOf("") }
-    var isLoadingForgot by remember { mutableStateOf(false) }
-    var isLoadingLogin by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val primaryBlue = Color(0xFF1877F2)
-    val tokenManager = remember { TokenManager(context) }
+    // Lắng nghe Event từ ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is AuthUiEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AuthUiEvent.NavigateToOtp -> onNavigateToOtp(event.email, event.isLoginMode)
+                is AuthUiEvent.NavigateToHome -> onNavigateToHome(event.message)
+                is AuthUiEvent.NavigateToResetPassword -> {
+                    showForgotDialog = false
+                    forgotEmail = ""
+                    onNavigateToResetPassword(event.email)
+                }
+                else -> Unit
+            }
+        }
+    }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // --- TIÊU ĐỀ ---
         Text("Đăng nhập", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryBlue)
         Spacer(modifier = Modifier.height(32.dp))
 
-        // --- NHẬP EMAIL ---
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true
+            value = email, onValueChange = { email = it }, label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- NHẬP MẬT KHẨU ---
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Mật khẩu") },
+            value = password, onValueChange = { password = it }, label = { Text("Mật khẩu") },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle password visibility")
+                    Icon(imageVector = image, contentDescription = "Toggle password")
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
         )
 
-        // --- QUÊN MẬT KHẨU ---
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             Text(
-                text = "Quên mật khẩu?",
-                color = primaryBlue,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .clickable { showForgotDialog = true }
+                text = "Quên mật khẩu?", color = primaryBlue, fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(vertical = 8.dp).clickable { showForgotDialog = true }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // --- NÚT ĐĂNG NHẬP THƯỜNG ---
+        // Nút Đăng nhập thường
         Button(
             onClick = {
                 val validEmail = email.trim()
                 if (validEmail.isEmpty() || password.isEmpty()) {
                     Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
-                    return@Button
-                }
-
-                isLoadingLogin = true
-                scope.launch {
-                    try {
-                        val response = RetrofitClient.apiService.loginInitiate(
-                            LoginRequest(email = validEmail, password = password)
-                        )
-
-                        if (response.isSuccessful) {
-                            Toast.makeText(context, "Đã gửi mã OTP đến email!", Toast.LENGTH_SHORT).show()
-                            onNavigateToOtp(validEmail) // Chuyển sang OTP
-                        } else {
-                            val errorBody = response.errorBody()?.string() ?: "Sai thông tin"
-                            Toast.makeText(context, "Đăng nhập thất bại: $errorBody", Toast.LENGTH_LONG).show()
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi kết nối mạng: ${e.message}", Toast.LENGTH_SHORT).show()
-                    } finally {
-                        isLoadingLogin = false
-                    }
+                } else {
+                    viewModel.login(validEmail, password)
                 }
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-            enabled = !isLoadingLogin
+            enabled = !isLoading
         ) {
-            if (isLoadingLogin) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+            else Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
         Text("HOẶC", color = Color.Gray, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
-
-        // --- NÚT ĐĂNG NHẬP GOOGLE ---
+        // Nút Đăng nhập Google
         OutlinedButton(
             onClick = {
-                if (isLoadingLogin) return@OutlinedButton
-                isLoadingLogin = true
-
+                if (isLoading) return@OutlinedButton
                 scope.launch {
                     try {
-                        // 1. Gọi hàm native để lấy idToken từ Google
                         val idToken = signInWithGoogle(context)
-
-                        // Nếu code chạy qua được dòng trên nghĩa là đã có Token
                         Toast.makeText(context, "Đang kết nối với Server...", Toast.LENGTH_SHORT).show()
-
-                        // 2. Gửi idToken lên Backend
-                        val response = RetrofitClient.apiService.googleAuthNative(
-                            GoogleLoginRequest(idToken = idToken)
-                        )
-
-                        if (response.isSuccessful && response.body() != null) {
-                            val result = response.body()!!
-                            if (result.accessToken != null) {
-                                val refreshToken = result.refreshToken ?: ""
-                                tokenManager.saveTokens(
-                                    accessToken = result.accessToken,
-                                    refreshToken = refreshToken
-                                )
-                                Toast.makeText(context, "Đăng nhập Google thành công!", Toast.LENGTH_SHORT).show()
-                                onNavigateToHome("Thành công")
-                            } else {
-                                Toast.makeText(context, "Lỗi Server: Không cấp phát Token", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            val errorBody = response.errorBody()?.string()
-                            Log.e("GOOGLE_AUTH", "Lỗi Backend: $errorBody")
-                            Toast.makeText(context, "Server từ chối yêu cầu (Lỗi ${response.code()})", Toast.LENGTH_LONG).show()
-                        }
-
-                        // --- BẮT ĐẦU CHIA NHỎ CÁC LỖI TỪ GOOGLE SDK ĐỂ BÁO CHO USER ---
+                        viewModel.loginWithGoogle(idToken)
                     } catch (e: GetCredentialCancellationException) {
-                        Toast.makeText(context, "Bạn đã đóng hộp thoại chọn tài khoản.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Đã hủy chọn tài khoản.", Toast.LENGTH_SHORT).show()
                     } catch (e: NoCredentialException) {
-                        Toast.makeText(context, "Không tìm thấy tài khoản Google nào trên thiết bị.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Không tìm thấy tài khoản Google.", Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
-                        Log.e("GOOGLE_AUTH", "Lỗi Exception: ${e.message}")
-                        Toast.makeText(context, "Lỗi đăng nhập: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-                    } finally {
-                        isLoadingLogin = false
+                        Toast.makeText(context, "Lỗi: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
                     }
                 }
             },
-            // ... (Phần UI giữ nguyên)
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             border = BorderStroke(width = 1.dp, color = Color.LightGray),
-            enabled = !isLoadingLogin // Disable nút khi đang loading
+            enabled = !isLoading
         ) {
-            if (isLoadingLogin) {
+            if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryBlue, strokeWidth = 2.dp)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("Đang xử lý...", color = Color.Gray, fontWeight = FontWeight.SemiBold)
             } else {
                 Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = "Google", modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
                 Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
         }
-        Spacer(modifier = Modifier.height(24.dp))
 
-        // --- CHUYỂN SANG ĐĂNG KÝ ---
+        Spacer(modifier = Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
             Text("Chưa có tài khoản? ", color = Color.Gray)
-            Text(
-                text = "Đăng ký ngay",
-                color = primaryBlue,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.clickable { onNavigateToRegister() }
-            )
+            Text("Đăng ký ngay", color = primaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
         }
     }
-    
-    // --- DIALOG QUÊN MẬT KHẨU ---
+
+    // Dialog Quên Mật Khẩu
     if (showForgotDialog) {
         AlertDialog(
             onDismissRequest = { showForgotDialog = false },
@@ -250,11 +181,7 @@ fun LoginScreen(
                     Text("Nhập email của bạn để nhận mã OTP khôi phục mật khẩu.")
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = forgotEmail,
-                        onValueChange = { forgotEmail = it },
-                        label = { Text("Email") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        value = forgotEmail, onValueChange = { forgotEmail = it }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
@@ -262,56 +189,22 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         val validEmail = forgotEmail.trim()
-                        if (validEmail.isEmpty()) {
-                            Toast.makeText(context, "Vui lòng nhập email", Toast.LENGTH_SHORT).show()
-                            return@Button
-                        }
-                        isLoadingForgot = true
-                        scope.launch {
-                            try {
-                                // Gọi API quên mật khẩu
-                                val response = RetrofitClient.apiService.forgotPassword(
-                                    ForgotPasswordRequest(
-                                        email = validEmail
-                                    )
-                                )
-                                if (response.isSuccessful) {
-                                    Toast.makeText(context, "Mã OTP đã được gửi!", Toast.LENGTH_LONG).show()
-                                    showForgotDialog = false
-                                    forgotEmail = ""
-                                    onNavigateToResetPassword(validEmail) // Chuyển sang Reset Password
-                                } else {
-                                    Toast.makeText(context, "Email không tồn tại hoặc lỗi máy chủ", Toast.LENGTH_SHORT).show()
-                                }
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Lỗi kết nối mạng!", Toast.LENGTH_SHORT).show()
-                            } finally {
-                                isLoadingForgot = false
-                            }
-                        }
+                        if (validEmail.isEmpty()) Toast.makeText(context, "Vui lòng nhập email", Toast.LENGTH_SHORT).show()
+                        else viewModel.forgotPassword(validEmail)
                     },
-                    enabled = !isLoadingForgot
+                    enabled = !isLoading
                 ) {
-                    if (isLoadingForgot) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                    } else {
-                        Text("Gửi mã")
-                    }
+                    if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    else Text("Gửi mã")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showForgotDialog = false }, enabled = !isLoadingForgot) {
-                    Text("Hủy", color = Color.Gray)
-                }
+                TextButton(onClick = { showForgotDialog = false }, enabled = !isLoading) { Text("Hủy", color = Color.Gray) }
             }
         )
     }
 }
 
-
-// =========================================================================
-// HÀM HỖ TRỢ ĐĂNG NHẬP GOOGLE NẰM NGOÀI @Composable
-// =========================================================================
 suspend fun signInWithGoogle(context: Context): String {
     val credentialManager = CredentialManager.create(context)
     val webClientId = context.getString(R.string.web_client_id)
@@ -326,11 +219,9 @@ suspend fun signInWithGoogle(context: Context): String {
         .addCredentialOption(googleIdOption)
         .build()
 
-    // Hàm getCredential sẽ tự động ném ra Exception nếu user hủy hoặc có lỗi
     val result = credentialManager.getCredential(context, request)
     val credential = result.credential
 
-    // XỬ LÝ CHUẨN: Bóc tách CustomCredential để lấy GoogleIdTokenCredential
     if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
         return googleIdTokenCredential.idToken

@@ -20,16 +20,20 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tanh.datsan.data.network.ResetPasswordRequest
-import com.tanh.datsan.data.network.RetrofitClient
-import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.tanh.datsan.viewmodel.AuthUiEvent
+import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun ResetPasswordScreen(
-    emailSent: String, // Vẫn giữ để hiển thị thông báo, nhưng KHÔNG gửi lên server nữa
+    viewModel: AuthViewModel,
+    emailSent: String,
     onNavigateBackToLogin: () -> Unit
 ) {
-    // ĐỔI 1: Đổi tên biến otp thành token
+    val context = LocalContext.current
+    val primaryBlue = Color(0xFF1877F2)
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
     var token by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -37,71 +41,57 @@ fun ResetPasswordScreen(
     var newPasswordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
-    var isLoading by remember { mutableStateOf(false) }
-
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
+    // Lắng nghe Event từ ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.uiEvent.collect { event ->
+            when (event) {
+                is AuthUiEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AuthUiEvent.NavigateBackToLogin -> onNavigateBackToLogin()
+                else -> Unit
+            }
+        }
+    }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // ĐỔI 2: Cập nhật lại Text hiển thị
-        Text("Đặt lại mật khẩu", color = Color(0xFF1877F2), fontSize = 32.sp, fontWeight = FontWeight.Bold)
+        Text("Đặt lại mật khẩu", color = primaryBlue, fontSize = 32.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "Vui lòng nhập mã xác nhận (Token) đã được gửi đến email:\n$emailSent",
-            color = Color.Gray,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center
+            color = Color.Gray, fontSize = 14.sp, textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(30.dp))
 
-        // ĐỔI 3: Ô nhập Token - Bỏ chặn 6 số, cho phép nhập chuỗi (Text)
         OutlinedTextField(
-            value = token,
-            onValueChange = { token = it }, // Nhận mọi ký tự chữ và số
-            label = { Text("Mã xác nhận (Token)") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), // Bàn phím chữ bình thường
-            singleLine = true
+            value = token, onValueChange = { token = it }, label = { Text("Mã xác nhận (Token)") },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text), singleLine = true
         )
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = newPassword,
-            onValueChange = { newPassword = it },
-            label = { Text("Mật khẩu mới (tối thiểu 8 ký tự)") }, // Nhắc nhở user
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            value = newPassword, onValueChange = { newPassword = it }, label = { Text("Mật khẩu mới (tối thiểu 8 ký tự)") },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
             visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (newPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle password visibility")
-                }
+                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) { Icon(imageVector = image, contentDescription = "Toggle") }
             },
             singleLine = true
         )
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
-            label = { Text("Xác nhận mật khẩu") },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
+            value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Xác nhận mật khẩu") },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle confirm password visibility")
-                }
+                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) { Icon(imageVector = image, contentDescription = "Toggle") }
             },
             singleLine = true
         )
@@ -110,13 +100,11 @@ fun ResetPasswordScreen(
         Button(
             onClick = {
                 val cleanToken = token.trim()
-
-                // ĐỔI 4: Check điều kiện Token và Mật khẩu (>= 8 ký tự)
                 if (cleanToken.isEmpty()) {
                     Toast.makeText(context, "Vui lòng nhập mã xác nhận", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
-                if (newPassword.length < 8) { // Sửa từ 6 thành 8
+                if (newPassword.length < 8) {
                     Toast.makeText(context, "Mật khẩu phải từ 8 ký tự trở lên", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
@@ -125,40 +113,16 @@ fun ResetPasswordScreen(
                     return@Button
                 }
 
-                isLoading = true
-                scope.launch {
-                    try {
-                        // ĐỔI 5: Gửi request chỉ gồm Token và Password
-                        val request = ResetPasswordRequest(
-                            token = cleanToken,
-                            newPassword = newPassword
-                        )
-                        val response = RetrofitClient.apiService.resetPassword(request)
-
-                        if (response.isSuccessful) {
-                            Toast.makeText(context, "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.", Toast.LENGTH_LONG).show()
-                            onNavigateBackToLogin()
-                        } else {
-                            // Xử lý lỗi từ server (ví dụ: Token sai, token hết hạn)
-                            Toast.makeText(context, "Mã xác nhận không hợp lệ hoặc đã hết hạn", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi kết nối mạng: ${e.message}", Toast.LENGTH_SHORT).show()
-                    } finally {
-                        isLoading = false
-                    }
-                }
+                // Gọi ViewModel
+                viewModel.resetPassword(cleanToken, newPassword)
             },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1877F2)),
+            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
             enabled = !isLoading
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text("Xác nhận đổi mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            }
+            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+            else Text("Xác nhận đổi mật khẩu", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
