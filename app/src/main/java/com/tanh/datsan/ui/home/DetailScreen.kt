@@ -55,11 +55,17 @@ fun DetailScreen(
     fieldId: String,
     viewModel: DetailViewModel = viewModel(),
     onBackClick: () -> Unit,
-    onNavigateToReview: (String) -> Unit
+    onNavigateToReview: (String) -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
+
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+
+    val uriHandler = LocalUriHandler.current
+    val bookingState by viewModel.bookingState
 
     // Fetch dữ liệu từ NestJS
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
@@ -69,7 +75,13 @@ fun DetailScreen(
             if (uiState is DetailUiState.Success) {
                 Surface(shadowElevation = 8.dp) {
                     Button(
-                        onClick = { showSheet = true },
+                        onClick = {
+                            if (isLoggedIn) {
+                                showSheet = true
+                            }else{
+                                onNavigateToLogin()
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
@@ -108,7 +120,6 @@ fun DetailScreen(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState
         ) {
-            val uriHandler = LocalUriHandler.current
             BookingBottomSheetContent(
                 field = field,
                 onConfirm = { date, duration, time ->
@@ -124,7 +135,6 @@ fun DetailScreen(
                 }
             )
 
-            val bookingState by viewModel.bookingState
             LaunchedEffect(bookingState) {
                 if (bookingState is BookingUiState.Success) {
                     val url = (bookingState as BookingUiState.Success).paymentUrl

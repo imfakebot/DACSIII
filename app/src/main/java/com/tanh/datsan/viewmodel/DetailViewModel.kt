@@ -1,25 +1,37 @@
 package com.tanh.datsan.viewmodel
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.runtime.State
+import androidx.lifecycle.AndroidViewModel
+import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.CreateBookingDto
-import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.repository.FieldRepository
-import com.tanh.datsan.data.repository.ReviewRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class DetailViewModel : ViewModel() {
+class DetailViewModel(application: Application) : AndroidViewModel(application) {
 
     private val fieldRepository = FieldRepository()
 
     // 1. Kho chứa trạng thái UI (Mặc định là đang Loading)
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
+
+    private val tokenManager = TokenManager(application)
+    val isLoggedIn: StateFlow<Boolean> = tokenManager.token
+        .map { token -> !token.isNullOrEmpty() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     fun fetchFieldDetail(fieldId: String) {
         viewModelScope.launch {

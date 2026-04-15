@@ -50,6 +50,9 @@ fun AppNavigation() {
                 },
                 onNavigateToReview = { fieldId ->
                     navController.navigate("reviews/$fieldId")
+                },
+                onNavigateToLogin = {
+                    navController.navigate("login")
                 }
             )
         }
