@@ -1,10 +1,13 @@
 package com.tanh.datsan.data.repository
 
 import com.tanh.datsan.data.model.Review
-import com.tanh.datsan.data.network.RetrofitClient
+import com.tanh.datsan.data.network.ReviewApiService
+import javax.inject.Inject
 
-class ReviewRepository {
-    suspend fun getFieldReview(fieldId: String):List<Review>{
-        return RetrofitClient.apiService.getFieldReview(fieldId).data
+class ReviewRepository @Inject constructor(
+    private val ReviewApiService: ReviewApiService
+) {
+    suspend fun getFieldReview(fieldId: String): List<Review> {
+        return ReviewApiService.getFieldReview(fieldId).data
     }
 }

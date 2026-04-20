@@ -1,15 +1,20 @@
 package com.tanh.datsan.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.repository.ReviewRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class ReviewViewModel : ViewModel() {
-    private val repository = ReviewRepository()
+@HiltViewModel
+class ReviewViewModel @Inject constructor(
+    private val repository: ReviewRepository
+) : ViewModel() {
 
     private val _reviews = MutableStateFlow<List<Review>>(emptyList())
     val reviews: StateFlow<List<Review>> = _reviews
@@ -24,7 +29,8 @@ class ReviewViewModel : ViewModel() {
                 //Todo
                 _reviews.value = repository.getFieldReview(fieldId)
             } catch (e: Exception) {
-                _errorMessage.value = "Lỗi tải bình luận: ${e.localizedMessage}"
+                Log.d("ReviewViewModel", "Error fetching reviews: ${e.message}")
+                _errorMessage.value = e.message
             }
         }
     }

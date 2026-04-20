@@ -1,18 +1,22 @@
 package com.tanh.datsan.data.repository
 
-import com.tanh.datsan.data.model.BookingResponse
-import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.FieldResponse
-import com.tanh.datsan.data.network.RetrofitClient
+import com.tanh.datsan.data.network.FieldApiService
+import javax.inject.Inject
 
-class FieldRepository{
-    private val apiService = RetrofitClient.apiService
-
-    suspend fun getFieldDetail(fieldId:String): FieldResponse {
-        return apiService.getFieldDetail(fieldId)
+class FieldRepository @Inject constructor(
+    private val fieldApiService: FieldApiService
+) {
+    suspend fun getFieldDetail(fieldId: String): FieldResponse {
+        return fieldApiService.getFieldDetail(fieldId)
     }
 
-    suspend fun createBooking(request: CreateBookingDto): BookingResponse {
-        return apiService.createBooking(request)
+    suspend fun getAllField(
+        lat: String?,
+        lon: String?,
+        radius: Int? = null,
+        cityId: Int? = null
+    ): List<FieldResponse> {
+        return fieldApiService.getAllFields(lat, lon, radius, cityId)
     }
 }

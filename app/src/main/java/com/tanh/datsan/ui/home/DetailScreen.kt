@@ -30,8 +30,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
@@ -48,12 +49,13 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     fieldId: String,
-    viewModel: DetailViewModel = viewModel(),
+    viewModel: DetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToLogin: () -> Unit
@@ -89,7 +91,7 @@ fun DetailScreen(
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                     ) {
-                        Text("CHỌN GIỜ ĐẶT SÂN", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(text = stringResource(R.string.booking_select_time_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
             }
@@ -107,7 +109,7 @@ fun DetailScreen(
 
             is DetailUiState.Error -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Lỗi: ${state.message}", color = Color.Red)
+                    state.message?.let { Text(text= stringResource(R.string.error_with_prefix, it), color = Color.Red) }
                 }
             }
         }
@@ -185,7 +187,7 @@ fun DetailContent(
         ) {
             AsyncImage(
                 model = imageUrl,
-                contentDescription = "Ảnh bìa sân bóng",
+                contentDescription = stringResource(R.string.cd_field_cover),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
             )
@@ -272,7 +274,7 @@ fun DetailContent(
                                 color = Color(0xFF111827)
                             )
                             Text(
-                                text = " (${field.reviewCount ?: 0} đánh giá)",
+                                text = stringResource(R.string.review_count_suffix, field.reviewCount ?: 0),
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
@@ -306,7 +308,7 @@ fun DetailContent(
 
                         // Tiện ích
                         Text(
-                            "Tiện ích tại sân",
+                            stringResource(R.string.field_amenities_title),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color(0xFF111827)
@@ -328,14 +330,14 @@ fun DetailContent(
 
                         // Giới thiệu
                         Text(
-                            "Giới thiệu",
+                            stringResource(R.string.detail_tab_intro),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
                             color = Color(0xFF111827)
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = field.description ?: "Chưa có thông tin mô tả cho sân bóng này.",
+                            text = field.description ?: stringResource(R.string.detail_no_description),
                             color = Color(0xFF4B5563),
                             fontSize = 15.sp,
                             lineHeight = 24.sp
@@ -352,7 +354,7 @@ fun DetailContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                "Đánh giá & Bình luận",
+                                stringResource(R.string.detail_tab_reviews),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
                                 color = Color(0xFF111827)
@@ -363,7 +365,7 @@ fun DetailContent(
                                 }
                             ) {
                                 Text(
-                                    "Xem tất cả",
+                                    stringResource(R.string.btn_view_all),
                                     color = primarySportColor,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -390,7 +392,7 @@ fun DetailContent(
                                     )
                                     Spacer(Modifier.height(8.dp))
                                     Text(
-                                        text = "Chưa có đánh giá nào.\nHãy là người đầu tiên trải nghiệm!",
+                                        text = stringResource(R.string.review_empty_msg),
                                         color = Color.Gray,
                                         fontSize = 14.sp,
                                         textAlign = TextAlign.Center
@@ -406,7 +408,7 @@ fun DetailContent(
                                 // Chỉ lấy tối đa 3 comment mới nhất để show ở màn hình này thôi
                                 field.reviews.take(3).forEachIndexed { index, review ->
                                     ReviewItem(
-                                        userName = review.user?.fullName ?: "Khách hàng",
+                                        userName = review.user?.fullName ?: stringResource(R.string.review_user_fallback),
                                         rating = review.rating,
                                         date = FormatReviewTime(review.createdAt),
                                         comment = review.comment ?: "",
@@ -440,7 +442,7 @@ fun DetailContent(
             .background(Color.White.copy(alpha = 0.25f), CircleShape) // Nền kính mờ
             .clip(CircleShape)
     ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.btn_back), tint = Color.White)
     }
 }
 
@@ -491,7 +493,8 @@ fun UtilityItem(utility: Utility) {
 fun BookingBottomSheetContent(
     field: FieldResponse, onConfirm: (date: String, duration: Int, time: String) -> Unit
 ) {
-    val quickDates = remember { getUpcomingDates() }
+    val todayLabel = stringResource(R.string.date_today)
+    val quickDates = remember { getUpcomingDates(todayLabel) }
     val durations = listOf(60, 90, 120)
 
     var selectedDate by remember { mutableStateOf(quickDates[0]) }
@@ -511,14 +514,14 @@ fun BookingBottomSheetContent(
             .verticalScroll(rememberScrollState())
     ) {
         Text(
-            "Tùy chỉnh đặt sân",
+            stringResource(R.string.booking_customize_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
 
         // CHỌN NGÀY
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-            Text("Ngày đá", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.booking_date_label), fontWeight = FontWeight.Bold)
             IconButton(onClick = { showDatePicker = true }) {
                 Icon(Icons.Default.DateRange, null, tint = Color(0xFF2E7D32))
             }
@@ -533,7 +536,7 @@ fun BookingBottomSheetContent(
         }
 
         // CHỌN THỜI LƯỢNG
-        Text("Thời lượng (phút)", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.booking_duration_label), Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             durations.forEach { dur ->
                 FilterChip(
@@ -544,7 +547,7 @@ fun BookingBottomSheetContent(
         }
 
         // CHỌN GIỜ
-        Text("Giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.booking_start_time_label), Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             timeSlots.forEach { time ->
                 FilterChip(
@@ -569,7 +572,7 @@ fun BookingBottomSheetContent(
                 .height(52.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
         ) {
-            Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.btn_confirm_caps), fontWeight = FontWeight.Bold)
         }
     }
 
@@ -583,17 +586,17 @@ fun BookingBottomSheetContent(
                     )
                 }
                 showDatePicker = false
-            }) { Text("CHỌN") }
+            }) { Text(stringResource(R.string.btn_select_caps)) }
         }) { DatePicker(state = datePickerState) }
     }
 }
 
 // --- HELPER FUNCTIONS ---
-fun getUpcomingDates(): List<Pair<String, String>> {
+fun getUpcomingDates(todayLabel: String): List<Pair<String, String>> {
     val today = LocalDate.now()
     return (0..6).map {
         val d = today.plusDays(it.toLong())
-        val label = if (it == 0) "Hôm nay" else d.format(DateTimeFormatter.ofPattern("dd/MM"))
+        val label = if (it == 0) todayLabel else d.format(DateTimeFormatter.ofPattern("dd/MM"))
         label to d.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     }
 }
@@ -640,7 +643,7 @@ fun ReviewItem(
                 AsyncImage(
                     model = ImageRequest.Builder(context).data(fullAvatarUrl).crossfade(true)
                         .build(),
-                    contentDescription = "Avatar",
+                    contentDescription = stringResource(R.string.cd_user_avatar),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )

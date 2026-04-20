@@ -1,4 +1,92 @@
 <resources>
     <string name="app_name">Datsan</string>
     <string name="default_web_client_id">317056862654-fforaeivr0mckkru88p9qrhuudf924cn.apps.googleusercontent.com</string>
+    <string name="btn_confirm">Xác nhận</string>
+    <string name="btn_back">Quay lại</string>
+    <string name="loading">Đang xử lý…</string>
+    <string name="error_network">Lỗi kết nối mạng!</string>
+    <string name="error_unknown">Đã có lỗi xảy ra, vui lòng thử lại!</string>
+
+    <string name="login_title">Đăng nhập</string>
+    <string name="login_email_hint">Email của bạn</string>
+    <string name="login_password_hint">Mật khẩu</string>
+    <string name="login_btn_submit">Đăng nhập</string>
+    <string name="login_google">Tiếp tục với Google</string>
+    <string name="login_no_account">Chưa có tài khoản? Đăng ký ngay</string>
+
+    <string name="reg_title">Tạo Tài Khoản</string>
+    <string name="reg_subtitle">Điền thông tin để bắt đầu đặt sân bóng</string>
+    <string name="reg_full_name">Họ và tên</string>
+    <string name="reg_phone">Số điện thoại</string>
+    <string name="reg_email">Email liên hệ</string>
+    <string name="reg_gender">Giới tính</string>
+    <string name="reg_password">Mật khẩu (Tối thiểu 8 ký tự)</string>
+    <string name="reg_confirm_password">Xác nhận mật khẩu</string>
+    <string name="reg_btn_submit">Đăng ký</string>
+    <string name="reg_has_account">Đã có tài khoản? Đăng nhập ngay</string>
+
+    <string name="otp_title">Xác thực OTP</string>
+    <string name="otp_description">Chúng tôi đã gửi mã xác thực gồm 6 số đến email:\n%1$s</string>
+    <string name="otp_hint">Nhập mã OTP (6 số)</string>
+    <string name="otp_error_empty">Vui lòng nhập đủ 6 số</string>
+
+    <string name="reset_title">Đặt lại mật khẩu</string>
+    <string name="reset_token_hint">Mã xác nhận (Token)</string>
+    <string name="reset_new_password">Mật khẩu mới (tối thiểu 8 ký tự)</string>
+    <string name="reset_confirm_password">Xác nhận mật khẩu mới</string>
+    <string name="reset_success">Đổi mật khẩu thành công!</string>
+
+    <string name="val_empty_fields">Vui lòng nhập đủ các trường bắt buộc</string>
+    <string name="val_password_mismatch">Mật khẩu xác nhận không khớp</string>
+    <string name="val_password_too_short">Mật khẩu phải có ít nhất 8 ký tự</string>
+
+    <string name="review_all_count">Tất cả đánh giá (%1$d)</string>
+    <string name="review_empty_or_loading">Đang tải dữ liệu hoặc chưa có đánh giá nào…</string>
+    <string name="booking_select_time_title">CHỌN GIỜ ĐẶT SÂN</string>
+    <string name="error_with_prefix">Lỗi: %1$s</string>
+    <string name="field_amenities_title">Tiện ích tại sân</string>
+
+    <!-- Main Screen -->
+    <string name="main_sport_placeholder">Môn thể thao</string>
+    <string name="sport_football">Bóng đá</string>
+    <string name="sport_tennis">Tennis</string>
+    <string name="sport_badminton">Cầu lông</string>
+    <string name="sport_table_tennis">Bóng bàn</string>
+    <string name="cd_user_avatar">Avatar người dùng</string>
+    <string name="main_app_slogan_title">Sport - Đặt sân</string>
+    <string name="main_app_slogan_subtitle">thể thao nhanh chóng</string>
+    <string name="main_search_hint">Nhập địa điểm hoặc tên sân…</string>
+    <string name="btn_search">Tìm kiếm</string>
+    <string name="promo_title">Tặng 1 giờ đá free</string>
+    <string name="promo_subtitle">Áp dụng cho khách hàng mới</string>
+    <string name="btn_book_now">Đặt ngay</string>
+    <string name="main_section_near_you">Sân tập gần bạn</string>
+    <string name="cd_field_image">Hình ảnh sân bóng</string>
+
+    <!-- Detail Screen -->
+    <string name="cd_field_cover">Ảnh bìa sân bóng</string>
+    <string name="detail_tab_intro">Giới thiệu</string>
+    <string name="detail_no_description">Chưa có thông tin mô tả cho sân bóng này.</string>
+    <string name="detail_tab_reviews">Đánh giá &amp; Bình luận</string>
+    <string name="btn_view_all">Xem tất cả</string>
+    <string name="review_empty_msg">Chưa có đánh giá nào.\nHãy là người đầu tiên trải nghiệm!</string>
+    <string name="booking_customize_title">Tùy chỉnh đặt sân</string>
+    <string name="booking_duration_label">Thời lượng (phút)</string>
+    <string name="booking_start_time_label">Giờ bắt đầu</string>
+    <string name="btn_select">CHỌN</string>
+    <string name="date_today">Hôm nay</string>
+
+    <!-- Review -->
+    <string name="review_user_fallback">Khách hàng</string>
+    <string name="review_count_suffix">(%1$d đánh giá)</string>
+
+    <!-- Errors & Fallbacks -->
+    <string name="error_load_reviews">Lỗi tải bình luận: %1$s</string>
+    <string name="error_unknown_image">Hình ảnh không xác định</string>
+    <string name="error_unknown_address">Địa chỉ không xác định</string>
+    <string name="error_api_generic">Lỗi gọi API: %1$s</string>
+    <string name="error_payment_link">Không lấy được link thanh toán</string>
+    <string name="booking_date_label">Ngày đá</string>
+    <string name="btn_confirm_caps">XÁC NHẬN</string>
+    <string name="btn_select_caps">CHỌN</string>
 </resources>

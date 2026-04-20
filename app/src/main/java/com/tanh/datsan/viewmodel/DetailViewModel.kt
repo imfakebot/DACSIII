@@ -1,30 +1,32 @@
 package com.tanh.datsan.viewmodel
 
-import android.app.Application
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import androidx.compose.runtime.State
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.data.repository.BookingRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class DetailViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class DetailViewModel @Inject constructor(
+    private val fieldRepository: FieldRepository,
+    private val tokenManager: TokenManager,
+    private val bookingRepository: BookingRepository
+) : ViewModel() {
 
-    private val fieldRepository = FieldRepository()
-
-    // 1. Kho chứa trạng thái UI (Mặc định là đang Loading)
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
-
-    private val tokenManager = TokenManager(application)
     val isLoggedIn: StateFlow<Boolean> = tokenManager.token
         .map { token -> !token.isNullOrEmpty() }
         .stateIn(
@@ -41,7 +43,7 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
                 val response = fieldRepository.getFieldDetail(fieldId)
                 _uiState.value = DetailUiState.Success(response)
             } catch (e: Exception) {
-                _uiState.value = DetailUiState.Error(e.message ?: "Lỗi không xác định")
+                _uiState.value = DetailUiState.Error(e.message)
             }
         }
     }
@@ -54,22 +56,22 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
             _bookingState.value = BookingUiState.Loading
             try {
                 // Gọi API POST /bookings với DTO
-                val response = fieldRepository.createBooking(
+                val response = bookingRepository.createBooking(
                     CreateBookingDto(
                         fieldId = fieldId,
                         startTime = startTime,
                         durationMinutes = durationMinutes,
-                        voucherCode = null // Sếp có thể thêm logic nhập mã sau
+                        voucherCode = null //TODO
                     )
                 )
 
                 if (response.paymentUrl != null) {
                     _bookingState.value = BookingUiState.Success(response.paymentUrl)
                 } else {
-                    _bookingState.value = BookingUiState.Error("Không lấy được link thanh toán")
+                    _bookingState.value = BookingUiState.Error("")
                 }
             } catch (e: Exception) {
-                _bookingState.value = BookingUiState.Error(e.message ?: "Lỗi kết nối")
+                _bookingState.value = BookingUiState.Error(e.message)
             }
         }
     }
@@ -77,12 +79,5 @@ class DetailViewModel(application: Application) : AndroidViewModel(application) 
     fun resetBookingState() {
         _bookingState.value = BookingUiState.Idle
     }
-}
-
-sealed class BookingUiState {
-    object Idle : BookingUiState()
-    object Loading : BookingUiState()
-    data class Success(val paymentUrl: String) : BookingUiState()
-    data class Error(val message: String) : BookingUiState()
 }
 

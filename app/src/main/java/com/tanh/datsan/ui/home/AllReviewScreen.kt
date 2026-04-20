@@ -30,15 +30,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.tanh.datsan.utils.FormatReviewTime
 import com.tanh.datsan.viewmodel.ReviewViewModel
+import com.tanh.datsan.R
+import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllReviewScreen(
     fieldId: String,
-    viewModel: ReviewViewModel = viewModel(),
+    viewModel: ReviewViewModel = hiltViewModel(),
     onBackCLick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -60,10 +62,10 @@ fun AllReviewScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tất cả đánh giá (${reviews.size})", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.review_all_count, reviews.size), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackCLick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.btn_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -81,7 +83,7 @@ fun AllReviewScreen(
                     .padding(padding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("Đang tải dữ liệu hoặc chưa có đánh giá nào...", color = Color.Gray)
+                Text(stringResource(R.string.review_empty_or_loading), color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -101,7 +103,7 @@ fun AllReviewScreen(
                     ) {
                         Box(modifier = Modifier.padding(16.dp)) {
                             ReviewItem(
-                                userName = reviewItem.user?.fullName ?: "Khách hàng",
+                                userName = reviewItem.user?.fullName ?: stringResource(R.string.review_user_fallback),
                                 rating = reviewItem.rating,
                                 date =FormatReviewTime(reviewItem.createdAt),
                                 comment = reviewItem.comment ?: "",
