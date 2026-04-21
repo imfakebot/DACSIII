@@ -1,4 +1,4 @@
-package com.tanh.datsan.ui.home
+package com.tanh.datsan.ui.home.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -63,7 +63,7 @@ fun MainScreen(
     var locationName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
+        containerColor = Color(0xFFF5F7FA)
     ) { paddingValues ->
         CustomRefreshLayout(
             onRefresh = {

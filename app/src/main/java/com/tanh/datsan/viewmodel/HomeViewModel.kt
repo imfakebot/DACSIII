@@ -68,10 +68,9 @@ class HomeViewModel @Inject constructor(
                 Log.d("HomeViewModel", "Current location: lat=$lat, lon=$lon")
                 fetchField(lat, lon)
             }else{
+                fetchField(lat, lon)
                 Log.w("HomeViewModel", "Unable to get current location")
             }
-
-            fetchField(lat, lon)
         }
     }
 }
