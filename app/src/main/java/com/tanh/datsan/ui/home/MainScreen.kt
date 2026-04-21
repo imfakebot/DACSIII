@@ -2,6 +2,7 @@ package com.tanh.datsan.ui.home
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -14,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
@@ -60,14 +62,12 @@ fun MainScreen(
 
         if (isGranted) {
             // ĐƯỢC CẤP QUYỀN -> Lấy GPS rồi gọi API có tọa độ
-
             if (ContextCompat.checkSelfPermission(
                     context, Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
                     context, Manifest.permission.ACCESS_COARSE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-
                 fusedLocalClient.lastLocation.addOnSuccessListener { location ->
                     if (location != null) {
                         viewModel.fetchField(
@@ -144,7 +144,6 @@ fun MainScreen(
                     )
             ) {
 
-
                 // Các nút góc trên cùng
                 Row(
                     modifier = Modifier
@@ -161,14 +160,37 @@ fun MainScreen(
                     )
 
                     if (isLoggedIn) {
-                        AsyncImage(
-                            model = "",
-                            contentDescription ="Avatar người dùng",
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                        )
+                        // NẾU ĐÃ ĐĂNG NHẬP: Hiện Avatar + Nút Đăng xuất
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(
+                                model = "",
+                                contentDescription ="Avatar người dùng",
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.LightGray) // Thêm nền xám phòng khi link ảnh rỗng
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            // MỚI: Nút đăng xuất siêu gọn
+                            IconButton(
+                                onClick = {
+                                    viewModel.logout()
+                                    Toast.makeText(context, "Đã đăng xuất!", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .size(40.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ExitToApp,
+                                    contentDescription = "Đăng xuất",
+                                    tint = Color.White // Nút màu trắng nổi bật trên nền xanh
+                                )
+                            }
+                        }
                     } else {
+                        // NẾU CHƯA ĐĂNG NHẬP: Hiện Đăng nhập / Đăng ký
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = { onLoginClick() }) {
                                 Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)

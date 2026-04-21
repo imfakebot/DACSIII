@@ -87,6 +87,7 @@ dependencies {
     // ViewModel & Navigation cho Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -100,4 +101,6 @@ dependencies {
     implementation("androidx.credentials:credentials:1.2.2")
     implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+    // Thêm dòng này để fix lỗi Duplicate class ListenableFuture
+    implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
 }

@@ -21,7 +21,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
-    val isLoggedIn : StateFlow<Boolean> = tokenManager.getToken.map{ token -> !token.isNullOrEmpty()}
+    val isLoggedIn : StateFlow<Boolean> = tokenManager.getAccessToken.map{ token -> !token.isNullOrEmpty()}
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -50,6 +50,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Lỗi gọi API: ${e.message}")
             }
+        }
+    }
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearTokens() // Xóa sạch token trong két
         }
     }
 }
