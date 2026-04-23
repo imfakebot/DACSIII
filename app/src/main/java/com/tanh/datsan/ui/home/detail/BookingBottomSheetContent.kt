@@ -30,6 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
+import com.tanh.datsan.utils.generateSlots
+import com.tanh.datsan.utils.getUpcomingDates
+import androidx.compose.foundation.lazy.items
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
