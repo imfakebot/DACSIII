@@ -33,18 +33,33 @@ import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.utils.generateSlots
 import com.tanh.datsan.utils.getUpcomingDates
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.tanh.datsan.viewmodel.DetailViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale.getDefault
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BookingBottomSheetContent(
     field: FieldResponse,
-    onConfirm: (date: String, duration: Int, time: String) -> Unit
+    viewModel: DetailViewModel = hiltViewModel(),
+    onConfirm: (date: String, duration: Int, time: String) -> Unit,
 ) {
     val quickDates = remember { getUpcomingDates("Hôm nay") }
     val durations = listOf(60, 90, 120)
     var selectedDate by remember { mutableStateOf(quickDates[0]) }
     var selectedDuration by remember { mutableIntStateOf(durations[0]) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
+
+    val bookedSlots by viewModel.bookedSlots
+
+    LaunchedEffect(selectedDate.second) {
+        viewModel.fetchBookedSlots(field.id, selectedDate.second)
+    }
 
     val timeSlots = remember(selectedDuration, selectedDate) {
         generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
@@ -66,7 +81,10 @@ fun BookingBottomSheetContent(
             items(quickDates) { date ->
                 FilterChip(
                     selected = selectedDate == date,
-                    onClick = { selectedDate = date; selectedTime = null },
+                    onClick = {
+                        selectedDate = date
+                        selectedTime = null
+                    },
                     label = { Text(date.first) })
             }
         }
@@ -76,18 +94,41 @@ fun BookingBottomSheetContent(
             durations.forEach { dur ->
                 FilterChip(
                     selected = selectedDuration == dur,
-                    onClick = { selectedDuration = dur; selectedTime = null },
+                    onClick = {
+                        selectedDuration = dur
+                        selectedTime = null
+                    },
                     label = { Text("$dur") })
             }
         }
 
         Text("Chọn giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+        val sdf = SimpleDateFormat("yyyy-MM-dd", getDefault())
+        val todayString = sdf.format(Date())
+        val isToday = selectedDate.second == todayString
+
+        val calendar = Calendar.getInstance()
+        val currentTotalMinute = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             timeSlots.forEach { time ->
+                // Tính số phút của slot (Ví dụ 15:30 -> 15*60 + 30)
+                val timePart = time.split(":")
+                val slotTotalMinute = timePart[0].toInt() * 60 + timePart[1].toInt()
+
+                // Điều kiện chặn: Đã bị người khác đặt hoặc là ngày hôm nay và giờ slot <= giờ hiện tại
+                val isPastTime = isToday && slotTotalMinute <= currentTotalMinute
+                val isDisabled = bookedSlots.contains(time) || isPastTime
+
                 FilterChip(
                     selected = selectedTime == time,
-                    onClick = { selectedTime = time },
-                    label = { Text(time) })
+                    onClick = {
+                        if (!isDisabled) {
+                            selectedTime = time
+                        }
+                    },
+                    enabled=!isDisabled,
+                    label = { Text(text=time, textDecoration = if(isDisabled) TextDecoration.LineThrough else null) })
             }
         }
 

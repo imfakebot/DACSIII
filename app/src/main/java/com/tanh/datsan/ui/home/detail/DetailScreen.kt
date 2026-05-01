@@ -26,6 +26,7 @@ import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
+import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
@@ -82,9 +83,10 @@ fun DetailScreen(
         ) {
             BookingBottomSheetContent(
                 field = field,
+                viewModel = viewModel,
                 onConfirm = { date, duration, time ->
                     showSheet = false
-                    viewModel.createBooking(fieldId, "${date}T${time}:00.000Z", duration)
+                    viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration)
                 }
             )
         }
@@ -117,7 +119,7 @@ fun DetailContent(
 
         //  ẢNH SLIDER + HIỆU ỨNG PARALLAX
         val imageUrls = remember(field) {
-            field.images?.map { it.imageUrl } ?: emptyList()
+            field.images?.map { it.imageUrl.toFullImageUrl() } ?: emptyList()
         }
 
         Box(

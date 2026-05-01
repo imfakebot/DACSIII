@@ -1,8 +1,8 @@
 import java.util.Properties
 
 val localProperties = Properties()
-val localPropertiesFile: File? = rootProject.file("local.properties")
-if (localPropertiesFile?.exists() ==true ) {
+val localPropertiesFile: File = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 
 }
@@ -24,6 +24,7 @@ android {
     defaultConfig {
         applicationId = "com.tanh.datsan"
         minSdk = 33
+        //noinspection OldTargetApi
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -32,9 +33,12 @@ android {
 
         val baseUrl = localProperties.getProperty("API_BASE_URL")
         val apiHost = localProperties.getProperty("API_HOST")
+        val apiBackend = localProperties.getProperty("API_BACKEND")
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
 
         buildConfigField("String", "API_HOST", "\"$apiHost\"")
+
+        buildConfigField("String", "API_BACKEND", "\"$apiBackend\"")
     }
 
     buildTypes {

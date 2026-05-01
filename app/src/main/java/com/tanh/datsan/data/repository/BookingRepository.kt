@@ -1,8 +1,10 @@
 package com.tanh.datsan.data.repository
 
+import com.tanh.datsan.data.model.BookedSlotsResponse
 import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.network.BookingApiService
+import retrofit2.Response
 import javax.inject.Inject
 
 class BookingRepository @Inject constructor(
@@ -10,5 +12,9 @@ class BookingRepository @Inject constructor(
 ){
     suspend fun createBooking(request: CreateBookingDto): BookingResponse {
         return bookingApiService.createBooking(request)
+    }
+
+    suspend fun getBookingSlotsOfAFieldInADay(fieldId: String, date: String): Response<BookedSlotsResponse>{
+        return bookingApiService.getFieldScheduleInAday(fieldId, date)
     }
 }

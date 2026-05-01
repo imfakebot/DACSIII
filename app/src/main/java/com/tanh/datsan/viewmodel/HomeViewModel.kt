@@ -3,11 +3,11 @@ package com.tanh.datsan.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.utils.LocationHelper
+import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,12 +40,9 @@ class HomeViewModel @Inject constructor(
             try {
                 val response = fieldRepository.getAllField(lat, lng)
                 val mappedList = response.map { jsonItem ->
-                    val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl ?: ""
-                    val fixedUrl = rawUrl.replace(
-                        "localhost",
-                        BuildConfig.API_BASE_URL.removePrefix("http://").removeSuffix("/")
-                    )
-
+                    val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
+                    val fixedUrl = rawUrl.toFullImageUrl()
+                    Log.d("HomeViewModel", "Link gốc: $rawUrl --- Link ĐÃ SỬA: $fixedUrl")
                     FieldModel(
                         id = jsonItem.id,
                         status = jsonItem.status,
@@ -62,12 +59,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun fetchFieldNearMe(){
+    fun fetchFieldNearMe() {
         locationHelper.getCurrentLocation { lat, lon ->
-            if(lat!=null && lon!=null){
+            if (lat != null && lon != null) {
                 Log.d("HomeViewModel", "Current location: lat=$lat, lon=$lon")
                 fetchField(lat, lon)
-            }else{
+            } else {
                 fetchField(lat, lon)
                 Log.w("HomeViewModel", "Unable to get current location")
             }
