@@ -20,12 +20,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
+import com.tanh.datsan.ui.component.VnPayWebView
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
@@ -38,7 +41,8 @@ fun DetailScreen(
     viewModel: DetailViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onNavigateToReview: (String) -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToLogin: () -> Unit,
+    onNavigateToSuccess: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
@@ -47,6 +51,8 @@ fun DetailScreen(
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+
+    var paymentUrlToShow by remember { mutableStateOf<String?>(null) }
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
@@ -95,9 +101,29 @@ fun DetailScreen(
     // Xử lý mở link thanh toán VNPAY sau khi tạo booking thành công
     LaunchedEffect(bookingState) {
         if (bookingState is BookingUiState.Success) {
-            val url = (bookingState as BookingUiState.Success).paymentUrl
-            uriHandler.openUri(url)
+            paymentUrlToShow = (bookingState as BookingUiState.Success).paymentUrl
             viewModel.resetBookingState()
+        }
+    }
+
+    if(paymentUrlToShow!=null){
+        Dialog(
+            onDismissRequest = {
+                paymentUrlToShow = null
+            },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ){
+            VnPayWebView(
+                payemtnUrl = paymentUrlToShow!!,
+                onPaymentSuccess = {txnRef->
+                    paymentUrlToShow = null
+                    onNavigateToSuccess(txnRef)
+                },
+                onPaymentFailure = {
+                    paymentUrlToShow = null
+                    // TODO: Có thể show Toast hoặc AlertDialog thông báo thất bại
+                }
+            )
         }
     }
 }
@@ -112,10 +138,12 @@ fun DetailContent(
     val lazyListState = rememberLazyListState()
     val primaryColor = Color(0xFF2E7D32)
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFF4F7F6))
-        .padding(padding)) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4F7F6))
+            .padding(padding)
+    ) {
 
         //  ẢNH SLIDER + HIỆU ỨNG PARALLAX
         val imageUrls = remember(field) {
@@ -136,9 +164,11 @@ fun DetailContent(
             if (imageUrls.isNotEmpty()) {
                 FieldImageSlider(images = imageUrls)
             } else {
-                Box(Modifier
-                    .fillMaxSize()
-                    .background(Color.LightGray))
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.LightGray)
+                )
             }
 
             // Gradient tối để nút quay lại và text nổi bật hơn
@@ -179,9 +209,9 @@ fun DetailContent(
                         )
 
                         RatingAndLocation(
-                            rating = field.averageRating?:0f,
-                            reviewCount = field.reviewCount?:0,
-                            address= "${field.branch.address?.street},${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
+                            rating = field.averageRating ?: 0f,
+                            reviewCount = field.reviewCount ?: 0,
+                            address = "${field.branch.address?.street},${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
                             tint = primaryColor
                         )
 

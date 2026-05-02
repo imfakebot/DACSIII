@@ -32,7 +32,7 @@ import com.tanh.datsan.R
 import com.tanh.datsan.viewmodel.HomeViewModel
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.tanh.datsan.component.CustomRefreshLayout
+import com.tanh.datsan.ui.component.CustomRefreshLayout
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

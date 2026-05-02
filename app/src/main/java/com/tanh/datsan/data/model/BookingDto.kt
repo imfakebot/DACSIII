@@ -11,12 +11,65 @@ data class CreateBookingDto(
     val voucherCode: String? = null
 )
 
-// Cục Data hứng về từ NestJS sau khi đặt thành công
 data class BookingResponse(
-    val message: String,
-    val paymentUrl: String?,
-    val finalAmount: Int
+    @SerializedName("id")
+    val id: String?,
+
+    @SerializedName("code")
+    val code: String?,
+
+    @SerializedName("check_in_at")
+    val checkInAt: String?,
+
+    @SerializedName("bookingDate")
+    val bookingDate: String?,
+
+    @SerializedName("start_time")
+    val startTime: String?,
+
+    @SerializedName("end_time")
+    val endTime: String?,
+
+    @SerializedName("total_price")
+    val totalPrice: Long?,
+
+    @SerializedName("status")
+    val status: String?,
+
+    @SerializedName("customerName")
+    val customerName: String?,
+
+    @SerializedName("customerPhone")
+    val customerPhone: String?,
+
+    @SerializedName("createdAt")
+    val createdAt: String?,
+
+    @SerializedName("updatedAt")
+    val updatedAt: String?,
+
+    // Object chứa thông tin user
+    @SerializedName("userProfile")
+    val userProfile: UserProfile?,
+
+    // Object chứa thông tin sân
+    @SerializedName("field")
+    val field: FieldResponse?
 )
+data class CreateBookingResponse(
+    @SerializedName("booking")
+    val booking: BookingResponse?,
+
+    @SerializedName("paymentUrl")
+    val paymentUrl: String?,
+
+    @SerializedName("finalAmount")
+    val finalAmount: Long?,
+
+    @SerializedName("message")
+    val message: String?
+)
+
 
 data class BookedSlotsResponse(
     @SerializedName("date") val date: String,

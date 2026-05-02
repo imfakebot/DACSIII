@@ -6,6 +6,7 @@
     <string name="loading">Đang xử lý…</string>
     <string name="error_network">Lỗi kết nối mạng!</string>
     <string name="error_unknown">Đã có lỗi xảy ra, vui lòng thử lại!</string>
+    <string name="home">Trang chủ</string>
 
     <string name="login_title">Đăng nhập</string>
     <string name="login_email_hint">Email của bạn</string>
@@ -45,6 +46,7 @@
     <string name="booking_select_time_title">CHỌN GIỜ ĐẶT SÂN</string>
     <string name="error_with_prefix">Lỗi: %1$s</string>
     <string name="field_amenities_title">Tiện ích tại sân</string>
+    <string name="error">Lỗi</string>
 
     <!-- Main Screen -->
     <string name="main_sport_placeholder">Môn thể thao</string>
@@ -80,6 +82,24 @@
     <string name="review_user_fallback">Khách hàng</string>
     <string name="review_count_suffix">(%1$d đánh giá)</string>
 
+    <!--Booking-->
+    <string name="booking_success">Đặt sân thành công!</string>
+    <string name="booking_failure">Đặt sân thất bại: %1$s</string>
+    <string name="ticket_loading">Đang tải thông tin vé</string>
+    <string name="booking_success_ticket">Thanh toán đã được xác nhận. Chúc bạn có trận đấu vui vẻ!</string>
+    <string name="booking_in4">Thông tin đặt sân</string>
+    <string name="booking_code">Mã đặt chỗ</string>
+    <string name="field">Sân</string>
+    <string name="updating">Đang cập nhật</string>
+    <string name="time">Thời gian</string>
+    <string name="customer">Khách hàng</string>
+    <string name="money_total">Tổng tiền</string>
+    <string name="confirmed">Đã xác nhận</string>
+    <string name="check_ticket">Xuất trình mã này khi đến sân</string>
+    <string name="download_pdf_ticket">Tải vé</string>
+    <string name="attention">Lưu ý quan trọng</string>
+    <string name="attention_content">Đến sân trước 15 phút để check-in.Mang theo mã QR này để đối soát.</string>
+
     <!-- Errors & Fallbacks -->
     <string name="error_load_reviews">Lỗi tải bình luận: %1$s</string>
     <string name="error_unknown_image">Hình ảnh không xác định</string>
@@ -89,4 +109,6 @@
     <string name="booking_date_label">Ngày đá</string>
     <string name="btn_confirm_caps">XÁC NHẬN</string>
     <string name="btn_select_caps">CHỌN</string>
+
+
 </resources>

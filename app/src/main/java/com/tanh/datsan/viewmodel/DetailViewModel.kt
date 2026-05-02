@@ -96,7 +96,8 @@ class DetailViewModel @Inject constructor(
                     )
                 )
 
-                if (response.paymentUrl != null) {
+                val url=response.paymentUrl
+                if (!url.isNullOrBlank()) {
                     _bookingState.value = BookingUiState.Success(response.paymentUrl)
                 } else {
                     _bookingState.value = BookingUiState.Error("")

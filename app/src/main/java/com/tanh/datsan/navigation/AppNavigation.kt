@@ -53,6 +53,9 @@ fun AppNavigation() {
                 },
                 onNavigateToLogin = {
                     navController.navigate("login")
+                },
+                onNavigateToSuccess = {txnRef->
+                    navController.navigate("booking_success/$txnRef")
                 }
             )
         }
