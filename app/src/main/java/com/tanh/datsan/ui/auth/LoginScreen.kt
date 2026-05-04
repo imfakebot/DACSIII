@@ -1,7 +1,6 @@
 package com.tanh.datsan.ui.auth
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -207,7 +206,7 @@ fun LoginScreen(
 
 suspend fun signInWithGoogle(context: Context): String {
     val credentialManager = CredentialManager.create(context)
-    val webClientId = context.getString(R.string.web_client_id)
+    val webClientId = context.getString(R.string.default_web_client_id)
 
     val googleIdOption = GetGoogleIdOption.Builder()
         .setFilterByAuthorizedAccounts(false)

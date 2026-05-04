@@ -22,9 +22,11 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tanh.datsan.data.network.RegisterRequest
+
+
 import com.tanh.datsan.viewmodel.AuthUiEvent
 import com.tanh.datsan.viewmodel.AuthViewModel
+import com.tanh.datsan.data.model.RegisterRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

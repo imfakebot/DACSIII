@@ -1,26 +1,23 @@
 package com.tanh.datsan.data.repository
 
 import com.tanh.datsan.core.TokenManager
-import com.tanh.datsan.data.network.ApiService
-import com.tanh.datsan.data.network.ForgotPasswordRequest
-import com.tanh.datsan.data.network.GoogleLoginRequest
-import com.tanh.datsan.data.network.LoginRequest
-import com.tanh.datsan.data.network.OtpRequest
-import com.tanh.datsan.data.network.RegisterRequest
-import com.tanh.datsan.data.network.ResetPasswordRequest
-import com.tanh.datsan.data.network.RetrofitClient
+import com.tanh.datsan.data.model.* // Nhập toàn bộ model từ package data.model mà chúng ta đã di dời
+import com.tanh.datsan.data.network.AuthApiService // Dùng interface đã được tách riêng
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class AuthRepository(
-    private val apiService: ApiService = RetrofitClient.apiService,
+@Singleton
+class AuthRepository @Inject constructor(
+    private val authApiService: AuthApiService, // Hilt sẽ tự động tiêm cái này vào
     private val tokenManager: TokenManager
 ) {
-    suspend fun loginInitiate(request: LoginRequest) = apiService.loginInitiate(request)
-    suspend fun registerInitiate(request: RegisterRequest) = apiService.registerInitiate(request)
-    suspend fun loginComplete(request: OtpRequest) = apiService.loginComplete(request)
-    suspend fun registerComplete(request: OtpRequest) = apiService.registerComplete(request)
-    suspend fun googleAuthNative(idToken: String) = apiService.googleAuthNative(GoogleLoginRequest(idToken))
-    suspend fun forgotPassword(email: String) = apiService.forgotPassword(ForgotPasswordRequest(email))
-    suspend fun resetPassword(request: ResetPasswordRequest) = apiService.resetPassword(request)
+    suspend fun loginInitiate(request: LoginRequest) = authApiService.loginInitiate(request)
+    suspend fun registerInitiate(request: RegisterRequest) = authApiService.registerInitiate(request)
+    suspend fun loginComplete(request: OtpRequest) = authApiService.loginComplete(request)
+    suspend fun registerComplete(request: OtpRequest) = authApiService.registerComplete(request)
+    suspend fun googleAuthNative(idToken: String) = authApiService.googleAuthNative(GoogleLoginRequest(idToken))
+    suspend fun forgotPassword(email: String) = authApiService.forgotPassword(ForgotPasswordRequest(email))
+    suspend fun resetPassword(request: ResetPasswordRequest) = authApiService.resetPassword(request)
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         tokenManager.saveTokens(accessToken, refreshToken)

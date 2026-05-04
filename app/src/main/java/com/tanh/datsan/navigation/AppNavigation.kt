@@ -1,7 +1,8 @@
 package com.tanh.datsan.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel // MỚI: Thêm import này
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,37 +12,75 @@ import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
 import com.tanh.datsan.ui.auth.ResetPasswordScreen
 import com.tanh.datsan.ui.auth.VerifyOtpScreen
+import com.tanh.datsan.ui.home.AllReviewScreen
+import com.tanh.datsan.ui.home.DetailScreen
 import com.tanh.datsan.ui.home.MainScreen
-import com.tanh.datsan.viewmodel.AuthViewModel // MỚI: Thêm import này
+import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // MỚI: Khởi tạo dùng chung MỘT ViewModel cho toàn bộ luồng Auth
+    // Khởi tạo dùng chung MỘT ViewModel cho toàn bộ luồng Auth để giữ State
     val authViewModel: AuthViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = "main"
+        startDestination = "main" // Dùng "main" làm màn hình bắt đầu hợp nhất
     ) {
-        // 0. Màn hình Chính
+        // ==========================================
+        // NHÓM 1: LUỒNG MÀN HÌNH CHÍNH & CHI TIẾT
+        // ==========================================
+
         composable("main") {
             MainScreen(
+                // Điều hướng từ code cũ
                 onLoginClick = { navController.navigate("login") },
-                onRegisterClick = { navController.navigate("register") }
+                onRegisterClick = { navController.navigate("register") },
+                // Điều hướng từ code mới
+                onNavigateToDetail = { fieldId ->
+                    navController.navigate("detail/$fieldId")
+                }
             )
         }
 
-        // 1. Màn hình Đăng nhập
+        composable(
+            route = "detail/{fieldId}",
+            arguments = listOf(navArgument("fieldId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val fieldID = backStackEntry.arguments?.getString("fieldId") ?: return@composable
+            Log.d("AppNavigation", "Điều hướng đến DetailScreen với fieldId: $fieldID")
+
+            DetailScreen(
+                fieldId = fieldID,
+                onBackClick = { navController.popBackStack() },
+                onNavigateToReview = { fieldId -> navController.navigate("reviews/$fieldId") },
+                onNavigateToLogin = { navController.navigate("login") }
+            )
+        }
+
+        composable(
+            route = "reviews/{fieldId}",
+            arguments = listOf(navArgument("fieldId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val fieldId = backStackEntry.arguments?.getString("fieldId") ?: return@composable
+            Log.d("AppNavigation", "Điều hướng đến AllReviewsScreen với fieldId: $fieldId")
+
+            AllReviewScreen(
+                fieldId = fieldId,
+                onBackCLick = { navController.popBackStack() }
+            )
+        }
+
+        // ==========================================
+        // NHÓM 2: LUỒNG XÁC THỰC (AUTH)
+        // ==========================================
+
         composable("login") {
             LoginScreen(
-                viewModel = authViewModel, // MỚI: Truyền viewModel vào
-                onNavigateToRegister = {
-                    navController.navigate("register")
-                },
+                viewModel = authViewModel,
+                onNavigateToRegister = { navController.navigate("register") },
                 onNavigateToOtp = { email, isLoginMode ->
-                    // Cập nhật lại route vì onNavigateToOtp giờ có 2 tham số
                     navController.navigate("verify_otp/$email/$isLoginMode")
                 },
                 onNavigateToResetPassword = { email ->
@@ -49,27 +88,22 @@ fun AppNavigation() {
                 },
                 onNavigateToHome = { userName ->
                     navController.navigate("main") {
-                        popUpTo(0)
+                        popUpTo(0) // Xóa toàn bộ stack sau khi đăng nhập thành công
                     }
                 }
             )
         }
 
-        // 2. Màn hình Đăng ký
         composable("register") {
             RegisterScreen(
-                viewModel = authViewModel, // MỚI: Truyền viewModel vào
-                onBackToLogin = {
-                    navController.popBackStack()
-                },
+                viewModel = authViewModel,
+                onBackToLogin = { navController.popBackStack() },
                 onNavigateToOtp = { email, isLoginMode ->
-                    // Cập nhật lại route
                     navController.navigate("verify_otp/$email/$isLoginMode")
                 }
             )
         }
 
-        // 3. Màn hình Xác thực OTP
         composable(
             route = "verify_otp/{email}/{isLoginMode}",
             arguments = listOf(
@@ -81,7 +115,7 @@ fun AppNavigation() {
             val isLoginMode = backStackEntry.arguments?.getBoolean("isLoginMode") ?: true
 
             VerifyOtpScreen(
-                viewModel = authViewModel, // MỚI: Truyền viewModel vào
+                viewModel = authViewModel,
                 email = email,
                 isLoginMode = isLoginMode,
                 onNavigateToHome = { userName ->
@@ -95,7 +129,6 @@ fun AppNavigation() {
             )
         }
 
-        // 4. Màn hình Đặt lại mật khẩu
         composable(
             route = "reset_password/{email}",
             arguments = listOf(navArgument("email") { type = NavType.StringType })
@@ -103,7 +136,7 @@ fun AppNavigation() {
             val email = backStackEntry.arguments?.getString("email") ?: ""
 
             ResetPasswordScreen(
-                viewModel = authViewModel, // MỚI: Truyền viewModel vào
+                viewModel = authViewModel,
                 emailSent = email,
                 onNavigateBackToLogin = {
                     navController.popBackStack("login", inclusive = false)

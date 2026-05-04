@@ -10,6 +10,8 @@ if (localPropertiesFile?.exists() == true) {
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt.android)
 }
 
 android {
@@ -62,7 +64,6 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -83,6 +84,16 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.browser)
+    implementation(libs.coil.svg)
+    implementation(libs.androidx.compose.foundation)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.material3)
+    implementation(libs.places)
+    implementation(libs.hilt.core)
+    implementation(libs.play.services.cloud.messaging)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // ViewModel & Navigation cho Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose.android)

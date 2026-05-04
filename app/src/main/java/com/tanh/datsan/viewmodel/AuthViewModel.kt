@@ -1,21 +1,22 @@
 package com.tanh.datsan.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.core.TokenManager
-import com.tanh.datsan.data.network.LoginRequest
-import com.tanh.datsan.data.network.OtpRequest
-import com.tanh.datsan.data.network.RegisterRequest
-import com.tanh.datsan.data.network.ResetPasswordRequest
+import com.tanh.datsan.data.model.LoginRequest
+import com.tanh.datsan.data.model.OtpRequest
+import com.tanh.datsan.data.model.RegisterRequest
+import com.tanh.datsan.data.model.ResetPasswordRequest
 import com.tanh.datsan.data.repository.AuthRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
+// Kênh sự kiện UI giữ nguyên để không làm lỗi file giao diện
 sealed class AuthUiEvent {
     data class ShowToast(val message: String) : AuthUiEvent()
     data class NavigateToOtp(val email: String, val isLoginMode: Boolean) : AuthUiEvent()
@@ -24,9 +25,10 @@ sealed class AuthUiEvent {
     object NavigateBackToLogin : AuthUiEvent()
 }
 
-class AuthViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = AuthRepository(tokenManager = TokenManager(application))
+@HiltViewModel
+class AuthViewModel @Inject constructor(
+    private val repository: AuthRepository // Hilt sẽ tự động tiêm Repository vào đây
+) : ViewModel() { // Đổi từ AndroidViewModel sang ViewModel chuẩn
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
