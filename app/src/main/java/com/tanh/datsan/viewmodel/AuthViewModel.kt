@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import javax.inject.Inject
 
 // Kênh sự kiện UI giữ nguyên để không làm lỗi file giao diện
@@ -42,10 +43,11 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.loginInitiate(LoginRequest(email, password))
                 if (response.isSuccessful) {
-                    sendEvent(AuthUiEvent.ShowToast("Đã gửi mã OTP đến email!"))
+                    val message = response.body()?.message ?: "Đã gửi mã OTP đến email!"
+                    sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToOtp(email, true))
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Sai thông tin đăng nhập!"))
+                    sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Sai thông tin đăng nhập!")))
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
@@ -62,11 +64,12 @@ class AuthViewModel @Inject constructor(
                 val response = repository.googleAuthNative(idToken)
                 if (response.isSuccessful && response.body()?.accessToken != null) {
                     val result = response.body()!!
-                    repository.saveTokens(result.accessToken!!, result.refreshToken ?: "")
+                    // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
+                    repository.saveTokens(result.accessToken!!, "")
                     sendEvent(AuthUiEvent.ShowToast("Đăng nhập Google thành công!"))
                     sendEvent(AuthUiEvent.NavigateToHome("Thành công"))
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Server từ chối yêu cầu!"))
+                    sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Server từ chối yêu cầu!")))
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi đăng nhập Google!"))
@@ -82,10 +85,11 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.registerInitiate(request)
                 if (response.isSuccessful) {
-                    sendEvent(AuthUiEvent.ShowToast("Đăng ký thành công!"))
+                    val message = response.body()?.message ?: "Đăng ký thành công, vui lòng kiểm tra email để lấy mã xác thực!"
+                    sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToOtp(request.email, false))
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Đăng ký thất bại, email có thể đã tồn tại!"))
+                    sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Đăng ký thất bại, email hoặc số điện thoại có thể đã tồn tại!")))
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
@@ -100,20 +104,40 @@ class AuthViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 val request = OtpRequest(email, otpCode)
-                val response = if (isLoginMode) repository.loginComplete(request) else repository.registerComplete(request)
-
-                if (response.isSuccessful && response.body() != null) {
-                    val result = response.body()!!
-                    if (result.accessToken != null) {
-                        repository.saveTokens(result.accessToken!!, result.refreshToken ?: "")
+                if (isLoginMode) {
+                    val response = repository.loginComplete(request)
+                    if (response.isSuccessful && response.body()?.accessToken != null) {
+                        val result = response.body()!!
+                        // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
+                        repository.saveTokens(result.accessToken!!, "")
                         sendEvent(AuthUiEvent.ShowToast("Đăng nhập thành công!"))
                         sendEvent(AuthUiEvent.NavigateToHome("Success"))
                     } else {
-                        sendEvent(AuthUiEvent.ShowToast("Xác thực thành công, vui lòng đăng nhập"))
-                        sendEvent(AuthUiEvent.NavigateBackToLogin)
+                        sendEvent(
+                            AuthUiEvent.ShowToast(
+                                extractErrorMessage(
+                                    response.errorBody()?.string(),
+                                    "Mã OTP không đúng hoặc đã hết hạn!",
+                                ),
+                            ),
+                        )
                     }
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Mã OTP không đúng hoặc đã hết hạn!"))
+                    val response = repository.registerComplete(request)
+                    if (response.isSuccessful) {
+                        val message = response.body()?.message ?: "Xác thực thành công, vui lòng đăng nhập"
+                        sendEvent(AuthUiEvent.ShowToast(message))
+                        sendEvent(AuthUiEvent.NavigateBackToLogin)
+                    } else {
+                        sendEvent(
+                            AuthUiEvent.ShowToast(
+                                extractErrorMessage(
+                                    response.errorBody()?.string(),
+                                    "Mã OTP không đúng hoặc đã hết hạn!",
+                                ),
+                            ),
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
@@ -129,10 +153,12 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.forgotPassword(email)
                 if (response.isSuccessful) {
-                    sendEvent(AuthUiEvent.ShowToast("Mã OTP đã được gửi!"))
+                    val message = response.body()?.message
+                        ?: "Nếu email tồn tại, hệ thống đã gửi hướng dẫn đặt lại mật khẩu."
+                    sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToResetPassword(email))
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Email không tồn tại!"))
+                    sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Không thể gửi yêu cầu đặt lại mật khẩu.")))
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
@@ -148,10 +174,11 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.resetPassword(ResetPasswordRequest(token, newPassword))
                 if (response.isSuccessful) {
-                    sendEvent(AuthUiEvent.ShowToast("Đổi mật khẩu thành công!"))
+                    val message = response.body()?.message ?: "Đổi mật khẩu thành công!"
+                    sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateBackToLogin)
                 } else {
-                    sendEvent(AuthUiEvent.ShowToast("Mã xác nhận không hợp lệ!"))
+                    sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Mã xác nhận không hợp lệ!")))
                 }
             } catch (e: Exception) {
                 sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
@@ -163,5 +190,26 @@ class AuthViewModel @Inject constructor(
 
     private fun sendEvent(event: AuthUiEvent) {
         viewModelScope.launch { _uiEvent.send(event) }
+    }
+
+    private fun extractErrorMessage(rawError: String?, fallback: String): String {
+        if (rawError.isNullOrBlank()) return fallback
+        return try {
+            val payload = JSONObject(rawError)
+            val messageValue = payload.opt("message")
+            when (messageValue) {
+                is String -> messageValue.ifBlank { fallback }
+                is org.json.JSONArray -> {
+                    if (messageValue.length() > 0) {
+                        messageValue.optString(0, fallback).ifBlank { fallback }
+                    } else {
+                        fallback
+                    }
+                }
+                else -> fallback
+            }
+        } catch (_: Exception) {
+            fallback
+        }
     }
 }

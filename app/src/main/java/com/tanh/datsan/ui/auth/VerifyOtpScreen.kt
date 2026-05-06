@@ -53,13 +53,13 @@ fun VerifyOtpScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Chúng tôi đã gửi mã xác thực gồm 6 số đến email:\n$email",
+            text = "Chúng tôi đã gửi mã xác thực gồm 6 kí tự đến email:\n$email",
             color = Color.Gray, fontSize = 16.sp, modifier = Modifier.padding(bottom = 30.dp)
         )
 
         OutlinedTextField(
             value = otpCode, onValueChange = { if (it.length <= 6) otpCode = it },
-            label = { Text("Nhập mã OTP (6 số)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            label = { Text("Nhập mã OTP ") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
         )
         Spacer(modifier = Modifier.height(24.dp))

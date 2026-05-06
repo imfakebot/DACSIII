@@ -16,7 +16,8 @@ class AuthRepository @Inject constructor(
     suspend fun loginComplete(request: OtpRequest) = authApiService.loginComplete(request)
     suspend fun registerComplete(request: OtpRequest) = authApiService.registerComplete(request)
     suspend fun googleAuthNative(idToken: String) = authApiService.googleAuthNative(GoogleLoginRequest(idToken))
-    suspend fun forgotPassword(email: String) = authApiService.forgotPassword(ForgotPasswordRequest(email))
+    suspend fun forgotPassword(email: String, returnUrl: String? = null) =
+        authApiService.forgotPassword(ForgotPasswordRequest(email, returnUrl))
     suspend fun resetPassword(request: ResetPasswordRequest) = authApiService.resetPassword(request)
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
