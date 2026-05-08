@@ -92,6 +92,10 @@ dependencies {
     implementation(libs.places)
     implementation(libs.hilt.core)
     implementation(libs.play.services.cloud.messaging)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.listenablefuture)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -108,10 +112,11 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // Thư viện Đăng nhập Google thế hệ mới (Credential Manager)
-    implementation("androidx.credentials:credentials:1.2.2")
-    implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
-    // Thêm dòng này để fix lỗi Duplicate class ListenableFuture
-    implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
+
+//        // Thư viện Đăng nhập Google thế hệ mới (Credential Manager)
+//        implementation("androidx.credentials:credentials:1.2.2")
+//        implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
+//        implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+//        // Thêm dòng này để fix lỗi Duplicate class ListenableFuture
+//        implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
 }

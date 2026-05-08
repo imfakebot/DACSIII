@@ -26,14 +26,27 @@ data class LoginResponse(
     val user: UserResponse? = null
 )
 
-data class LoginRequest(val email: String, val password: String)
-data class RegisterRequest(val full_name: String, val email: String, val phone_number: String, val gender: String, val password: String)
-data class OtpRequest(val email: String, val verificationCode: String)
+data class LoginRequest(
+    val email: String,
+    val password: String)
+data class RegisterRequest(
+    val full_name: String,
+    val email: String,
+    val phone_number: String,
+    val gender: String,
+    val password: String
+)
+data class OtpRequest(
+    val email: String,
+    val verificationCode: String
+)
 data class ForgotPasswordRequest(
     val email: String,
     val returnUrl: String? = null
 )
-data class ResetPasswordRequest(val token: String, var newPassword: String)
+data class ResetPasswordRequest(
+    val token: String,
+    var newPassword: String)
 
 // Model gửi Token Google lên
 data class GoogleLoginRequest(
