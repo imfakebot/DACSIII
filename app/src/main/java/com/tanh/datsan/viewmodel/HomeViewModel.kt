@@ -49,7 +49,8 @@ class HomeViewModel @Inject constructor(
                         name = jsonItem.name,
                         address = jsonItem.branch.address?.street ?: "Địa chỉ k xác định",
                         rating = jsonItem.averageRating,
-                        imageUrl = fixedUrl
+                        imageUrl = fixedUrl,
+                        distance = jsonItem.distance
                     )
                 }
                 _fieldList.value = mappedList

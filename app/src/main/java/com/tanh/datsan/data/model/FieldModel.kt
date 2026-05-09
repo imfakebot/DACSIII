@@ -72,7 +72,9 @@ data class FieldResponse(
 
     @SerializedName("reviewCount") val reviewCount: Int?,
 
-    val reviews : List<Review>?= null
+    val reviews : List<Review>?= null,
+
+    val distance: Double?
 )
 
 data class FieldModel(
@@ -88,7 +90,9 @@ data class FieldModel(
 
     val utilities: List<Utility>? = emptyList(),
 
-    @SerializedName("fieldType") val fieldType: FieldType? = null
+    @SerializedName("fieldType") val fieldType: FieldType? = null,
+
+    val distance: Double?
 )
 
 data class ReviewPaginateResponse(
