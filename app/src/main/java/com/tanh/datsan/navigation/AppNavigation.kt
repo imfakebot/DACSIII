@@ -12,9 +12,11 @@ import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
 import com.tanh.datsan.ui.auth.ResetPasswordScreen
 import com.tanh.datsan.ui.auth.VerifyOtpScreen
-import com.tanh.datsan.ui.home.AllReviewScreen
-import com.tanh.datsan.ui.home.DetailScreen
-import com.tanh.datsan.ui.home.MainScreen
+//import com.tanh.datsan.ui.home.AllReviewScreen
+import com.tanh.datsan.ui.home.detail.DetailScreen
+import com.tanh.datsan.ui.home.main.MainScreen
+import com.tanh.datsan.ui.home.review.AllReviewScreen
+//import com.tanh.datsan.ui.home.MainScreen
 import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
@@ -50,12 +52,13 @@ fun AppNavigation() {
         ) { backStackEntry ->
             val fieldID = backStackEntry.arguments?.getString("fieldId") ?: return@composable
             Log.d("AppNavigation", "Điều hướng đến DetailScreen với fieldId: $fieldID")
-
             DetailScreen(
                 fieldId = fieldID,
                 onBackClick = { navController.popBackStack() },
                 onNavigateToReview = { fieldId -> navController.navigate("reviews/$fieldId") },
-                onNavigateToLogin = { navController.navigate("login") }
+                onNavigateToLogin = { navController.navigate("login") },
+                viewModel = TODO(),
+                onNavigateToSuccess = TODO()
             )
         }
 
@@ -121,6 +124,13 @@ fun AppNavigation() {
                 onNavigateToHome = { userName ->
                     navController.navigate("main") {
                         popUpTo(0)
+                    }
+                },
+                onNavigateToLogin = {
+                    navController.navigate("login"){
+                        popUpTo("register") {
+                            inclusive = true
+                        }
                     }
                 },
                 onBackToLogin = {

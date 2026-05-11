@@ -24,6 +24,7 @@ fun VerifyOtpScreen(
     email: String,
     isLoginMode: Boolean,
     onNavigateToHome: (String) -> Unit,
+    onNavigateToLogin: ()-> Unit,
     onBackToLogin: () -> Unit
 ) {
     val context = LocalContext.current
@@ -38,11 +39,13 @@ fun VerifyOtpScreen(
             when (event) {
                 is AuthUiEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
                 is AuthUiEvent.NavigateToHome -> onNavigateToHome(event.message)
-                is AuthUiEvent.NavigateBackToLogin -> onBackToLogin()
+                is AuthUiEvent.NavigateBackToLogin -> onNavigateToLogin()
+
                 else -> Unit
             }
         }
     }
+    TextButton(onClick = onBackToLogin) { Text("Quay lại", color = Color.Gray) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),

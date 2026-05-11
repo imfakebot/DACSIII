@@ -1,4 +1,4 @@
-package com.tanh.datsan.component
+package com.tanh.datsan.ui.component
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox

@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 // --- AUTH DATA MODELS ---
 data class AuthMessageResponse(
-    val message: String? = null
+    val message: String = ""
 )
 
 data class UserBranch(
@@ -12,18 +12,18 @@ data class UserBranch(
 )
 
 data class UserResponse(
-    val id: String? = null,
-    val email: String? = null,
-    val role: String? = null,
+    val id: String = "",
+    val email: String = "",
+    val role: String = "",
     @SerializedName("is_profile_complete")
-    val isProfileComplete: Boolean? = null,
+    val isProfileComplete: Boolean = false,
     val branch: UserBranch? = null
 )
 
 data class LoginResponse(
     @SerializedName("accessToken")
-    val accessToken: String? = null,
-    val user: UserResponse? = null
+    val accessToken: String = "",
+    val user: UserResponse = UserResponse()
 )
 
 data class LoginRequest(
@@ -46,7 +46,7 @@ data class ForgotPasswordRequest(
 )
 data class ResetPasswordRequest(
     val token: String,
-    var newPassword: String)
+    val newPassword: String)
 
 // Model gửi Token Google lên
 data class GoogleLoginRequest(

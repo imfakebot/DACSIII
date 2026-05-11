@@ -1,4 +1,4 @@
-package com.tanh.datsan.ui.home
+package com.tanh.datsan.ui.home.review
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -30,11 +30,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import com.tanh.datsan.utils.FormatReviewTime
 import com.tanh.datsan.viewmodel.ReviewViewModel
 import com.tanh.datsan.R
 import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.tanh.datsan.ui.component.ReviewItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +99,7 @@ fun AllReviewScreen(
                 items(reviews) { reviewItem ->
                     Surface(
                         color = Color.White,
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(12.dp),
                         shadowElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {

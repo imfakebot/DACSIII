@@ -1,12 +1,11 @@
 import java.util.Properties
-import java.io.File // Thêm import File nếu bị thiếu
 
 val localProperties = Properties()
 val localPropertiesFile: File? = rootProject.file("local.properties")
-if (localPropertiesFile?.exists() == true) {
+if (localPropertiesFile?.exists() ==true ) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
-}
 
+}
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -16,7 +15,7 @@ plugins {
 
 android {
     namespace = "com.tanh.datsan"
-    compileSdk = 36 // Đã sửa lại cho đúng cú pháp
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.tanh.datsan"
@@ -27,15 +26,14 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Đọc BASE_URL từ local.properties, nếu không có thì dùng mặc định là localhost của máy ảo
-        // Nếu không có trong file local.properties, tự động lấy "http://10.0.2.2:3000/"
-        val baseUrl = localProperties.getProperty("API_BASE_URL") ?: "http://10.0.2.2:3000/"
-
-        // Tương tự, tự động lấy "10.0.2.2" nếu không tìm thấy
-        val apiHost = localProperties.getProperty("API_HOST") ?: "10.0.2.2"
-
+        val baseUrl = localProperties.getProperty("API_BASE_URL")
+        val apiHost = localProperties.getProperty("API_HOST")
+        val apiBackend = localProperties.getProperty("API_BACKEND")
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
+
         buildConfigField("String", "API_HOST", "\"$apiHost\"")
+
+        buildConfigField("String", "API_BACKEND", "\"$apiBackend\"")
     }
 
     buildTypes {
@@ -47,17 +45,14 @@ android {
             )
         }
     }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-
     buildFeatures {
         compose = true
         buildConfig=true
     }
-    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
@@ -111,12 +106,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
-
-//        // Thư viện Đăng nhập Google thế hệ mới (Credential Manager)
-//        implementation("androidx.credentials:credentials:1.2.2")
-//        implementation("androidx.credentials:credentials-play-services-auth:1.2.2")
-//        implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
-//        // Thêm dòng này để fix lỗi Duplicate class ListenableFuture
-//        implementation("com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava")
 }

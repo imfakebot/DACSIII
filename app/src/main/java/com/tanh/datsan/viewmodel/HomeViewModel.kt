@@ -3,10 +3,11 @@ package com.tanh.datsan.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.utils.LocationHelper
+import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,54 +19,55 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val tokenManager: TokenManager,
-    private val fieldRepository: FieldRepository
+    tokenManager: TokenManager,
+    private val fieldRepository: FieldRepository,
+    private val locationHelper: LocationHelper
 ) : ViewModel() {
 
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
-    val isLoggedIn: StateFlow<Boolean> = tokenManager.getAccessToken
+    var isLoggedIn: StateFlow<Boolean> = tokenManager.getAccessToken
         .map { token -> !token.isNullOrEmpty() }
         .stateIn(
-            scope = viewModelScope,
+            viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
 
-    fun fetchFieldNearMe(lat: String? = null, lng: String? = null) {
+    fun fetchField(lat: String? = null, lng: String? = null) {
         viewModelScope.launch {
             try {
-                // Sửa thành getAllField (không có s) cho khớp FieldRepository
                 val response = fieldRepository.getAllField(lat, lng)
-
                 val mappedList = response.map { jsonItem ->
-                    val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl ?: ""
-
-                    // Dùng API_BASE_URL từ BuildConfig, cắt bỏ http:// và / cuối nếu cần (tùy config của bạn)
-                    val host = BuildConfig.API_BASE_URL.removePrefix("http://").removeSuffix("/")
-                    val fixedUrl = rawUrl.replace("localhost", host)
-
+                    val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
+                    val fixedUrl = rawUrl.toFullImageUrl()
+                    Log.d("HomeViewModel", "Link gốc: $rawUrl --- Link ĐÃ SỬA: $fixedUrl")
                     FieldModel(
-                        id = jsonItem.id ?: "",
-                        status = jsonItem.status ?: "",
-                        name = jsonItem.name ?: "Chưa có tên",
-                        address = jsonItem.branch?.address?.street ?: "Địa chỉ không xác định",
-                        rating = jsonItem.averageRating ?: 0.0,
+                        id = jsonItem.id,
+                        status = jsonItem.status,
+                        name = jsonItem.name,
+                        address = jsonItem.branch!!.address?.street ?: "Địa chỉ k xác định",
+                        rating = jsonItem.averageRating,
                         imageUrl = fixedUrl
                     )
                 }
-
                 _fieldList.value = mappedList
             } catch (e: Exception) {
-                Log.e("HomeViewModel", "Lỗi gọi API: ${e.message}")
+                Log.e("HomeViewModel", "Error fetching fields: ${e.message}")
             }
         }
     }
 
-    fun logout() {
-        viewModelScope.launch {
-            tokenManager.clearTokens()
+    fun fetchFieldNearMe() {
+        locationHelper.getCurrentLocation { lat, lon ->
+            if (lat != null && lon != null) {
+                Log.d("HomeViewModel", "Current location: lat=$lat, lon=$lon")
+                fetchField(lat, lon)
+            } else {
+                fetchField(lat, lon)
+                Log.w("HomeViewModel", "Unable to get current location")
+            }
         }
     }
 }

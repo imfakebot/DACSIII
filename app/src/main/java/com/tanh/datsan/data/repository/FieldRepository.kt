@@ -21,4 +21,6 @@ class FieldRepository @Inject constructor(
     ): List<FieldResponse> { // CHÚ Ý: Bắt buộc trả về List<FieldResponse>
         return fieldApiService.getAllFields(lat, lon, radius, cityId)
     }
+
+
 }

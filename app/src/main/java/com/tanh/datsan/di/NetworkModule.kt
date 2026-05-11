@@ -53,7 +53,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthenticator(): okhttp3.Authenticator {
+    fun provideAuthenticator(): Authenticator {
         return Authenticator { _, response ->
             Log.e(
                 "NETWORK_AUTH",

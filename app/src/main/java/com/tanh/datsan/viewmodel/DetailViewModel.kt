@@ -1,5 +1,6 @@
 package com.tanh.datsan.viewmodel
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,11 +18,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     private val fieldRepository: FieldRepository,
-    private val tokenManager: TokenManager,
+    tokenManager: TokenManager,
     private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
@@ -53,6 +55,35 @@ class DetailViewModel @Inject constructor(
     private val _bookingState = mutableStateOf<BookingUiState>(BookingUiState.Idle)
     val bookingState: State<BookingUiState> = _bookingState
 
+    private val _bookedSlots = mutableStateOf<List<String>>(emptyList())
+    val bookedSlots: State<List<String>> = _bookedSlots
+
+    fun fetchBookedSlots(fieldId: String, date: String) {
+        viewModelScope.launch {
+            try {
+              _bookedSlots.value = emptyList()
+                val response = bookingRepository.getBookingSlotsOfAFieldInADay(fieldId, date)
+                if(response.isSuccessful){
+                    val bookingList = response.body()?.bookings?: emptyList()
+
+                    val extractTime = bookingList.mapNotNull { booking ->
+                        val startTime = booking.startTime
+                        if (startTime.length >= 16) {
+                            startTime.substring(11, 16) // Trích xuất "HH:mm"
+                        } else null
+                    }
+                    _bookedSlots.value = extractTime
+                } else{
+                    _bookedSlots.value = emptyList()
+                    Log.d("DetailViewModel", "Error fetching booked slots: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                Log.d("DetailViewModel", "Exception fetching booked slots: ${e.message}")
+                _bookedSlots.value = emptyList()
+            }
+        }
+    }
+
     fun createBooking(fieldId: String, startTime: String, durationMinutes: Int) {
         viewModelScope.launch {
             _bookingState.value = BookingUiState.Loading
@@ -67,7 +98,8 @@ class DetailViewModel @Inject constructor(
                     )
                 )
 
-                if (response.paymentUrl != null) {
+                val url=response.paymentUrl
+                if (!url.isNullOrBlank()) {
                     _bookingState.value = BookingUiState.Success(response.paymentUrl)
                 } else {
                     _bookingState.value = BookingUiState.Error("")

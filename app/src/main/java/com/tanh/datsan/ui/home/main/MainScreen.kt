@@ -1,10 +1,5 @@
-package com.tanh.datsan.ui.home
+package com.tanh.datsan.ui.home.main
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -15,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
@@ -27,84 +21,31 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.google.android.gms.location.LocationServices
-import com.tanh.datsan.R
-import com.tanh.datsan.component.CustomRefreshLayout
 import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.R
 import com.tanh.datsan.viewmodel.HomeViewModel
+import androidx.compose.ui.res.stringResource
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.tanh.datsan.ui.component.CustomRefreshLayout
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Preview
 fun MainScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {}
 ) {
-    val context = LocalContext.current
-
-    // Công cụ lấy tọa độ GPS
-    val fusedLocalClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    // Khởi tạo bộ xin quyền
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val isGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-
-        if (isGranted) {
-            // ĐƯỢC CẤP QUYỀN -> Lấy GPS rồi gọi API có tọa độ
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            ) {
-                fusedLocalClient.lastLocation.addOnSuccessListener { location ->
-                    if (location != null) {
-                        viewModel.fetchFieldNearMe(location.latitude.toString(), location.longitude.toString())
-                    } else {
-                        viewModel.fetchFieldNearMe() // Lấy mặc định nếu ko có sóng
-                    }
-                }.addOnFailureListener {
-                    viewModel.fetchFieldNearMe()
-                }
-            }
-        } else {
-            // TỪ CHỐI QUYỀN
-            viewModel.fetchFieldNearMe()
-        }
-    }
 
     LaunchedEffect(Unit) {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-
-        if (hasPermission) {
-            fusedLocalClient.lastLocation.addOnSuccessListener { location ->
-                if (location != null) {
-                    viewModel.fetchFieldNearMe(location.latitude.toString(), location.longitude.toString())
-                } else {
-                    viewModel.fetchFieldNearMe()
-                }
-            }
-        } else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
+        viewModel.fetchFieldNearMe()
     }
 
     val fieldList by viewModel.fieldList.collectAsState()
@@ -122,29 +63,18 @@ fun MainScreen(
     var locationName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA) // Màu nền tổng thể xám nhạt
+        containerColor = Color(0xFFF5F7FA)
     ) { paddingValues ->
-        // Bọc trong CustomRefreshLayout từ bản cập nhật mới
         CustomRefreshLayout(
             onRefresh = {
-                // Khi người dùng vuốt xuống để làm mới, hãy kiểm tra lại quyền và vị trí
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    fusedLocalClient.lastLocation.addOnSuccessListener { location ->
-                        if (location != null) {
-                            viewModel.fetchFieldNearMe(location.latitude.toString(), location.longitude.toString())
-                        } else {
-                            viewModel.fetchFieldNearMe()
-                        }
-                    }
-                } else {
-                    viewModel.fetchFieldNearMe()
-                }
+                viewModel.fetchFieldNearMe()
             },
             modifier = Modifier.padding(paddingValues)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
                 // 1. KHỐI HEADER MÀU XANH
@@ -155,12 +85,14 @@ fun MainScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF0056B3),
-                                    Color(0xFF00A2FF)
+                                    Color(0xFF0056B3), // Xanh đậm ở trên
+                                    Color(0xFF00A2FF)  // Xanh nhạt ở dưới
                                 )
                             )
                         )
                 ) {
+
+
                     // Các nút góc trên cùng
                     Row(
                         modifier = Modifier
@@ -177,34 +109,13 @@ fun MainScreen(
                         )
 
                         if (isLoggedIn) {
-                            // Phục hồi Nút Đăng xuất từ code cục bộ
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                AsyncImage(
-                                    model = "",
-                                    contentDescription = stringResource(R.string.cd_user_avatar),
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.LightGray)
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                IconButton(
-                                    onClick = {
-                                        viewModel.logout()
-                                        Toast.makeText(context, "Đã đăng xuất!", Toast.LENGTH_SHORT).show()
-                                    },
-                                    modifier = Modifier
-                                        .background(Color.White.copy(alpha = 0.2f), CircleShape)
-                                        .size(40.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ExitToApp,
-                                        contentDescription = "Đăng xuất",
-                                        tint = Color.White
-                                    )
-                                }
-                            }
+                            AsyncImage(
+                                model = "",
+                                contentDescription = stringResource(R.string.cd_user_avatar),
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                            )
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { onLoginClick() }) {
@@ -238,7 +149,7 @@ fun MainScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.main_app_slogan_title),
-                            color = Color(0xFFFFD700),
+                            color = Color(0xFFFFD700), // Màu vàng nổi bật
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -251,17 +162,18 @@ fun MainScreen(
                     }
                 }
 
-                // 2. KHỐI TÌM KIẾM NỔI
+                // 2. KHỐI TÌM KIẾM NỔI (Nằm đè lên viền xanh)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .offset(y = (-40).dp),
+                        .offset(y = (-40).dp), // Kéo thẻ này chìm vào khối xanh 40dp
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        // Dropdown chọn môn thể thao
                         Box {
                             OutlinedButton(
                                 onClick = { isSportMenuExpanded = true },
@@ -293,6 +205,7 @@ fun MainScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
+                        // Ô nhập địa điểm, tên sân
                         OutlinedTextField(
                             value = locationName,
                             onValueChange = { locationName = it },

@@ -61,7 +61,7 @@ data class FieldModel(
     val name: String,
     val status: String,
     val address: String?,
-    @SerializedName("averageRating") val rating: Double,
+    @SerializedName("averageRating") val rating: Float?,
     val imageUrl: String = "",
     val utilities: List<Utility>? = emptyList(),
     @SerializedName("fieldType") val fieldType: FieldType? = null
@@ -71,19 +71,20 @@ data class FieldModel(
 // 2. MODEL DÀNH CHO NETWORK (Hứng dữ liệu từ API)
 // ==========================================
 data class FieldResponse(
-    val id: String? = null,
-    val name: String? = null,
-    val description: String? = null,
-    val status: String? = null, // Giữ kiểu String để linh hoạt xử lý
-    @SerializedName("createdAt") val createdAt: String? = null,
-    @SerializedName("updatedAt") val updatedAt: String? = null,
-    @SerializedName("fieldType") val fieldType: FieldType? = null, // Bổ sung cho DetailScreen
-    val branch: Branch? = null,
-    val images: List<FieldImage>? = null,
-    val utilities: List<Utility>? = null,
-    @SerializedName("averageRating") val averageRating: Double? = null,
-    @SerializedName("reviewCount") val reviewCount: Int? = null, // Chuyển thành Int vì reviewCount thường là số nguyên
-    val reviews: List<Review>? = null
+    val id: String,//val id: String? = null
+    val name: String, //val name: String? = null
+    val description: String, //val description: String? = null
+    val status: String, // Giữ kiểu String để linh hoạt xử lý
+    @SerializedName("createdAt") val createdAt: String,
+    @SerializedName("updatedAt") val updatedAt: String,
+    @SerializedName("fieldType") val fieldType: FieldType, // Bổ sung cho DetailScreen
+    val branch: Branch,
+    val images: List<FieldImage>?,
+    val utilities: List<Utility>?,
+    @SerializedName("averageRating") val averageRating: Float?,
+    @SerializedName("reviewCount") val reviewCount: Int?, // Chuyển thành Int vì reviewCount thường là số nguyên
+    val reviews: List<Review>? = null,
+    val distance: Double?
 )
 
 data class Review(

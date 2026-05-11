@@ -43,7 +43,8 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.loginInitiate(LoginRequest(email, password))
                 if (response.isSuccessful) {
-                    val message = response.body()?.message ?: "Đã gửi mã OTP đến email!"
+                    val message = response.body()?.message?.ifBlank { "Đã gửi mã OTP đến email!" }
+                        ?: "Đã gửi mã OTP đến email!"
                     sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToOtp(email, true))
                 } else {
@@ -62,10 +63,10 @@ class AuthViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 val response = repository.googleAuthNative(idToken)
-                if (response.isSuccessful && response.body()?.accessToken != null) {
+                if (response.isSuccessful && !response.body()?.accessToken.isNullOrBlank()) {
                     val result = response.body()!!
                     // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
-                    repository.saveTokens(result.accessToken!!, "")
+                    repository.saveTokens(result.accessToken, "")
                     sendEvent(AuthUiEvent.ShowToast("Đăng nhập Google thành công!"))
                     sendEvent(AuthUiEvent.NavigateToHome("Thành công"))
                 } else {
@@ -85,7 +86,9 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.registerInitiate(request)
                 if (response.isSuccessful) {
-                    val message = response.body()?.message ?: "Đăng ký thành công, vui lòng kiểm tra email để lấy mã xác thực!"
+                    val message = response.body()?.message
+                        ?.ifBlank { "Đăng ký thành công, vui lòng kiểm tra email để lấy mã xác thực!" }
+                        ?: "Đăng ký thành công, vui lòng kiểm tra email để lấy mã xác thực!"
                     sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToOtp(request.email, false))
                 } else {
@@ -106,10 +109,10 @@ class AuthViewModel @Inject constructor(
                 val request = OtpRequest(email, otpCode)
                 if (isLoginMode) {
                     val response = repository.loginComplete(request)
-                    if (response.isSuccessful && response.body()?.accessToken != null) {
+                    if (response.isSuccessful && !response.body()?.accessToken.isNullOrBlank()) {
                         val result = response.body()!!
                         // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
-                        repository.saveTokens(result.accessToken!!, "")
+                        repository.saveTokens(result.accessToken, "")
                         sendEvent(AuthUiEvent.ShowToast("Đăng nhập thành công!"))
                         sendEvent(AuthUiEvent.NavigateToHome("Success"))
                     } else {
@@ -125,7 +128,8 @@ class AuthViewModel @Inject constructor(
                 } else {
                     val response = repository.registerComplete(request)
                     if (response.isSuccessful) {
-                        val message = response.body()?.message ?: "Xác thực thành công, vui lòng đăng nhập"
+                        val message = response.body()?.message?.ifBlank { "Xác thực thành công, vui lòng đăng nhập" }
+                            ?: "Xác thực thành công, vui lòng đăng nhập"
                         sendEvent(AuthUiEvent.ShowToast(message))
                         sendEvent(AuthUiEvent.NavigateBackToLogin)
                     } else {
@@ -153,7 +157,9 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.forgotPassword(email)
                 if (response.isSuccessful) {
-                    val message = response.body()?.message
+                    val message = response.body()?.message?.ifBlank {
+                        "Nếu email tồn tại, hệ thống đã gửi hướng dẫn đặt lại mật khẩu."
+                    }
                         ?: "Nếu email tồn tại, hệ thống đã gửi hướng dẫn đặt lại mật khẩu."
                     sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateToResetPassword(email))
@@ -174,7 +180,8 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = repository.resetPassword(ResetPasswordRequest(token, newPassword))
                 if (response.isSuccessful) {
-                    val message = response.body()?.message ?: "Đổi mật khẩu thành công!"
+                    val message = response.body()?.message?.ifBlank { "Đổi mật khẩu thành công!" }
+                        ?: "Đổi mật khẩu thành công!"
                     sendEvent(AuthUiEvent.ShowToast(message))
                     sendEvent(AuthUiEvent.NavigateBackToLogin)
                 } else {
