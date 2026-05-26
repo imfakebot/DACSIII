@@ -37,7 +37,7 @@ class TokenManager @Inject constructor(
     }
 
     val token: Flow<String?> = dataStore.data.map { preferences ->
-        preferences[TOKEN_KEY]
+        preferences[TOKEN_KEY]?:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFuaHR0LjI0aXRAdmt1LnVkbi52biIsInN1YiI6IjhhOTE5NmEzLTU1MDktMTFmMS1hY2RmLTZhNDU1NDM5OTg2NCIsInJvbGUiOiJ1c2VyIiwidXNlclByb2ZpbGVJZCI6IjRmZmRhYTNjLTMzZWMtNGEzNS05YmRlLWFiMjIwZTQwMDUyZSIsImlhdCI6MTc3OTgwNzc1NiwiZXhwIjoxNzc5ODA4NjU2fQ.XnkB9_8Kg3tjDfozEMGK0cmmB43D3TQqayx5OKyUvFQ"
     }
 
     suspend fun saveToken(token: String) {

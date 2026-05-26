@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.home.detail
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -34,20 +35,28 @@ import com.tanh.datsan.utils.generateSlots
 import com.tanh.datsan.utils.getUpcomingDates
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.viewmodel.DetailViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
-import java.util.Locale.getDefault
+import androidx.compose.ui.platform.LocalLocale
+import com.tanh.datsan.data.model.VoucherDto
+import com.tanh.datsan.ui.component.VoucherSection
+import com.tanh.datsan.ui.component.VoucherSelectionSheet
 
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BookingBottomSheetContent(
     field: FieldResponse,
     viewModel: DetailViewModel = hiltViewModel(),
-    onConfirm: (date: String, duration: Int, time: String) -> Unit,
+    selectedVoucherCode: String? = null,
+    discountAmount: Double = 0.0,
+    onOpenVoucherList: List<VoucherDto> = emptyList(),
+    onConfirm: (String, Int, String) -> Unit,
 ) {
     val quickDates = remember { getUpcomingDates("Hôm nay") }
     val durations = listOf(60, 90, 120)
@@ -56,9 +65,19 @@ fun BookingBottomSheetContent(
     var selectedTime by remember { mutableStateOf<String?>(null) }
 
     val bookedSlots by viewModel.bookedSlots
+    val priceState by viewModel.priceState.collectAsState()
+
+    var showVoucherSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDate.second) {
         viewModel.fetchBookedSlots(field.id, selectedDate.second)
+    }
+
+    LaunchedEffect(selectedDate.second, selectedDuration, selectedTime) {
+        if (selectedTime != null) {
+            val startTimeIso = "${selectedDate.second}T${selectedTime}:00+07:00"
+            viewModel.checkPrice(field.id, startTimeIso, selectedDuration)
+        }
     }
 
     val timeSlots = remember(selectedDuration, selectedDate) {
@@ -103,12 +122,13 @@ fun BookingBottomSheetContent(
         }
 
         Text("Chọn giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
-        val sdf = SimpleDateFormat("yyyy-MM-dd", getDefault())
+        val sdf = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
         val todayString = sdf.format(Date())
         val isToday = selectedDate.second == todayString
 
         val calendar = Calendar.getInstance()
-        val currentTotalMinute = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+        val currentTotalMinute =
+            calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
 
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             timeSlots.forEach { time ->
@@ -127,8 +147,66 @@ fun BookingBottomSheetContent(
                             selectedTime = time
                         }
                     },
-                    enabled=!isDisabled,
-                    label = { Text(text=time, textDecoration = if(isDisabled) TextDecoration.LineThrough else null) })
+                    enabled = !isDisabled,
+                    label = {
+                        Text(
+                            text = time,
+                            textDecoration = if (isDisabled) TextDecoration.LineThrough else null
+                        )
+                    })
+            }
+        }
+
+        VoucherSection(
+            selectedVoucherCode = selectedVoucherCode,
+            discountAmount = discountAmount,
+            onOpenVoucherList = { showVoucherSheet = true }
+        )
+
+        priceState?.let { price ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Tổng tiền sân:", fontWeight = FontWeight.Bold)
+                Text(
+                    String.format("%,.0f %s", price.pricing.totalPrice, price.pricing.currency),
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            if (discountAmount > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Giảm giá:", color = Color.Red)
+                    Text(
+                        String.format("-%,.0f %s", discountAmount, price.pricing.currency),
+                        color = Color.Red
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Thành tiền:", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                    val finalAmount = price.pricing.totalPrice - discountAmount
+                    Text(
+                        String.format("%,.0f %s", if (finalAmount > 0) finalAmount else 0.0, price.pricing.currency),
+                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF2E7D32)
+                    )
+                }
             }
         }
 
@@ -151,5 +229,19 @@ fun BookingBottomSheetContent(
         ) {
             Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
         }
+    }
+
+    if (showVoucherSheet){
+        VoucherSelectionSheet(
+            vouchers = onOpenVoucherList,
+            selectedVoucherCode = selectedVoucherCode,
+            onSelect = {voucher->
+                showVoucherSheet=false
+                val orderValue = priceState?.pricing?.totalPrice ?: 0.0
+                viewModel.selectVoucher(voucher, orderValue)
+            }, onDismiss = {
+                showVoucherSheet=false
+            }
+        )
     }
 }

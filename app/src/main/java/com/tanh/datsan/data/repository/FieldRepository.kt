@@ -3,7 +3,9 @@ package com.tanh.datsan.data.repository
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.network.FieldApiService
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class FieldRepository @Inject constructor(
     private val fieldApiService: FieldApiService
 ) {

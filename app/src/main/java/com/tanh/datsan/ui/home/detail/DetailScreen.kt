@@ -1,7 +1,26 @@
 package com.tanh.datsan.ui.home.detail
 
+import android.annotation.SuppressLint
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -9,34 +28,51 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.core.util.Consumer
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
-import com.tanh.datsan.ui.component.VnPayWebView
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
 import java.util.Locale
+import androidx.core.net.toUri
 
+@SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -51,14 +87,73 @@ fun DetailScreen(
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val bookingState by viewModel.bookingState
 
+
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
-    var paymentUrlToShow by remember { mutableStateOf<String?>(null) }
+    val selectedVoucher by viewModel.selectedVoucher.collectAsState()
+    val discountAmount by viewModel.discountAmount.collectAsState()
+    val voucherList by viewModel.voucher.collectAsState()
+
+    val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
+
+    val context = LocalContext.current
+    val activity = remember (context){
+        var ctx = context
+        while (ctx is ContextWrapper){
+            if(ctx is ComponentActivity) break
+            ctx=ctx.baseContext
+        }
+        ctx as? ComponentActivity
+    }
+
+    DisposableEffect(activity) {
+        val intentListener = Consumer<Intent> { intent ->
+            val uri = intent.data
+            Log.d("DetailScreen", "Received intent with URI: $uri")
+
+            if (uri != null && uri.scheme == "dacsii" && uri.host == "payment") {
+                val path = uri.path
+                val bookingId = uri.getQueryParameter("bookingId")
+                val code = uri.getQueryParameter("code")
+                if (path?.contains("payment-success") == true) {
+                    onNavigateToSuccess(bookingId ?: "UNKNOWN")
+                } else if (path?.contains("payment-failed") == true) {
+                    Toast.makeText(context, "Thanh toán thất bại!", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        // Đăng ký bắt link mới nếu App đang nằm ngầm
+        activity?.addOnNewIntentListener(intentListener)
+        // Bắt link ngay lập tức nếu App vừa được gọi dậy
+        if (activity?.intent?.data != null) {
+            intentListener.accept(activity.intent)
+        }
+        onDispose { activity?.removeOnNewIntentListener(intentListener) }
+    }
+
+    LaunchedEffect(bookingState) {
+        if (bookingState is BookingUiState.Success) {
+            val url = (bookingState as BookingUiState.Success).paymentUrl
+            viewModel.resetBookingState()
+
+
+            try {
+                val builder = CustomTabsIntent.Builder()
+                val customTabsIntent = builder.build()
+                customTabsIntent.launchUrl(context, url.toUri())
+            } catch (_: Exception) {
+                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                context.startActivity(intent)
+            }
+        }
+    }
+
+
 
     Scaffold(
         bottomBar = {
@@ -93,6 +188,9 @@ fun DetailScreen(
             BookingBottomSheetContent(
                 field = field,
                 viewModel = viewModel,
+                selectedVoucherCode = selectedVoucher?.code,
+                discountAmount = discountAmount,
+                onOpenVoucherList = voucherList,
                 onConfirm = { date, duration, time ->
                     showSheet = false
                     viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration)
@@ -101,34 +199,9 @@ fun DetailScreen(
         }
     }
 
-    // Xử lý mở link thanh toán VNPAY sau khi tạo booking thành công
-    LaunchedEffect(bookingState) {
-        if (bookingState is BookingUiState.Success) {
-            paymentUrlToShow = (bookingState as BookingUiState.Success).paymentUrl
-            viewModel.resetBookingState()
-        }
-    }
+    // Xử lý mở link thanh toán VNPAY sau khi tạo booking thành côn
 
-    if(paymentUrlToShow!=null){
-        Dialog(
-            onDismissRequest = {
-                paymentUrlToShow = null
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ){
-            VnPayWebView(
-                payemtnUrl = paymentUrlToShow!!,
-                onPaymentSuccess = {txnRef->
-                    paymentUrlToShow = null
-                    onNavigateToSuccess(txnRef)
-                },
-                onPaymentFailure = {
-                    paymentUrlToShow = null
-                    // TODO: Có thể show Toast hoặc AlertDialog thông báo thất bại
-                }
-            )
-        }
-    }
+
 }
 
 @Composable
@@ -204,7 +277,7 @@ fun DetailContent(
                     Column(Modifier.padding(24.dp)) {
                         FieldBadge(field.fieldType.name, primaryColor)
 
-                        field.distance.let{dist->
+                        field.distance.let { dist ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Rounded.LocationOn,

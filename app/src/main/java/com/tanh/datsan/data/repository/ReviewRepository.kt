@@ -3,11 +3,13 @@ package com.tanh.datsan.data.repository
 import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.network.ReviewApiService
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class ReviewRepository @Inject constructor(
-    private val ReviewApiService: ReviewApiService
+    private val reviewApiService: ReviewApiService
 ) {
     suspend fun getFieldReview(fieldId: String): List<Review> {
-        return ReviewApiService.getFieldReview(fieldId).data
+        return reviewApiService.getFieldReview(fieldId).data
     }
 }

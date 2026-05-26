@@ -31,12 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.tanh.datsan.utils.FormatReviewTime
 import com.tanh.datsan.viewmodel.ReviewViewModel
 import com.tanh.datsan.R
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.ui.component.ReviewItem
+import com.tanh.datsan.utils.DateUtil.formatReviewTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,7 +107,7 @@ fun AllReviewScreen(
                             ReviewItem(
                                 userName = reviewItem.user?.fullName ?: stringResource(R.string.review_user_fallback),
                                 rating = reviewItem.rating,
-                                date =FormatReviewTime(reviewItem.createdAt),
+                                date = formatReviewTime(reviewItem.createdAt),
                                 comment = reviewItem.comment ?: "",
                                 avatarUrl = reviewItem.user?.avatarUrl
                             )

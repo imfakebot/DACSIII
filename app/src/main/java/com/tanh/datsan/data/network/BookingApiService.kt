@@ -8,7 +8,12 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import retrofit2.http.Query
+
+data class CheckInDto(
+    val identifier: String
+)
 
 interface BookingApiService {
     @POST("bookings")
@@ -18,13 +23,18 @@ interface BookingApiService {
 
     @GET("bookings/field/{fieldId}/schedule")
     suspend fun getFieldScheduleInAday(
-      @Query("fieldId") fieldId: String,
+      @Path("fieldId") fieldId: String,
       @Query("date") date: String
     ):Response<BookedSlotsResponse>
 
     @GET("bookings/{bookingId}")
     suspend fun getBookingById(
-        @Query("bookingId") bookingId: String
+        @Path("bookingId") bookingId: String
+    ): BookingResponse
+
+    @POST("bookings/check-in")
+    suspend fun checkIn(
+        @Body checkInDto: CheckInDto
     ): BookingResponse
 
 }

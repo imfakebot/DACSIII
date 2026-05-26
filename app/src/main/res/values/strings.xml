@@ -110,5 +110,10 @@
     <string name="btn_confirm_caps">XÁC NHẬN</string>
     <string name="btn_select_caps">CHỌN</string>
 
-
+    <string name ="voucher_icon">Voucher Icon</string>
+    <string name ="voucher_sale">Voucher / Khuyến mãi</string>
+    <string name="voucher_code">Mã %1$s</string>
+    <string name="decrease_money">Đã giảm: %1$s</string>
+    <string name="discount_selection">Chọn mã giảm giá</string>
+    <string name="choose_voucher">Chọn voucher</string>
 </resources>

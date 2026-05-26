@@ -58,6 +58,7 @@ import com.tanh.datsan.R
 import com.tanh.datsan.ui.theme.BackgroundGray
 import com.tanh.datsan.ui.theme.PrimaryGreen
 import com.tanh.datsan.utils.DownloadHelper
+import com.tanh.datsan.utils.NotificationHelper
 import com.tanh.datsan.viewmodel.BookingReceiptUiState
 import com.tanh.datsan.viewmodel.BookingSuccessViewModel
 
@@ -75,6 +76,18 @@ fun BookingSuccessScreen(
     }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState) {
+        if (uiState is BookingReceiptUiState.Success) {
+            val booking = (uiState as BookingReceiptUiState.Success).booking
+            NotificationHelper.showBookingSuccessNotification(
+                context,
+                bookingCode = booking.code ?: bookingId,
+                fieldName = booking.field?.name ?: "Sân bóng"
+            )
+        }
+    }
+
     val token by viewModel.tokenFlow.collectAsState()
 
     Column(
@@ -142,7 +155,7 @@ fun BookingSuccessScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            Icons.Filled.Check,
+                            imageVector = Icons.Filled.Check,
                             contentDescription = null,
                             modifier = Modifier.size(56.dp)
                         )

@@ -9,6 +9,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.ui.home.review.AllReviewScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
+import com.tanh.datsan.ui.home.BookingSuccessScreen
+import com.tanh.datsan.ui.staff.QrScannerScreen
 //import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 
@@ -29,6 +31,9 @@ fun AppNavigation() {
                 },
                 onNavigateToDetail = { fieldId ->
                     navController.navigate("detail/$fieldId")
+                },
+                onNavigateToScanner = {
+                    navController.navigate("scanner")
                 }
             )
         }
@@ -66,6 +71,29 @@ fun AppNavigation() {
             AllReviewScreen(
                 fieldId = fieldId,
                 onBackCLick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            "booking_success/{bookingId}",
+            arguments = listOf(navArgument("bookingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val bookingId = backStackEntry.arguments?.getString("bookingId") ?: return@composable
+            BookingSuccessScreen(
+                bookingId = bookingId,
+                onNavigateHome = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable("scanner") {
+            QrScannerScreen(
+                onBackClick = {
                     navController.popBackStack()
                 }
             )

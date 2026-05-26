@@ -46,4 +46,6 @@ class BookingSuccessViewModel @Inject constructor(
     fun getDownloadUrl(bookingId : String):String{
         return "${BuildConfig.API_BASE_URL}/bookings/$bookingId/download"
     }
+
+
 }

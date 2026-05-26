@@ -5,18 +5,22 @@ import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.FieldApiService
+import com.tanh.datsan.data.network.PricingApiService
 import com.tanh.datsan.data.network.ReviewApiService
+import com.tanh.datsan.data.network.VoucherApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import okhttp3.Interceptor
-import okhttp3.logging.HttpLoggingInterceptor
-import javax.inject.Singleton
 import okhttp3.Authenticator
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Singleton
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -83,7 +87,7 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
@@ -101,5 +105,15 @@ object NetworkModule {
     @Singleton
     fun provideReviewApi(retrofit: Retrofit): ReviewApiService =
         retrofit.create(ReviewApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideVoucherApi(retrofit: Retrofit): VoucherApiService =
+        retrofit.create(VoucherApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun providePricingApi(retrofit: Retrofit): PricingApiService =
+        retrofit.create(PricingApiService::class.java)
 
 }

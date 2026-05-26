@@ -36,6 +36,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
 import java.util.Locale
 
+import androidx.compose.material.icons.filled.QrCodeScanner
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
@@ -43,7 +45,8 @@ fun MainScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onNavigateToDetail: (String) -> Unit = {}
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToScanner: () -> Unit = {}
 ) {
 
     LaunchedEffect(Unit) {
@@ -65,7 +68,18 @@ fun MainScreen(
     var locationName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA)
+        containerColor = Color(0xFFF5F7FA),
+        floatingActionButton = {
+            if (isLoggedIn) {
+                FloatingActionButton(
+                    onClick = onNavigateToScanner,
+                    containerColor = Color(0xFF007BFF),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Quét mã check-in")
+                }
+            }
+        }
     ) { paddingValues ->
         CustomRefreshLayout(
             onRefresh = {
