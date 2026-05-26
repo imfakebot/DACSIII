@@ -56,7 +56,7 @@ android {
 }
 
 dependencies {
-    implementation("androidx.compose.material:material-icons-extended")
+  //  implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
@@ -72,7 +72,6 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.androidx.material.icons.extended)
     implementation(libs.play.services.location)
     implementation(libs.logging.interceptor)
     implementation(libs.coil.compose)
@@ -91,6 +90,8 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.listenablefuture)
+    implementation(libs.androidx.compose.material.icons.extended)
+    //   implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
 

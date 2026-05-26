@@ -111,4 +111,44 @@
     <string name="btn_select_caps">CHỌN</string>
 
 
+    <string name="register_title">Tạo Tài Khoản</string>
+    <string name="register_subtitle">Điền thông tin để bắt đầu đặt sân bóng</string>
+    <string name="label_full_name">Họ và tên</string>
+    <string name="label_email">Email liên hệ</string>
+    <string name="label_phone">Số điện thoại</string>
+    <string name="label_gender_placeholder">--Giới tính--</string>
+    <string name="label_password">Mật khẩu (Tối thiểu 8 ký tự)</string>
+    <string name="label_confirm_password">Xác nhận mật khẩu</string>
+    <string name="btn_register">Đăng ký</string>
+    <string name="btn_already_have_account">Đã có tài khoản? Đăng nhập ngay</string>
+
+    <string name="gender_male">Nam</string>
+    <string name="gender_female">Nữ</string>
+    <string name="gender_other">Khác</string>
+
+    <string name="error_empty_fields">Vui lòng nhập đủ các trường bắt buộc</string>
+    <string name="error_password_mismatch">Mật khẩu xác nhận không khớp</string>
+    <string name="error_password_too_short">Mật khẩu phải có nhất 8 ký tự</string>
+
+    <string name="cd_toggle_password">Thay đổi hiển thị mật khẩu</string>
+
+    <string name="login_forgot_password">Quên mật khẩu?</string>
+    <string name="login_or">HOẶC</string>
+    <string name="login_no_account_prompt">Chưa có tài khoản? </string>
+    <string name="login_register_link">Đăng ký ngay</string>
+
+    <string name="dialog_forgot_password_title">Quên mật khẩu</string>
+    <string name="dialog_forgot_password_desc">Nhập email của bạn để nhận mã OTP khôi phục mật khẩu.</string>
+    <string name="dialog_forgot_password_email_hint">Email</string>
+    <string name="btn_send_code">Gửi mã</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="error_empty_email">Vui lòng nhập email</string>
+
+    <string name="msg_connecting_server">Đang kết nối với Server…</string>
+    <string name="error_google_cancelled">Đã hủy chọn tài khoản.</string>
+    <string name="error_no_google_account">Không tìm thấy tài khoản Google.</string>
+    <string name="error_unsupported_credential">Định dạng tài khoản không được hỗ trợ.</string>
+    <string name="cd_google_logo">Logo Google</string>
+
+
 </resources>

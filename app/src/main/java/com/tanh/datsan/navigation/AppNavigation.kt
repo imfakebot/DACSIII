@@ -16,6 +16,7 @@ import com.tanh.datsan.ui.auth.VerifyOtpScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.review.AllReviewScreen
+//import com.tanh.datsan.ui.profile.ProfileScreen
 //import com.tanh.datsan.ui.home.MainScreen
 import com.tanh.datsan.viewmodel.AuthViewModel
 
@@ -42,9 +43,22 @@ fun AppNavigation() {
                 // Điều hướng từ code mới
                 onNavigateToDetail = { fieldId ->
                     navController.navigate("detail/$fieldId")
+                },
+                onNavigateToProfile = {
+                    navController.navigate("profile")
                 }
             )
         }
+//        composable("profile") {
+//            ProfileScreen(
+//                onBackClick = { navController.popBackStack() },
+//                onLogoutClick = {
+//                    navController.navigate("main") {
+//                        popUpTo(0) // Xóa toàn bộ stack
+//                    }
+//                }
+//            )
+//        }
 
         composable(
             route = "detail/{fieldId}",

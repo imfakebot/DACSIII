@@ -26,6 +26,8 @@ class TokenManager @Inject constructor(
     companion object {
         val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
         val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+        val USER_AVATAR_KEY = stringPreferencesKey("user_avatar")
+        val USER_NAME_KEY = stringPreferencesKey("user_name")
     }
 
     // Cache để lấy token đồng bộ (Dùng cho Retrofit Interceptor)
@@ -43,6 +45,14 @@ class TokenManager @Inject constructor(
     // Lấy Refresh Token
     val getRefreshToken: Flow<String?> = dataStore.data.map { preferences ->
         preferences[REFRESH_TOKEN_KEY]
+    }
+
+    val getUserAvatar: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[USER_AVATAR_KEY]
+    }
+
+    val getUserName: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[USER_NAME_KEY]
     }
 
     // 2. CHẠY INIT BLOCK SAU KHI CÁC FLOW ĐÃ ĐƯỢC KHỞI TẠO
@@ -71,11 +81,21 @@ class TokenManager @Inject constructor(
         cachedRefreshToken = refreshToken
     }
 
+    suspend fun saveUserInfo(avatarUrl: String?, userName: String?) {
+        dataStore.edit { preferences ->
+            avatarUrl?.let { preferences[USER_AVATAR_KEY] = it }
+            userName?.let { preferences[USER_NAME_KEY] = it }
+
+        }
+    }
+
     // Xóa sạch token khi người dùng bấm Đăng Xuất
     suspend fun clearTokens() {
         dataStore.edit { preferences ->
             preferences.remove(ACCESS_TOKEN_KEY)
             preferences.remove(REFRESH_TOKEN_KEY)
+            preferences.remove(USER_AVATAR_KEY) // 🌟 Xóa thêm cái này
+            preferences.remove(USER_NAME_KEY)   // 🌟 Xóa thêm cái này
         }
         // Xóa cả cache
         cachedAccessToken = null

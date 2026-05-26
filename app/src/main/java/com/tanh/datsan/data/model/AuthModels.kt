@@ -12,18 +12,23 @@ data class UserBranch(
 )
 
 data class UserResponse(
-    val id: String = "",
-    val email: String = "",
-    val role: String = "",
+    val id: String,
+    val email: String,
+    val role: String,
     @SerializedName("is_profile_complete")
-    val isProfileComplete: Boolean = false,
-    val branch: UserBranch? = null
+    val isProfileComplete: Boolean,
+    val branch: UserBranch?,
+    @SerializedName("avatarUrl")  // chờ xem log để sửa tên cho đúng
+    val avatarUrl: String?,
+    @SerializedName("userName")   // chờ xem log để sửa tên cho đúng
+    val userName: String?
+
 )
 
 data class LoginResponse(
     @SerializedName("accessToken")
-    val accessToken: String = "",
-    val user: UserResponse = UserResponse()
+    val accessToken: String,
+    val user: UserResponse?
 )
 
 data class LoginRequest(

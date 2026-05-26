@@ -17,13 +17,15 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import javax.inject.Inject
 
-// Kênh sự kiện UI giữ nguyên để không làm lỗi file giao diện
+
+
 sealed class AuthUiEvent {
     data class ShowToast(val message: String) : AuthUiEvent()
     data class NavigateToOtp(val email: String, val isLoginMode: Boolean) : AuthUiEvent()
     data class NavigateToResetPassword(val email: String) : AuthUiEvent()
     data class NavigateToHome(val message: String) : AuthUiEvent()
     object NavigateBackToLogin : AuthUiEvent()
+    object OtpResent : AuthUiEvent()
 }
 
 @HiltViewModel
@@ -36,6 +38,9 @@ class AuthViewModel @Inject constructor(
 
     private val _uiEvent = Channel<AuthUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
+
+    // Lưu trữ thông tin đăng ký để có thể gửi lại OTP
+    private var pendingRegisterRequest: RegisterRequest? = null
 
     fun login(email: String, password: String) {
         viewModelScope.launch {
@@ -67,6 +72,9 @@ class AuthViewModel @Inject constructor(
                     val result = response.body()!!
                     // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
                     repository.saveTokens(result.accessToken, "")
+                    android.util.Log.d("AUTH_DEBUG", "avatarUrl = ${result.user?.avatarUrl}")
+                    android.util.Log.d("AUTH_DEBUG", "userName = ${result.user?.userName}")
+                    repository.saveUserInfo(avatarUrl = null, userName = result.user?.email)
                     sendEvent(AuthUiEvent.ShowToast("Đăng nhập Google thành công!"))
                     sendEvent(AuthUiEvent.NavigateToHome("Thành công"))
                 } else {
@@ -81,6 +89,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun register(request: RegisterRequest) {
+        pendingRegisterRequest = request
         viewModelScope.launch {
             _isLoading.value = true
             try {
@@ -102,6 +111,34 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun resendOtp(email: String, isLoginMode: Boolean) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                if (isLoginMode) {
+
+                    sendEvent(AuthUiEvent.ShowToast("Vui lòng quay lại màn hình trước để yêu cầu mã mới."))
+                } else {
+                    pendingRegisterRequest?.let { request ->
+                        val response = repository.registerInitiate(request)
+                        if (response.isSuccessful) {
+                            sendEvent(AuthUiEvent.ShowToast("Đã gửi lại mã OTP!"))
+                            sendEvent(AuthUiEvent.OtpResent)
+                        } else {
+                            sendEvent(AuthUiEvent.ShowToast("Không thể gửi lại mã, vui lòng thử lại sau."))
+                        }
+                    } ?: run {
+                        sendEvent(AuthUiEvent.ShowToast("Không tìm thấy thông tin đăng ký, vui lòng thực hiện lại."))
+                    }
+                }
+            } catch (e: Exception) {
+                sendEvent(AuthUiEvent.ShowToast("Lỗi kết nối mạng!"))
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun verifyOtp(email: String, otpCode: String, isLoginMode: Boolean) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -113,7 +150,9 @@ class AuthViewModel @Inject constructor(
                         val result = response.body()!!
                         // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
                         repository.saveTokens(result.accessToken, "")
+                        repository.saveUserInfo(avatarUrl = null, userName = result.user?.email)
                         sendEvent(AuthUiEvent.ShowToast("Đăng nhập thành công!"))
+
                         sendEvent(AuthUiEvent.NavigateToHome("Success"))
                     } else {
                         sendEvent(

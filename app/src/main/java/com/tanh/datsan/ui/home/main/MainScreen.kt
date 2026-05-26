@@ -2,6 +2,7 @@ package com.tanh.datsan.ui.home.main
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -41,7 +42,8 @@ fun MainScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onNavigateToDetail: (String) -> Unit = {}
+    onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToProfile: () -> Unit = {}
 ) {
 
     LaunchedEffect(Unit) {
@@ -60,6 +62,7 @@ fun MainScreen(
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val userAvatarUrl by viewModel.userAvatarUrl.collectAsState()
     var locationName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
@@ -110,11 +113,15 @@ fun MainScreen(
 
                         if (isLoggedIn) {
                             AsyncImage(
-                                model = "",
+                                model = userAvatarUrl,
                                 contentDescription = stringResource(R.string.cd_user_avatar),
                                 modifier = Modifier
                                     .size(44.dp)
                                     .clip(CircleShape)
+                                    .clickable { onNavigateToProfile() },
+                                // ✅ THÊM fallback avatar mặc định
+                                error = painterResource(id = R.drawable.avartar_default),
+                                placeholder = painterResource(id = R.drawable.avartar_default)
                             )
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

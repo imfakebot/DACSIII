@@ -28,13 +28,18 @@ class HomeViewModel @Inject constructor(
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
     var isLoggedIn: StateFlow<Boolean> = tokenManager.getAccessToken
-        .map { token -> !token.isNullOrEmpty() }
+        .map { token -> !token.isNullOrBlank() && token != "null" && token != "undefined" }
         .stateIn(
             viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
 
+    val userAvatarUrl: StateFlow<String?> = tokenManager.getUserAvatar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val userName: StateFlow<String?> = tokenManager.getUserName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     fun fetchField(lat: String? = null, lng: String? = null) {
         viewModelScope.launch {
             try {

@@ -23,4 +23,7 @@ class AuthRepository @Inject constructor(
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         tokenManager.saveTokens(accessToken, refreshToken)
     }
+    suspend fun saveUserInfo(avatarUrl: String?, userName: String?) {
+        tokenManager.saveUserInfo(avatarUrl, userName)
+    }
 }

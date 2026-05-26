@@ -1,12 +1,15 @@
 package com.tanh.datsan.ui.auth
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -17,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -31,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.tanh.datsan.R
+import com.tanh.datsan.utils.GoogleAuthHelper
 import com.tanh.datsan.viewmodel.AuthUiEvent
 import com.tanh.datsan.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -45,19 +52,54 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val primaryBlue = Color(0xFF1877F2)
+    val primaryBlue = MaterialTheme.colorScheme.primary
 
-    // Quan sát State
+    // 1. ĐỊNH NGHĨA TẤT CẢ CHUỖI Ở ĐẦU COMPOSABLE ĐỂ TRÁNH LỖI LINT LỘC-CONTEXT
+    val textLoginTitle = stringResource(R.string.login_title)
+    val textEmailHint = stringResource(R.string.login_email_hint)
+    val textPasswordHint = stringResource(R.string.login_password_hint)
+    val textForgotPassword = stringResource(R.string.login_forgot_password)
+    val textBtnSubmit = stringResource(R.string.login_btn_submit)
+    val textLoginOr = stringResource(R.string.login_or)
+    val textLoginGoogle = stringResource(R.string.login_google)
+    val textNoAccountPrompt = stringResource(R.string.login_no_account_prompt)
+    val textRegisterLink = stringResource(R.string.login_register_link)
+
+    val textDialogTitle = stringResource(R.string.dialog_forgot_password_title)
+    val textDialogDesc = stringResource(R.string.dialog_forgot_password_desc)
+    val textDialogEmailHint = stringResource(R.string.dialog_forgot_password_email_hint)
+    val textBtnSendCode = stringResource(R.string.btn_send_code)
+    val textBtnCancel = stringResource(R.string.btn_cancel)
+
+    val errorEmptyFields = stringResource(R.string.val_empty_fields)
+    val errorEmptyEmail = stringResource(R.string.error_empty_email)
+    val msgConnectingServer = stringResource(R.string.msg_connecting_server)
+    val errorGoogleCancelled = stringResource(R.string.error_google_cancelled)
+    val errorNoGoogleAccount = stringResource(R.string.error_no_google_account)
+    val errorWithPrefixTemplate = stringResource(R.string.error_with_prefix)
+    val errorUnsupportedCredential = stringResource(R.string.error_unsupported_credential)
+
+    val cdTogglePassword = stringResource(R.string.cd_toggle_password)
+    val cdGoogleLogo = stringResource(R.string.cd_google_logo)
+
+    // Trạng thái dữ liệu
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-
     var showForgotDialog by remember { mutableStateOf(false) }
     var forgotEmail by remember { mutableStateOf("") }
 
-    // Lắng nghe Event từ ViewModel
+    // Logic đăng nhập dùng chung
+    val handleLogin = {
+        val validEmail = email.trim()
+        if (validEmail.isEmpty() || password.isEmpty()) {
+            Toast.makeText(context, errorEmptyFields, Toast.LENGTH_SHORT).show()
+        } else {
+            viewModel.login(validEmail, password)
+        }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -79,56 +121,67 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Đăng nhập", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryBlue)
+        Text(text = textLoginTitle, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryBlue)
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Ô nhập Email
         OutlinedTextField(
-            value = email, onValueChange = { email = it }, label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
+            value = email, onValueChange = { email = it },
+            label = { Text(text = textEmailHint) },
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            )
         )
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Ô nhập Mật khẩu
         OutlinedTextField(
-            value = password, onValueChange = { password = it }, label = { Text("Mật khẩu") },
+            value = password, onValueChange = { password = it },
+            label = { Text(text = textPasswordHint) },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Toggle password")
+                    Icon(imageVector = image, contentDescription = cdTogglePassword)
                 }
             },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { handleLogin() }
+            )
         )
 
         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
             Text(
-                text = "Quên mật khẩu?", color = primaryBlue, fontWeight = FontWeight.SemiBold,
+                text = textForgotPassword, color = primaryBlue, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp).clickable { showForgotDialog = true }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Nút Đăng nhập thường
+        // Nút Đăng nhập
         Button(
-            onClick = {
-                val validEmail = email.trim()
-                if (validEmail.isEmpty() || password.isEmpty()) {
-                    Toast.makeText(context, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show()
-                } else {
-                    viewModel.login(validEmail, password)
-                }
-            },
+            onClick = { handleLogin() },
             modifier = Modifier.fillMaxWidth().height(50.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
             enabled = !isLoading
         ) {
-            if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-            else Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            if (isLoading) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+            } else {
+                Text(text = textBtnSubmit, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text("HOẶC", color = Color.Gray, fontWeight = FontWeight.Bold)
+        Text(text = textLoginOr, color = Color.Gray, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
         // Nút Đăng nhập Google
@@ -137,15 +190,19 @@ fun LoginScreen(
                 if (isLoading) return@OutlinedButton
                 scope.launch {
                     try {
-                        val idToken = signInWithGoogle(context)
-                        Toast.makeText(context, "Đang kết nối với Server...", Toast.LENGTH_SHORT).show()
+                        val idToken = GoogleAuthHelper.signInWithGoogle(context, errorUnsupportedCredential)
+
+                        Toast.makeText(context, msgConnectingServer, Toast.LENGTH_SHORT).show()
                         viewModel.loginWithGoogle(idToken)
                     } catch (e: GetCredentialCancellationException) {
-                        Toast.makeText(context, "Đã hủy chọn tài khoản.", Toast.LENGTH_SHORT).show()
+                        Log.w("Auth", "Google Sign-In Cancelled", e)
+                        Toast.makeText(context, errorGoogleCancelled, Toast.LENGTH_SHORT).show()
                     } catch (e: NoCredentialException) {
-                        Toast.makeText(context, "Không tìm thấy tài khoản Google.", Toast.LENGTH_SHORT).show()
+                        Log.e("Auth", "No Google Account Found", e)
+                        Toast.makeText(context, errorNoGoogleAccount, Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
-                        Toast.makeText(context, "Lỗi: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        val formattedError = String.format(errorWithPrefixTemplate, e.localizedMessage ?: "")
+                        Toast.makeText(context, formattedError, Toast.LENGTH_LONG).show()
                     }
                 }
             },
@@ -157,74 +214,60 @@ fun LoginScreen(
             if (isLoading) {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryBlue, strokeWidth = 2.dp)
             } else {
-                Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = "Google", modifier = Modifier.size(24.dp))
+                Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = cdGoogleLogo, modifier = Modifier.size(24.dp))
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Đăng nhập bằng Google", color = Color.Black, fontWeight = FontWeight.SemiBold)
+                Text(text = textLoginGoogle, color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-            Text("Chưa có tài khoản? ", color = Color.Gray)
-            Text("Đăng ký ngay", color = primaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
+            Text(text = textNoAccountPrompt, color = Color.Gray)
+            Text(text = textRegisterLink, color = primaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
         }
     }
 
     // Dialog Quên Mật Khẩu
     if (showForgotDialog) {
+        val handleForgotSubmit = {
+            val validEmail = forgotEmail.trim()
+            if (validEmail.isEmpty()) {
+                Toast.makeText(context, errorEmptyEmail, Toast.LENGTH_SHORT).show()
+            } else {
+                viewModel.forgotPassword(validEmail)
+            }
+        }
+
         AlertDialog(
             onDismissRequest = { showForgotDialog = false },
-            title = { Text("Quên mật khẩu", fontWeight = FontWeight.Bold) },
+            title = { Text(text = textDialogTitle, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Nhập email của bạn để nhận mã OTP khôi phục mật khẩu.")
+                    Text(text = textDialogDesc)
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = forgotEmail, onValueChange = { forgotEmail = it }, label = { Text("Email") }, singleLine = true, modifier = Modifier.fillMaxWidth()
+                        value = forgotEmail, onValueChange = { forgotEmail = it },
+                        label = { Text(text = textDialogEmailHint) },
+                        singleLine = true, modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { handleForgotSubmit() }
+                        )
                     )
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        val validEmail = forgotEmail.trim()
-                        if (validEmail.isEmpty()) Toast.makeText(context, "Vui lòng nhập email", Toast.LENGTH_SHORT).show()
-                        else viewModel.forgotPassword(validEmail)
-                    },
-                    enabled = !isLoading
-                ) {
+                Button(onClick = { handleForgotSubmit() }, enabled = !isLoading) {
                     if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-                    else Text("Gửi mã")
+                    else Text(text = textBtnSendCode)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showForgotDialog = false }, enabled = !isLoading) { Text("Hủy", color = Color.Gray) }
+                TextButton(onClick = { showForgotDialog = false }, enabled = !isLoading) { Text(text = textBtnCancel, color = Color.Gray) }
             }
         )
-    }
-}
-
-suspend fun signInWithGoogle(context: Context): String {
-    val credentialManager = CredentialManager.create(context)
-    val webClientId = context.getString(R.string.default_web_client_id)
-
-    val googleIdOption = GetGoogleIdOption.Builder()
-        .setFilterByAuthorizedAccounts(false)
-        .setServerClientId(webClientId)
-        .setAutoSelectEnabled(true)
-        .build()
-
-    val request = GetCredentialRequest.Builder()
-        .addCredentialOption(googleIdOption)
-        .build()
-
-    val result = credentialManager.getCredential(context, request)
-    val credential = result.credential
-
-    if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-        val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-        return googleIdTokenCredential.idToken
-    } else {
-        throw RuntimeException("Định dạng tài khoản trả về không được hỗ trợ.")
     }
 }

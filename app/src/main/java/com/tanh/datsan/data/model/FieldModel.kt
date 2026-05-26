@@ -43,14 +43,14 @@ data class Address(
 )
 
 data class Branch(
-    val id: String? = null,
-    val name: String? = null,
-    @SerializedName("phone_number") val phoneNumber: String? = null,
-    val description: String? = null,
-    val status: Boolean = false,
+    val id: String,
+    val name: String,
+    @SerializedName("phone_number") val phoneNumber: String,
+    val description: String,
+    val status: Boolean,
     @SerializedName("open_time") val openTime: String = "00:00",
     @SerializedName("close_time") val closeTime: String = "23:59",
-    val address: Address? = null
+    val address: Address
 )
 
 // ==========================================
