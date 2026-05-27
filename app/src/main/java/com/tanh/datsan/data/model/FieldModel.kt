@@ -3,7 +3,9 @@ package com.tanh.datsan.data.model
 import com.google.gson.annotations.SerializedName
 
 data class FieldType(
-    val id: String, val name: String, val description: String?
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String?
 )
 
 data class FieldImage(

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
@@ -27,6 +28,15 @@ class HomeViewModel @Inject constructor(
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
+    private val _fieldTypes = MutableStateFlow<List<FieldType>>(emptyList())
+    val fieldTypes: StateFlow<List<FieldType>> = _fieldTypes
+
+    private val _selectedType = MutableStateFlow<String?>(null)
+    val selectedType: StateFlow<String?> = _selectedType
+
+    private var currentLat: String? = null
+    private var currentLng: String? = null
+
     var isLoggedIn: StateFlow<Boolean> = tokenManager.token
         .map { token -> !token.isNullOrEmpty() }
         .stateIn(
@@ -35,10 +45,23 @@ class HomeViewModel @Inject constructor(
             initialValue = false
         )
 
-    fun fetchField(lat: String? = null, lng: String? = null) {
+    init {
+        fetchFieldNearMe()
+        fetchFieldTypes()
+    }
+
+
+    fun fetchField(
+        lat: String? = currentLat,
+        lng: String? = currentLng,
+        typeId: String? = _selectedType.value,
+        name: String? = null
+    ) {
         viewModelScope.launch {
             try {
-                val response = fieldRepository.getAllField(lat, lng)
+                Log.d("HomeViewModel", "Fetching fields with lat=$lat, lng=$lng, typeId=$typeId, name=$name")
+                val response =
+                    fieldRepository.getAllField(lat = lat, lon = lng, typeId = typeId, name = name)
                 val mappedList = response.map { jsonItem ->
                     val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
                     val fixedUrl = rawUrl.toFullImageUrl()
@@ -50,7 +73,8 @@ class HomeViewModel @Inject constructor(
                         address = jsonItem.branch.address?.street ?: "Địa chỉ k xác định",
                         rating = jsonItem.averageRating,
                         imageUrl = fixedUrl,
-                        distance = jsonItem.distance
+                        distance = jsonItem.distance,
+                        fieldType = jsonItem.fieldType
                     )
                 }
                 _fieldList.value = mappedList
@@ -62,6 +86,8 @@ class HomeViewModel @Inject constructor(
 
     fun fetchFieldNearMe() {
         locationHelper.getCurrentLocation { lat, lon ->
+            currentLat = lat
+            currentLng = lon
             if (lat != null && lon != null) {
                 Log.d("HomeViewModel", "Current location: lat=$lat, lon=$lon")
                 fetchField(lat, lon)
@@ -70,5 +96,20 @@ class HomeViewModel @Inject constructor(
                 Log.w("HomeViewModel", "Unable to get current location")
             }
         }
+    }
+
+    private fun fetchFieldTypes() {
+        viewModelScope.launch {
+            try {
+                _fieldTypes.value = fieldRepository.getAllFieldTypes()
+            } catch (e: Exception) {
+                Log.e("HomeViewModel", "Error fetching field types: ${e.message}")
+            }
+        }
+    }
+
+    fun onFieldTypeSelected(type: FieldType?) {
+        _selectedType.value = type?.id
+        fetchField(currentLat, currentLng, type?.id)
     }
 }

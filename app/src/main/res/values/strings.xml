@@ -116,4 +116,6 @@
     <string name="decrease_money">Đã giảm: %1$s</string>
     <string name="discount_selection">Chọn mã giảm giá</string>
     <string name="choose_voucher">Chọn voucher</string>
+
+    <string name="field_type_unknown">Loại sân không xác định</string>
 </resources>

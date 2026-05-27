@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.home.main
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -37,6 +38,7 @@ import com.tanh.datsan.ui.component.CustomRefreshLayout
 import java.util.Locale
 
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.ui.platform.LocalFocusManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,16 +58,14 @@ fun MainScreen(
     val fieldList by viewModel.fieldList.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
 
-    val sportsList = listOf(
-        stringResource(R.string.sport_football),
-        stringResource(R.string.sport_tennis),
-        stringResource(R.string.sport_badminton),
-        stringResource(R.string.sport_table_tennis)
-    )
+    val sportList by viewModel.fieldTypes.collectAsState()
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     var locationName by rememberSaveable { mutableStateOf("") }
+    val selectedType by viewModel.selectedType.collectAsState()
+    val focusManager = LocalFocusManager.current
+
 
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
@@ -211,12 +211,23 @@ fun MainScreen(
                             }
                             DropdownMenu(
                                 expanded = isSportMenuExpanded,
-                                onDismissRequest = { isSportMenuExpanded = false }) {
-                                sportsList.forEach { sport ->
-                                    DropdownMenuItem(text = { Text(sport) }, onClick = {
-                                        selectedSport = sport
+                                onDismissRequest = { isSportMenuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(defaultSportLabel) },
+                                    onClick = {
+                                        selectedSport = defaultSportLabel
+                                        viewModel.onFieldTypeSelected(null)
                                         isSportMenuExpanded = false
-                                    })
+                                    }
+                                )
+                                sportList.forEach { sport ->
+                                    DropdownMenuItem(text = { Text(sport.name) }, onClick = {
+                                        selectedSport = sport.name
+                                        viewModel.onFieldTypeSelected(sport)
+                                        isSportMenuExpanded = false
+                                    }
+                                    )
                                 }
                             }
                         }
@@ -242,7 +253,11 @@ fun MainScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = { /* TODO: Xử lý tìm kiếm */ },
+                            onClick = {
+                                val searchQuery = locationName.ifBlank { null }
+                                viewModel.fetchField(name = searchQuery, typeId = selectedType)
+                                focusManager.clearFocus()
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
@@ -369,10 +384,9 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
+
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -388,12 +402,24 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                            Text(
+                                text = field.fieldType?.name
+                                    ?: stringResource(R.string.field_type_unknown),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF0056B3),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
                         }
 
-                        field.distance.let{dist->
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        field.distance.let { dist ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector =  Icons.Rounded.LocationOn,
+                                    imageVector = Icons.Rounded.LocationOn,
                                     contentDescription = null,
                                     tint = Color(0xFF4CAF50),
                                     modifier = Modifier.size(14.dp)
