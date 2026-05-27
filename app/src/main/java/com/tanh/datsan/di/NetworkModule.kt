@@ -1,3 +1,4 @@
+
 package com.tanh.datsan.di
 
 import android.util.Log
@@ -7,10 +8,13 @@ import com.tanh.datsan.data.network.AuthApiService
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.FieldApiService
 import com.tanh.datsan.data.network.ReviewApiService
+import com.tanh.datsan.data.network.UserApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -38,14 +42,20 @@ object NetworkModule {
     @Singleton
     fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
-            val orignalRequest = chain.request()
+            val originalRequest = chain.request()
 
-            // ĐÃ SỬA: Sử dụng cachedAccessToken theo chuẩn TokenManager mới
-            val token = tokenManager.cachedAccessToken
+            // Dùng runBlocking để lấy token mới nhất từ DataStore
+            // Điều này đảm bảo token không bao giờ bị null do quá trình khởi tạo bất đồng bộ
+            val token = runBlocking {
+                tokenManager.getAccessToken.first()
+            }
 
-            val requestBuilder = orignalRequest.newBuilder()
-            if (!token.isNullOrEmpty())
+            Log.d("NETWORK_DEBUG", "Sending Token: $token")
+
+            val requestBuilder = originalRequest.newBuilder()
+            if (!token.isNullOrEmpty()) {
                 requestBuilder.addHeader("Authorization", "Bearer $token")
+            }
 
             chain.proceed(requestBuilder.build())
         }
@@ -109,4 +119,9 @@ object NetworkModule {
     @Singleton
     fun provideReviewApi(retrofit: Retrofit): ReviewApiService =
         retrofit.create(ReviewApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserApi(retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
 }

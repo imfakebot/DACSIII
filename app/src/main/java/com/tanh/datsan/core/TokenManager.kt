@@ -28,6 +28,8 @@ class TokenManager @Inject constructor(
         val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
         val USER_AVATAR_KEY = stringPreferencesKey("user_avatar")
         val USER_NAME_KEY = stringPreferencesKey("user_name")
+        val USER_PHONE_KEY = stringPreferencesKey("user_phone")
+        val USER_ADDRESS_KEY = stringPreferencesKey("user_address")
     }
 
     // Cache để lấy token đồng bộ (Dùng cho Retrofit Interceptor)
@@ -37,12 +39,10 @@ class TokenManager @Inject constructor(
         private set
 
     // 1. KHAI BÁO CÁC FLOW TRƯỚC (RẤT QUAN TRỌNG ĐỂ TRÁNH NULL POINTER EXCEPTION)
-    // Lấy Access Token (Flow để View/ViewModel observe)
     val getAccessToken: Flow<String?> = dataStore.data.map { preferences ->
         preferences[ACCESS_TOKEN_KEY]
     }
 
-    // Lấy Refresh Token
     val getRefreshToken: Flow<String?> = dataStore.data.map { preferences ->
         preferences[REFRESH_TOKEN_KEY]
     }
@@ -55,9 +55,16 @@ class TokenManager @Inject constructor(
         preferences[USER_NAME_KEY]
     }
 
+    val getUserPhone: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[USER_PHONE_KEY]
+    }
+
+    val getUserAddress: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[USER_ADDRESS_KEY]
+    }
+
     // 2. CHẠY INIT BLOCK SAU KHI CÁC FLOW ĐÃ ĐƯỢC KHỞI TẠO
     init {
-        // Tự động cập nhật cache mỗi khi token trong DataStore thay đổi
         CoroutineScope(Dispatchers.IO).launch {
             getAccessToken.collect { token ->
                 cachedAccessToken = token
@@ -70,34 +77,38 @@ class TokenManager @Inject constructor(
         }
     }
 
-    // Lưu CẢ 2 token vào máy
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         dataStore.edit { preferences ->
             preferences[ACCESS_TOKEN_KEY] = accessToken
             preferences[REFRESH_TOKEN_KEY] = refreshToken
         }
-        // Cập nhật ngay vào cache để có thể dùng ngay lập tức
         cachedAccessToken = accessToken
         cachedRefreshToken = refreshToken
     }
 
-    suspend fun saveUserInfo(avatarUrl: String?, userName: String?) {
+    suspend fun saveUserInfo(
+        avatarUrl: String?,
+        userName: String?,
+        phone: String? = null,
+        address: String? = null
+    ) {
         dataStore.edit { preferences ->
             avatarUrl?.let { preferences[USER_AVATAR_KEY] = it }
             userName?.let { preferences[USER_NAME_KEY] = it }
-
+            phone?.let { preferences[USER_PHONE_KEY] = it }
+            address?.let { preferences[USER_ADDRESS_KEY] = it }
         }
     }
 
-    // Xóa sạch token khi người dùng bấm Đăng Xuất
     suspend fun clearTokens() {
         dataStore.edit { preferences ->
             preferences.remove(ACCESS_TOKEN_KEY)
             preferences.remove(REFRESH_TOKEN_KEY)
-            preferences.remove(USER_AVATAR_KEY) // 🌟 Xóa thêm cái này
-            preferences.remove(USER_NAME_KEY)   // 🌟 Xóa thêm cái này
+            preferences.remove(USER_AVATAR_KEY)
+            preferences.remove(USER_NAME_KEY)
+            preferences.remove(USER_PHONE_KEY)
+            preferences.remove(USER_ADDRESS_KEY)
         }
-        // Xóa cả cache
         cachedAccessToken = null
         cachedRefreshToken = null
     }

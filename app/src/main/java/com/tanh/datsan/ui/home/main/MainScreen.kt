@@ -112,17 +112,28 @@ fun MainScreen(
                         )
 
                         if (isLoggedIn) {
-                            AsyncImage(
-                                model = userAvatarUrl,
-                                contentDescription = stringResource(R.string.cd_user_avatar),
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                                    .clickable { onNavigateToProfile() },
-                                // ✅ THÊM fallback avatar mặc định
-                                error = painterResource(id = R.drawable.avartar_default),
-                                placeholder = painterResource(id = R.drawable.avartar_default)
-                            )
+                            val userName by viewModel.userName.collectAsState()
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.clickable { onNavigateToProfile() }
+                            ) {
+                                Text(
+                                    text = userName ?: "",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                AsyncImage(
+                                    model = userAvatarUrl,
+                                    contentDescription = stringResource(R.string.cd_user_avatar),
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape),
+                                    // ✅ THÊM fallback avatar mặc định
+                                    error = painterResource(id = R.drawable.avartar_default),
+                                    placeholder = painterResource(id = R.drawable.avartar_default)
+                                )
+                            }
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { onLoginClick() }) {

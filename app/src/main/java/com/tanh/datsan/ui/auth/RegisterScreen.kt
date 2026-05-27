@@ -44,6 +44,7 @@ fun RegisterScreen(
 
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
+    var address by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
@@ -109,6 +110,13 @@ fun RegisterScreen(
             value = phoneNumber, onValueChange = { phoneNumber = it },
             label = { Text(stringResource(R.string.label_phone)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = address, onValueChange = { address = it },
+            label = { Text("Địa chỉ") }, // TODO: Add to strings.xml
             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -184,11 +192,12 @@ fun RegisterScreen(
                 val genderApi = selectedGender?.apiKey ?: "other"
 
                 val requestBody = RegisterRequest(
-                     fullName.trim(),
-                    email.trim(),
-                    phoneNumber.trim(),
-                     genderApi,
-                     password
+                    full_name = fullName.trim(),
+                    email = email.trim(),
+                    phone_number = phoneNumber.trim(),
+                    address = address.trim(),
+                    gender = genderApi,
+                    password = password
                 )
                 viewModel.register(requestBody)
             },

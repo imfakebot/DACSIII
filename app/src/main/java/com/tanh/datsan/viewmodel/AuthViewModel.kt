@@ -74,7 +74,10 @@ class AuthViewModel @Inject constructor(
                     repository.saveTokens(result.accessToken, "")
                     android.util.Log.d("AUTH_DEBUG", "avatarUrl = ${result.user?.avatarUrl}")
                     android.util.Log.d("AUTH_DEBUG", "userName = ${result.user?.userName}")
-                    repository.saveUserInfo(avatarUrl = null, userName = result.user?.email)
+                    repository.saveUserInfo(
+                        avatarUrl = result.user?.avatarUrl,
+                        userName = result.user?.userName ?: result.user?.email
+                    )
                     sendEvent(AuthUiEvent.ShowToast("Đăng nhập Google thành công!"))
                     sendEvent(AuthUiEvent.NavigateToHome("Thành công"))
                 } else {
@@ -150,7 +153,10 @@ class AuthViewModel @Inject constructor(
                         val result = response.body()!!
                         // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
                         repository.saveTokens(result.accessToken, "")
-                        repository.saveUserInfo(avatarUrl = null, userName = result.user?.email)
+                        repository.saveUserInfo(
+                            avatarUrl = result.user?.avatarUrl,
+                            userName = result.user?.userName ?: result.user?.email
+                        )
                         sendEvent(AuthUiEvent.ShowToast("Đăng nhập thành công!"))
 
                         sendEvent(AuthUiEvent.NavigateToHome("Success"))
