@@ -18,7 +18,7 @@ class FieldRepository @Inject constructor(
         lon: String? = null,
         radius: Int? = 10,
         cityId: Int? = null
-    ): List<FieldResponse> { // CHÚ Ý: Bắt buộc trả về List<FieldResponse>
+    ): List<FieldResponse> {
         return fieldApiService.getAllFields(lat, lon, radius, cityId)
     }
 
