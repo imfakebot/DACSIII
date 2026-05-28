@@ -7,6 +7,7 @@ import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.data.repository.UserRepository
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,7 +23,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     tokenManager: TokenManager,
     private val fieldRepository: FieldRepository,
-    private val locationHelper: LocationHelper
+    private val locationHelper: LocationHelper,
+    private val userRepository: UserRepository
 ) : ViewModel() {
 
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
@@ -33,6 +35,12 @@ class HomeViewModel @Inject constructor(
 
     private val _selectedType = MutableStateFlow<String?>(null)
     val selectedType: StateFlow<String?> = _selectedType
+
+    private val _userName = MutableStateFlow<String?>(null)
+    val userName: StateFlow<String?> = _userName
+
+    private val _userAvatarUrl = MutableStateFlow<String?>(null)
+    val userAvatarUrl: StateFlow<String?> = _userAvatarUrl
 
     private var currentLat: String? = null
     private var currentLng: String? = null
@@ -49,6 +57,7 @@ class HomeViewModel @Inject constructor(
         fetchFieldNearMe()
         fetchFieldTypes()
     }
+
 
 
     fun fetchField(
@@ -111,5 +120,17 @@ class HomeViewModel @Inject constructor(
     fun onFieldTypeSelected(type: FieldType?) {
         _selectedType.value = type?.id
         fetchField(currentLat, currentLng, type?.id)
+    }
+
+    private fun fetchUserProfileAfterLoggin() {
+        viewModelScope.launch {
+            try{
+                val userProfile = userRepository.getProfileLogginedIn()
+                _userName.value = userProfile.fullName
+                _userAvatarUrl.value = userProfile.avatarUrl
+            }catch(e: Exception){
+                Log.e("HomeViewModel", "Error fetching user profile: ${e.message}")
+            }
+        }
     }
 }
