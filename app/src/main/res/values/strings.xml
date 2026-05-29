@@ -127,4 +127,6 @@
     <string name="welcome_user">Xin chào %1$s</string>
     <string name="you">Bạn</string>
     <string name="back">Quay lại</string>
+    
+    <string name="qr_scanner">Quét mã checkin</string>
 </resources>

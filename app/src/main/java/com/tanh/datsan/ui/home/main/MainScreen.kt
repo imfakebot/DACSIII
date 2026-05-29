@@ -1,7 +1,6 @@
 package com.tanh.datsan.ui.home.main
 
-import android.app.Notification
-import android.util.Log
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -64,7 +63,10 @@ fun MainScreen(
     val sportList by viewModel.fieldTypes.collectAsState()
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
+
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val userRole by viewModel.userRole.collectAsState()
+
     var locationName by rememberSaveable { mutableStateOf("") }
     val selectedType by viewModel.selectedType.collectAsState()
     val focusManager = LocalFocusManager.current
@@ -78,13 +80,13 @@ fun MainScreen(
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
         floatingActionButton = {
-            if (isLoggedIn) {
+            if (isLoggedIn && (userRole=="admin"|| userRole=="staff")) {
                 FloatingActionButton(
                     onClick = onNavigateToScanner,
                     containerColor = Color(0xFF007BFF),
                     contentColor = Color.White
                 ) {
-                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Quét mã check-in")
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.qr_scanner))
                 }
             }
         }

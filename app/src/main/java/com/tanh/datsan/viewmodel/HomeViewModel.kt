@@ -9,6 +9,7 @@ import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.data.repository.NotificationRepository
 import com.tanh.datsan.data.repository.UserRepository
+import com.tanh.datsan.utils.JwtUtil
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -55,6 +56,16 @@ class HomeViewModel @Inject constructor(
             viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
+        )
+
+    val userRole: StateFlow<String> = tokenManager.token
+        .map{token->
+            JwtUtil.getRoleFromToken(token)
+        }
+        .stateIn(
+            scope=viewModelScope,
+            started= SharingStarted.WhileSubscribed(5000),
+            initialValue = "user"
         )
 
     init {
