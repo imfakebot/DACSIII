@@ -24,24 +24,32 @@ class TokenManager @Inject constructor(
     private val dataStore = context.applicationContext.dataStorage
 
     companion object {
-        val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
+        // Giữ đồng bộ chuỗi định danh "jwt_token" từ Git cho Access Token
+        val TOKEN_KEY = stringPreferencesKey("jwt_token")
         val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
         val USER_AVATAR_KEY = stringPreferencesKey("user_avatar")
         val USER_NAME_KEY = stringPreferencesKey("user_name")
         val USER_PHONE_KEY = stringPreferencesKey("user_phone")
         val USER_ADDRESS_KEY = stringPreferencesKey("user_address")
+        
+        // Settings keys
+        val THEME_KEY = stringPreferencesKey("app_theme") // "light", "dark", "system"
+        val LANGUAGE_KEY = stringPreferencesKey("app_language") // "vi", "en"
     }
 
-    // Cache để lấy token đồng bộ (Dùng cho Retrofit Interceptor)
-    var cachedAccessToken: String? = null
+    // Biến tĩnh dùng đồng bộ trực tiếp trong NetworkModule của Git
+    var cachedToken: String? = null
         private set
     var cachedRefreshToken: String? = null
         private set
 
-    // 1. KHAI BÁO CÁC FLOW TRƯỚC (RẤT QUAN TRỌNG ĐỂ TRÁNH NULL POINTER EXCEPTION)
-    val getAccessToken: Flow<String?> = dataStore.data.map { preferences ->
-        preferences[ACCESS_TOKEN_KEY]
+    // Flow luồng dữ liệu thay đổi của Token chính (Tương thích cả Git và Local)
+    val token: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[TOKEN_KEY]
     }
+
+    // Khai báo Flow lấy Access Token (Trỏ trực tiếp về TOKEN_KEY để không lệch cấu trúc)
+    val getAccessToken: Flow<String?> = token
 
     val getRefreshToken: Flow<String?> = dataStore.data.map { preferences ->
         preferences[REFRESH_TOKEN_KEY]
@@ -63,11 +71,20 @@ class TokenManager @Inject constructor(
         preferences[USER_ADDRESS_KEY]
     }
 
-    // 2. CHẠY INIT BLOCK SAU KHI CÁC FLOW ĐÃ ĐƯỢC KHỞI TẠO
+    // Settings Flows
+    val getTheme: Flow<String> = dataStore.data.map { preferences ->
+        preferences[THEME_KEY] ?: "system"
+    }
+
+    val getLanguage: Flow<String> = dataStore.data.map { preferences ->
+        preferences[LANGUAGE_KEY] ?: "vi"
+    }
+
     init {
+        // Lắng nghe và gán tự động vào biến cache tĩnh theo kiến trúc tối ưu của Git
         CoroutineScope(Dispatchers.IO).launch {
-            getAccessToken.collect { token ->
-                cachedAccessToken = token
+            token.collect { currentToken ->
+                cachedToken = currentToken
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
@@ -77,15 +94,25 @@ class TokenManager @Inject constructor(
         }
     }
 
+    // Hàm lưu token đơn của Git (Dành cho các tiến trình cơ bản)
+    suspend fun saveToken(token: String) {
+        dataStore.edit { preferences ->
+            preferences[TOKEN_KEY] = token
+        }
+        cachedToken = token
+    }
+
+    // Hàm lưu cặp Token đôi cao cấp của Local (Giúp MVVM chạy cơ chế Refresh Token tự động)
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         dataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN_KEY] = accessToken
+            preferences[TOKEN_KEY] = accessToken
             preferences[REFRESH_TOKEN_KEY] = refreshToken
         }
-        cachedAccessToken = accessToken
+        cachedToken = accessToken
         cachedRefreshToken = refreshToken
     }
 
+    // Giữ nguyên hàm lưu thông tin User của Local để hiển thị lên MainScreen
     suspend fun saveUserInfo(
         avatarUrl: String?,
         userName: String?,
@@ -100,16 +127,33 @@ class TokenManager @Inject constructor(
         }
     }
 
-    suspend fun clearTokens() {
+    // Settings Save Methods
+    suspend fun saveTheme(theme: String) {
         dataStore.edit { preferences ->
-            preferences.remove(ACCESS_TOKEN_KEY)
+            preferences[THEME_KEY] = theme
+        }
+    }
+
+    suspend fun saveLanguage(language: String) {
+        dataStore.edit { preferences ->
+            preferences[LANGUAGE_KEY] = language
+        }
+    }
+
+    // Xóa sạch dấu vết bộ nhớ khi người dùng thực hiện Log Out
+    suspend fun clearToken() {
+        dataStore.edit { preferences ->
+            preferences.remove(TOKEN_KEY)
             preferences.remove(REFRESH_TOKEN_KEY)
             preferences.remove(USER_AVATAR_KEY)
             preferences.remove(USER_NAME_KEY)
             preferences.remove(USER_PHONE_KEY)
             preferences.remove(USER_ADDRESS_KEY)
         }
-        cachedAccessToken = null
+        cachedToken = null
         cachedRefreshToken = null
     }
+
+    // Map hàm cũ của bản Local về hàm mới để tránh báo lỗi đỏ ở các file Repository
+    suspend fun clearTokens() = clearToken()
 }

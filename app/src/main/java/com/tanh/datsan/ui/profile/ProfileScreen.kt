@@ -4,14 +4,12 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -22,28 +20,39 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.utils.toFile
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.ProfileViewModel
+import com.tanh.datsan.viewmodel.MainViewModel
+import com.tanh.datsan.viewmodel.AuthViewModel
+import com.tanh.datsan.viewmodel.AuthUiEvent
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
+    mainViewModel: MainViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {}
+    onLogoutClick: () -> Unit = {},
+    onNavigateToResetPassword: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     val profile by viewModel.profileState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val authIsLoading by authViewModel.isLoading.collectAsState()
     val toastMessage by viewModel.toastMessage.collectAsState()
     val avatarUrl by viewModel.userAvatarUrl.collectAsState()
     val initialUserName by viewModel.userName.collectAsState()
     val initialPhone by viewModel.userPhone.collectAsState()
     val initialAddress by viewModel.userAddress.collectAsState()
+
+    // Global settings from MainViewModel
+    val currentTheme by mainViewModel.theme.collectAsState()
+    val currentLanguage by mainViewModel.language.collectAsState()
 
     // Local states for editing
     var fullName by remember { mutableStateOf("") }
@@ -78,6 +87,21 @@ fun ProfileScreen(
         }
     }
 
+    // Handle Auth UI Events (for forgot password navigation)
+    LaunchedEffect(Unit) {
+        authViewModel.uiEvent.collectLatest { event ->
+            when (event) {
+                is AuthUiEvent.NavigateToResetPassword -> {
+                    onNavigateToResetPassword(event.email)
+                }
+                is AuthUiEvent.ShowToast -> {
+                    Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                }
+                else -> {}
+            }
+        }
+    }
+
     // Image Picker Launcher
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -92,7 +116,7 @@ fun ProfileScreen(
 
     val gradientColors = listOf(Color(0xFF0056B3), Color(0xFF00A2FF))
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F7FA))) {
+    Box(modifier = Modifier.fillMaxSize().background(if (isSystemInDarkTheme()) Color(0xFF121212) else Color(0xFFF5F7FA))) {
 
         // ── HEADER nền xanh gradient ──
         Box(
@@ -172,7 +196,7 @@ fun ProfileScreen(
                             error = androidx.compose.ui.res.painterResource(id = com.tanh.datsan.R.drawable.avartar_default)
                         )
                         
-                        if (isLoading) {
+                        if (isLoading || authIsLoading) {
                             Box(
                                 modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
                                 contentAlignment = Alignment.Center
@@ -211,14 +235,14 @@ fun ProfileScreen(
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
-                color = Color(0xFF1A1A2E)
+                color = Color.White
             )
             Text(
                 text = profile?.email ?: "",
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = Color.White.copy(alpha = 0.8f)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -229,7 +253,7 @@ fun ProfileScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
@@ -265,6 +289,76 @@ fun ProfileScreen(
                         value = address,
                         isEditing = isEditing,
                         onValueChange = { address = it }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── CARD CÀI ĐẶT ──
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        "Cài đặt & Bảo mật",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color(0xFF0056B3)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Theme setting
+                    SettingItem(
+                        icon = if (currentTheme == "dark") Icons.Default.DarkMode else Icons.Default.LightMode,
+                        label = "Chế độ hiển thị",
+                        value = when (currentTheme) {
+                            "light" -> "Sáng"
+                            "dark" -> "Tối"
+                            else -> "Theo hệ thống"
+                        },
+                        onClick = {
+                            val nextTheme = when (currentTheme) {
+                                "light" -> "dark"
+                                "dark" -> "system"
+                                else -> "light"
+                            }
+                            mainViewModel.setTheme(nextTheme)
+                        }
+                    )
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    // Language setting
+                    SettingItem(
+                        icon = Icons.Default.Language,
+                        label = "Ngôn ngữ",
+                        value = if (currentLanguage == "vi") "Tiếng Việt" else "English",
+                        onClick = {
+                            val nextLang = if (currentLanguage == "vi") "en" else "vi"
+                            mainViewModel.setLanguage(nextLang)
+                        }
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    // Change Password
+                    SettingItem(
+                        icon = Icons.Default.Lock,
+                        label = "Đổi mật khẩu",
+                        value = "Gửi mã xác nhận qua email",
+                        onClick = { 
+                            profile?.email?.let { email ->
+                                authViewModel.forgotPassword(email)
+                            } ?: run {
+                                Toast.makeText(context, "Không tìm thấy email người dùng", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     )
                 }
             }
@@ -320,7 +414,7 @@ fun ProfileScreen(
         }
 
         // Loading Overlay for full screen actions
-        if (isLoading && !isEditing) {
+        if ((isLoading || authIsLoading) && !isEditing) {
             Box(
                 modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
@@ -394,7 +488,7 @@ fun ProfileField(
                     textStyle = androidx.compose.ui.text.TextStyle(
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF1A1A2E)
+                        color = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     decorationBox = { innerTextField ->
@@ -416,10 +510,52 @@ fun ProfileField(
                     text = value.ifEmpty { "Chưa cập nhật" },
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Medium,
-                    color = if (value.isEmpty()) Color.LightGray else Color(0xFF1A1A2E),
+                    color = if (value.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+fun SettingItem(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE3F2FD).copy(alpha = 0.5f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = Color(0xFF007BFF),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+            Text(value, fontSize = 12.sp, color = Color.Gray)
+        }
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = Color.LightGray,
+            modifier = Modifier.size(20.dp)
+        )
     }
 }

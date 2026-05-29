@@ -3,13 +3,15 @@ package com.tanh.datsan.data.model
 import com.google.gson.annotations.SerializedName
 
 data class FieldType(
-    val id: String, val name: String, val description: String?
+    @SerializedName("id") val id: String,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String?
 )
 
 data class FieldImage(
-    val id: String? = null,
-    @SerializedName("image_url") val imageUrl: String? = null,
-    @SerializedName("isCover") val isCover: Boolean = false
+    val id: String,
+    @SerializedName("image_url") val imageUrl: String,
+    @SerializedName("isCover") val isCover: Boolean
 )
 
 data class Utility(
@@ -34,23 +36,23 @@ data class Ward(
 )
 
 data class Address(
-    val id: String? = null,
-    val street: String? = null,
-    val latitude: Double? = null,
-    val longitude: Double? = null,
-    val city: City? = null,
-    val ward: Ward? = null
+    val id: String,
+    val street: String,
+    val latitude: Double?,
+    val longitude: Double?,
+    val city: City?,
+    val ward: Ward?
 )
 
 data class Branch(
     val id: String,
     val name: String,
-    @SerializedName("phone_number") val phoneNumber: String,
-    val description: String,
+    @SerializedName("phone_number") val phoneNumber: String?,
+    val description: String?,
     val status: Boolean,
-    @SerializedName("open_time") val openTime: String = "00:00",
-    @SerializedName("close_time") val closeTime: String = "23:59",
-    val address: Address
+    @SerializedName("open_time") val openTime: String,
+    @SerializedName("close_time") val closeTime: String,
+    val address: Address?
 )
 
 // ==========================================
@@ -59,30 +61,31 @@ data class Branch(
 data class FieldModel(
     val id: String,
     val name: String,
-    val status: String,
+    val status: Boolean, // Cập nhật sang Boolean theo Git để đồng bộ hệ thống
     val address: String?,
     @SerializedName("averageRating") val rating: Float?,
     val imageUrl: String = "",
     val utilities: List<Utility>? = emptyList(),
-    @SerializedName("fieldType") val fieldType: FieldType? = null
+    @SerializedName("fieldType") val fieldType: FieldType? = null,
+    val distance: Double? // Thêm trường khoảng cách từ bản Git để hiển thị ở danh sách UI
 )
 
 // ==========================================
 // 2. MODEL DÀNH CHO NETWORK (Hứng dữ liệu từ API)
 // ==========================================
 data class FieldResponse(
-    val id: String,//val id: String? = null
-    val name: String, //val name: String? = null
-    val description: String, //val description: String? = null
-    val status: String, // Giữ kiểu String để linh hoạt xử lý
+    val id: String,
+    val name: String,
+    val description: String?, // Cập nhật kiểu Nullable từ Git
+    val status: Boolean, // QUAN TRỌNG: Backend đổi thành Boolean, phải theo Git để tránh crash
     @SerializedName("createdAt") val createdAt: String,
     @SerializedName("updatedAt") val updatedAt: String,
-    @SerializedName("fieldType") val fieldType: FieldType, // Bổ sung cho DetailScreen
+    @SerializedName("fieldType") val fieldType: FieldType,
     val branch: Branch,
     val images: List<FieldImage>?,
     val utilities: List<Utility>?,
     @SerializedName("averageRating") val averageRating: Float?,
-    @SerializedName("reviewCount") val reviewCount: Int?, // Chuyển thành Int vì reviewCount thường là số nguyên
+    @SerializedName("reviewCount") val reviewCount: Int?,
     val reviews: List<Review>? = null,
     val distance: Double?
 )
@@ -101,5 +104,5 @@ data class ReviewUser(
 )
 
 data class ReviewPaginateResponse(
-    val data: List<Review>? = null
+    val data: List<Review>
 )

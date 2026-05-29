@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.home.main
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,7 +12,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,18 +26,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.R
-import com.tanh.datsan.viewmodel.HomeViewModel
-import androidx.compose.ui.res.stringResource
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
+import com.tanh.datsan.viewmodel.HomeViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,7 +49,9 @@ fun MainScreen(
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {},      // Giữ lại từ Local
+    onNavigateToScanner: () -> Unit = {},      // Thêm từ Git
+    onNavigateToNotification: () -> Unit = {}   // Thêm từ Git
 ) {
 
     LaunchedEffect(Unit) {
@@ -53,20 +61,34 @@ fun MainScreen(
     val fieldList by viewModel.fieldList.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
 
-    val sportsList = listOf(
-        stringResource(R.string.sport_football),
-        stringResource(R.string.sport_tennis),
-        stringResource(R.string.sport_badminton),
-        stringResource(R.string.sport_table_tennis)
-    )
+    // Danh sách môn thể thao tải động từ API theo bản nâng cấp trên Git
+    val sportList by viewModel.fieldTypes.collectAsState()
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
+
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
-    val userAvatarUrl by viewModel.userAvatarUrl.collectAsState()
     var locationName by rememberSaveable { mutableStateOf("") }
+    val selectedType by viewModel.selectedType.collectAsState()
+    val focusManager = LocalFocusManager.current
+
+    val userName by viewModel.userName.collectAsState()
+    val userAvatar by viewModel.userAvatarUrl.collectAsState()
+    val unreadNotiCount by viewModel.unreadNotification.collectAsState(0)
 
     Scaffold(
-        containerColor = Color(0xFFF5F7FA)
+        containerColor = Color(0xFFF5F7FA),
+        // Nút bấm nổi quét mã check-in từ Git
+        floatingActionButton = {
+            if (isLoggedIn) {
+                FloatingActionButton(
+                    onClick = onNavigateToScanner,
+                    containerColor = Color(0xFF007BFF),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Quét mã check-in")
+                }
+            }
+        }
     ) { paddingValues ->
         CustomRefreshLayout(
             onRefresh = {
@@ -77,7 +99,6 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
                 // 1. KHỐI HEADER MÀU XANH
@@ -88,15 +109,12 @@ fun MainScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF0056B3), // Xanh đậm ở trên
-                                    Color(0xFF00A2FF)  // Xanh nhạt ở dưới
+                                    Color(0xFF0056B3),
+                                    Color(0xFF00A2FF)
                                 )
                             )
                         )
                 ) {
-
-
-                    // Các nút góc trên cùng
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -105,6 +123,7 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Logo ứng dụng
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = stringResource(R.string.app_name),
@@ -112,27 +131,62 @@ fun MainScreen(
                         )
 
                         if (isLoggedIn) {
-                            val userName by viewModel.userName.collectAsState()
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { onNavigateToProfile() }
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                Text(
-                                    text = userName ?: "",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(end = 8.dp)
-                                )
-                                AsyncImage(
-                                    model = userAvatarUrl,
-                                    contentDescription = stringResource(R.string.cd_user_avatar),
-                                    modifier = Modifier
-                                        .size(44.dp)
-                                        .clip(CircleShape),
-                                    // ✅ THÊM fallback avatar mặc định
-                                    error = painterResource(id = R.drawable.avartar_default),
-                                    placeholder = painterResource(id = R.drawable.avartar_default)
-                                )
+                                // Icon thông báo tích hợp Badge số đếm từ Git
+                                BadgedBox(
+                                    badge = {
+                                        if (unreadNotiCount > 0) {
+                                            Badge(
+                                                containerColor = Color.Red,
+                                                contentColor = Color.White
+                                            ) {
+                                                Text(unreadNotiCount.toString())
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    IconButton(
+                                        onClick = onNavigateToNotification,
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Notifications,
+                                            contentDescription = stringResource(R.string.notification),
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+
+                                // Thông tin User (Bổ sung tính năng click chuyển sang trang cá nhân từ Local)
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.clickable { onNavigateToProfile() }
+                                ) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.welcome_user,
+                                            userName ?: stringResource(R.string.you)
+                                        ),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        maxLines = 2
+                                    )
+                                    AsyncImage(
+                                        model = userAvatar.takeIf { !it.isNullOrEmpty() }
+                                            ?: R.drawable.ic_default_avatar,
+                                        contentDescription = stringResource(R.string.cd_user_avatar),
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White, CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             }
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -157,7 +211,7 @@ fun MainScreen(
                         }
                     }
 
-                    // Chữ Slogan lớn ở giữa
+                    // Khối Slogan giữa Header
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -167,7 +221,7 @@ fun MainScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.main_app_slogan_title),
-                            color = Color(0xFFFFD700), // Màu vàng nổi bật
+                            color = Color(0xFFFFD700),
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -180,18 +234,18 @@ fun MainScreen(
                     }
                 }
 
-                // 2. KHỐI TÌM KIẾM NỔI (Nằm đè lên viền xanh)
+                // 2. KHỐI TÌM KIẾM NỔI
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .offset(y = (-40).dp), // Kéo thẻ này chìm vào khối xanh 40dp
+                        .offset(y = (-40).dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Dropdown chọn môn thể thao
+                        // Dropdown chọn môn thể thao động từ Server
                         Box {
                             OutlinedButton(
                                 onClick = { isSportMenuExpanded = true },
@@ -213,17 +267,31 @@ fun MainScreen(
                             }
                             DropdownMenu(
                                 expanded = isSportMenuExpanded,
-                                onDismissRequest = { isSportMenuExpanded = false }) {
-                                sportsList.forEach { sport ->
-                                    DropdownMenuItem(text = { Text(sport) }, onClick = {
-                                        selectedSport = sport
+                                onDismissRequest = { isSportMenuExpanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(defaultSportLabel) },
+                                    onClick = {
+                                        selectedSport = defaultSportLabel
+                                        viewModel.onFieldTypeSelected(null)
                                         isSportMenuExpanded = false
-                                    })
+                                    }
+                                )
+                                sportList.forEach { sport ->
+                                    DropdownMenuItem(
+                                        text = { Text(sport.name) },
+                                        onClick = {
+                                            selectedSport = sport.name
+                                            viewModel.onFieldTypeSelected(sport)
+                                            isSportMenuExpanded = false
+                                        }
+                                    )
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        // Ô nhập địa điểm, tên sân
+
+                        // Ô tìm kiếm văn bản
                         OutlinedTextField(
                             value = locationName,
                             onValueChange = { locationName = it },
@@ -243,8 +311,14 @@ fun MainScreen(
                             )
                         )
                         Spacer(modifier = Modifier.height(12.dp))
+
+                        // Nút Thực hiện Tìm kiếm kết nối API thực tế từ Git
                         Button(
-                            onClick = { /* TODO: Xử lý tìm kiếm */ },
+                            onClick = {
+                                val searchQuery = locationName.ifBlank { null }
+                                viewModel.fetchField(name = searchQuery, typeId = selectedType)
+                                focusManager.clearFocus()
+                            },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
@@ -258,7 +332,7 @@ fun MainScreen(
                     }
                 }
 
-                // 3. KHỐI PROMO
+                // 3. KHỐI PROMO (Khuyến mãi)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -299,13 +373,11 @@ fun MainScreen(
                     }
                 }
 
-                // 4. DANH SÁCH SÂN BÓNG
+                // 4. DANH SÁCH SÂN BÓNG GẦN BẠN
                 SectionTitle(title = stringResource(R.string.main_section_near_you))
                 FieldListHorizontal(
-                    fieldList,
-                    onFieldClick = { fieldId ->
-                        onNavigateToDetail(fieldId)
-                    }
+                    fieldList = fieldList,
+                    onFieldClick = { fieldId -> onNavigateToDetail(fieldId) }
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -337,7 +409,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
             Card(
                 modifier = Modifier
                     .width(180.dp)
-                    .height(220.dp),
+                    .height(245.dp), // Tăng nhẹ chiều cao để giao diện không bị chen chúc
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -356,7 +428,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                     )
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            field.name,
+                            text = field.name,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1
@@ -364,26 +436,63 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                         Spacer(modifier = Modifier.height(4.dp))
                         field.address?.let {
                             Text(
-                                it,
+                                text = it,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray,
                                 maxLines = 1
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Rounded.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFFFC107),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
+
+                        // Hàng hiển thị: Điểm đánh giá Star & Nhãn loại sân bóng (Đã căn đều SpaceBetween)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Star,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFC107),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = field.rating.toString(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                             Text(
-                                field.rating.toString(),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                text = field.fieldType?.name ?: stringResource(R.string.field_type_unknown),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF0056B3),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .background(Color(0xFFE3F2FD), RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
                             )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Khoảng cách định vị (Đã sửa lỗi Safe Null-Check bằng ?.let giúp chống crash)
+                        field.distance?.let { dist ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LocationOn,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "${String.format(Locale.US, "%.1f", dist)} km",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.Gray
+                                )
+                            }
                         }
                     }
                 }

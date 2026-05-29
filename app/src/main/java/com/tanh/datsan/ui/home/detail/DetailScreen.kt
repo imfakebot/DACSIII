@@ -1,5 +1,12 @@
 package com.tanh.datsan.ui.home.detail
 
+import android.annotation.SuppressLint
+import android.content.ContextWrapper
+import android.content.Intent
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,32 +15,36 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.core.net.toUri
+import androidx.core.util.Consumer
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
-import com.tanh.datsan.ui.component.VnPayWebView
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
+import java.util.Locale
 
+@SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -52,10 +63,67 @@ fun DetailScreen(
     var showSheet by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
-    var paymentUrlToShow by remember { mutableStateOf<String?>(null) }
+    // Các trạng thái liên quan đến Voucher được tích hợp từ Git
+    val selectedVoucher by viewModel.selectedVoucher.collectAsState()
+    val discountAmount by viewModel.discountAmount.collectAsState()
+    val voucherList by viewModel.voucher.collectAsState()
+
+    val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
+
+    val context = LocalContext.current
+    val activity = remember(context) {
+        var ctx = context
+        while (ctx is ContextWrapper) {
+            if (ctx is ComponentActivity) break
+            ctx = ctx.baseContext
+        }
+        ctx as? ComponentActivity
+    }
+
+    // Lắng nghe kết quả trả về từ Deep Link hệ thống (Xử lý thanh toán VNPAY từ Git)
+    DisposableEffect(activity) {
+        val intentListener = Consumer<Intent> { intent ->
+            val uri = intent.data
+            Log.d("DetailScreen", "Received intent with URI: $uri")
+
+            if (uri != null && uri.scheme == "dacsii" && uri.host == "payment") {
+                val path = uri.path
+                val bookingId = uri.getQueryParameter("bookingId")
+                if (path?.contains("payment-success") == true) {
+                    currentNavigateSuccess(bookingId ?: "UNKNOWN")
+                } else if (path?.contains("payment-failed") == true) {
+                    Toast.makeText(context, "Thanh toán thất bại!", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+        // Đăng ký bắt link mới nếu App đang chạy ngầm
+        activity?.addOnNewIntentListener(intentListener)
+        // Bắt link ngay lập tức nếu App vừa được gọi dậy từ trình duyệt/app bank
+        if (activity?.intent?.data != null) {
+            intentListener.accept(activity.intent)
+        }
+        onDispose { activity?.removeOnNewIntentListener(intentListener) }
+    }
+
+    // Xử lý mở cổng thanh toán qua CustomTabsIntent (Git upgrade từ WebView cũ)
+    LaunchedEffect(bookingState) {
+        if (bookingState is BookingUiState.Success) {
+            val url = (bookingState as BookingUiState.Success).paymentUrl
+            viewModel.resetBookingState()
+
+            try {
+                val builder = CustomTabsIntent.Builder()
+                val customTabsIntent = builder.build()
+                customTabsIntent.launchUrl(context, url.toUri())
+            } catch (_: Exception) {
+                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+                context.startActivity(intent)
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -80,7 +148,7 @@ fun DetailScreen(
         }
     }
 
-    // Modal chọn giờ đặt sân
+    // Modal Bottom Sheet chứa thông tin đặt chỗ và Voucher gộp từ Git
     if (showSheet && uiState is DetailUiState.Success) {
         val field = (uiState as DetailUiState.Success).field
         ModalBottomSheet(
@@ -90,38 +158,12 @@ fun DetailScreen(
             BookingBottomSheetContent(
                 field = field,
                 viewModel = viewModel,
+                selectedVoucherCode = selectedVoucher?.code,
+                discountAmount = discountAmount,
+                onOpenVoucherList = voucherList,
                 onConfirm = { date, duration, time ->
                     showSheet = false
                     viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration)
-                }
-            )
-        }
-    }
-
-    // Xử lý mở link thanh toán VNPAY sau khi tạo booking thành công
-    LaunchedEffect(bookingState) {
-        if (bookingState is BookingUiState.Success) {
-            paymentUrlToShow = (bookingState as BookingUiState.Success).paymentUrl
-            viewModel.resetBookingState()
-        }
-    }
-
-    if(paymentUrlToShow!=null){
-        Dialog(
-            onDismissRequest = {
-                paymentUrlToShow = null
-            },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ){
-            VnPayWebView(
-                payemtnUrl = paymentUrlToShow!!,
-                onPaymentSuccess = {txnRef->
-                    paymentUrlToShow = null
-                    onNavigateToSuccess(txnRef)
-                },
-                onPaymentFailure = {
-                    paymentUrlToShow = null
-                    // TODO: Có thể show Toast hoặc AlertDialog thông báo thất bại
                 }
             )
         }
@@ -145,7 +187,7 @@ fun DetailContent(
             .padding(padding)
     ) {
 
-        //  ẢNH SLIDER + HIỆU ỨNG PARALLAX
+        // ẢNH SLIDER + HIỆU ỨNG PARALLAX
         val imageUrls = remember(field) {
             field.images?.map { it.imageUrl.toFullImageUrl() } ?: emptyList()
         }
@@ -155,7 +197,6 @@ fun DetailContent(
                 .fillMaxWidth()
                 .height(320.dp)
                 .graphicsLayer {
-                    // Parallax: ảnh chạy chậm hơn nội dung cuộn
                     translationY = if (lazyListState.firstVisibleItemIndex == 0) {
                         lazyListState.firstVisibleItemScrollOffset * 0.5f
                     } else 0f
@@ -171,7 +212,6 @@ fun DetailContent(
                 )
             }
 
-            // Gradient tối để nút quay lại và text nổi bật hơn
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -187,9 +227,9 @@ fun DetailContent(
             )
         }
 
-        //  NỘI DUNG CHI TIẾT SÂN
+        // NỘI DUNG CHI TIẾT SÂN
         LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
-            item { Spacer(Modifier.height(280.dp)) } // Tạo khoảng trống để thấy ảnh
+            item { Spacer(Modifier.height(280.dp)) }
 
             item {
                 Surface(
@@ -201,6 +241,28 @@ fun DetailContent(
                     Column(Modifier.padding(24.dp)) {
                         FieldBadge(field.fieldType.name, primaryColor)
 
+                        // Hiển thị khoảng cách (Tích hợp tính năng định vị từ Git)
+                        field.distance?.let { dist ->
+                            Row(
+                                modifier = Modifier.padding(top = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.LocationOn,
+                                    contentDescription = null,
+                                    tint = primaryColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${String.format(Locale.US, "%.1f", dist)} km",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = primaryColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
                         Text(
                             text = field.name,
                             style = MaterialTheme.typography.headlineMedium,
@@ -211,13 +273,13 @@ fun DetailContent(
                         RatingAndLocation(
                             rating = field.averageRating?.toFloat() ?: 0f,
                             reviewCount = field.reviewCount ?: 0,
-                            address = "${field.branch.address?.street},${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
+                            address = "${field.branch.address?.street}, ${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
                             tint = primaryColor
                         )
 
                         SectionDivider()
 
-                        // Danh sách tiện ích (Wifi, Gửi xe...)
+                        // Danh sách tiện ích
                         Text(
                             stringResource(R.string.field_amenities_title),
                             fontWeight = FontWeight.Bold,
@@ -255,13 +317,13 @@ fun DetailContent(
                         ReviewHeader(field.id, onNavigateToReview, primaryColor)
                         ReviewList(field.reviews)
 
-                        Spacer(Modifier.height(100.dp)) // Padding cho BottomBar
+                        Spacer(Modifier.height(100.dp))
                     }
                 }
             }
         }
 
-        //  NÚT QUAY LẠI (Nổi trên cùng)
+        // NÚT QUAY LẠI
         IconButton(
             onClick = onBackClick,
             modifier = Modifier

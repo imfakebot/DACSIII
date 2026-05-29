@@ -20,15 +20,15 @@ android {
     defaultConfig {
         applicationId = "com.tanh.datsan"
         minSdk = 33
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val baseUrl = localProperties.getProperty("API_BASE_URL")
-        val apiHost = localProperties.getProperty("API_HOST")
-        val apiBackend = localProperties.getProperty("API_BACKEND")
+        val baseUrl = localProperties.getProperty("API_BASE_URL") ?: ""
+        val apiHost = localProperties.getProperty("API_HOST") ?: ""
+        val apiBackend = localProperties.getProperty("API_BACKEND") ?: ""
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
 
         buildConfigField("String", "API_HOST", "\"$apiHost\"")
@@ -53,10 +53,10 @@ android {
         compose = true
         buildConfig=true
     }
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
-  //  implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(platform(libs.androidx.compose.bom))
@@ -64,14 +64,11 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-
-    // Icons
-    implementation(libs.androidx.material.icons.extended)
-
-    // Retrofit & Coroutines (Sử dụng version catalog, đã xóa các dòng hardcode bị trùng ở dưới)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.material.icons.extended)
     implementation(libs.play.services.location)
     implementation(libs.logging.interceptor)
     implementation(libs.coil.compose)
@@ -95,11 +92,16 @@ dependencies {
     //   implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.barcode.scanning)
 
     // ViewModel & Navigation cho Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose.android)
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.compiler)
+//    implementation(libs.androidx.compiler)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

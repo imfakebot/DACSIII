@@ -6,15 +6,46 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-fun FormatReviewTime(isoString: String): String {
-    return try {
-        val instant = Instant.parse(isoString)
-        val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault())
-        formatter.format(instant)
-    } catch (e: Exception) {
-        "Ngày không xác định"
+object DateUtil {
+    private val zoneId = ZoneId.systemDefault()
+    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+
+    fun formatReviewTime(isoString: String): String {
+        return try {
+            val instant = Instant.parse(isoString)
+            dateFormatter.withZone(zoneId).format(instant)
+        } catch (e: Exception) {
+            "Ngày không xác định"
+        }
+    }
+
+    fun formatBookingTimeRange(startIso: String, endIso: String): String {
+        return try {
+            val start = Instant.parse(startIso).atZone(zoneId)
+            val end = Instant.parse(endIso).atZone(zoneId)
+
+            "${start.format(timeFormatter)} - ${end.format(timeFormatter)} | ${
+                start.format(
+                    dateFormatter
+                )
+            }"
+        } catch (e: Exception) {
+            "Thời gian không xác định"
+        }
+    }
+
+    fun formatNotificationTime(isoString: String): String {
+        return try {
+            val instant = Instant.parse(isoString)
+            dateTimeFormatter.withZone(zoneId).format(instant)
+        } catch (e: Exception) {
+            isoString
+        }
     }
 }
+
 
 fun getUpcomingDates(todayLabel: String): List<Pair<String, String>> {
     val today = LocalDate.now()

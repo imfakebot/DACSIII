@@ -1,28 +1,33 @@
-
 package com.tanh.datsan.di
 
 import android.util.Log
 import com.tanh.datsan.BuildConfig
+
 import com.tanh.datsan.core.TokenManager
-import com.tanh.datsan.data.network.AuthApiService
+import com.tanh.datsan.data.network.AuthApiService         // Giữ từ Local
 import com.tanh.datsan.data.network.BookingApiService
+import com.tanh.datsan.data.network.FeedbackApiService     // Giữ từ Local
 import com.tanh.datsan.data.network.FieldApiService
-import com.tanh.datsan.data.network.FeedbackApiService
+import com.tanh.datsan.data.network.NotificationApiService  // Thêm từ Git
+import com.tanh.datsan.data.network.PricingApiService       // Thêm từ Git
 import com.tanh.datsan.data.network.ReviewApiService
 import com.tanh.datsan.data.network.UserApiService
+import com.tanh.datsan.data.network.VoucherApiService       // Thêm từ Git
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import jakarta.inject.Singleton                             // Sử dụng cấu trúc thư viện mới từ Git
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
+
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.firstOrNull
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -45,32 +50,49 @@ object NetworkModule {
         return Interceptor { chain ->
             val originalRequest = chain.request()
 
-            // Dùng runBlocking để lấy token mới nhất từ DataStore
-            // Điều này đảm bảo token không bao giờ bị null do quá trình khởi tạo bất đồng bộ
-            val token = runBlocking {
-                tokenManager.getAccessToken.first()
+            // Thử lấy token từ cache trước
+            var token = tokenManager.cachedToken
+            
+            // Nếu cache trống (có thể do app mới restart), lấy trực tiếp từ DataStore
+            if (token.isNullOrEmpty()) {
+                token = runBlocking {
+                    tokenManager.token.firstOrNull()
+                }
+                Log.d("NETWORK_DEBUG", "Token retrieved from DataStore: ${token?.take(10)}...")
             }
 
-            Log.d("NETWORK_DEBUG", "Sending Token: $token")
+            Log.d("NETWORK_DEBUG", "--- Request: ${originalRequest.method} ${originalRequest.url} ---")
+            val tokenInfo = if (token.isNullOrEmpty()) "EMPTY" else "${token.take(5)}...${token.takeLast(5)}"
+            Log.d("NETWORK_DEBUG", "Final Token used: $tokenInfo")
 
             val requestBuilder = originalRequest.newBuilder()
-            if (!token.isNullOrEmpty()) {
+            if (!token.isNullOrEmpty() && token != "null" && token != "undefined") {
+                Log.d("NETWORK_DEBUG", "Adding Authorization Header: Bearer ${token.take(10)}...")
                 requestBuilder.addHeader("Authorization", "Bearer $token")
+            } else {
+                Log.w("NETWORK_DEBUG", "Token is empty or invalid, skip adding Authorization header")
             }
 
-            chain.proceed(requestBuilder.build())
+            val response = chain.proceed(requestBuilder.build())
+//...
+            
+            if (response.code == 401) {
+                Log.e("NETWORK_DEBUG", "401 Unauthorized response for: ${originalRequest.url}")
+            }
+            
+            response
         }
     }
 
     @Provides
     @Singleton
     fun provideAuthenticator(): Authenticator {
-        return Authenticator { _, response ->
+        return Authenticator { route, response ->
             Log.e(
                 "NETWORK_AUTH",
-                "Phát hiện lỗi 401 - Token hết hạn! Cần xử lý Refresh Token hoặc Logout."
+                "Phát hiện lỗi 401 - Token hết hạn hoặc không hợp lệ! Url: ${response.request.url}"
             )
-            //TODO: gọi Refresh Token API ở đây, nếu thành công trả về request mới với token mới, nếu thất bại trả về null
+            // Nếu muốn xử lý Refresh Token thì code ở đây
             null
         }
     }
@@ -96,11 +118,11 @@ object NetworkModule {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
-    // MỚI: Cung cấp AuthApiService để Hilt có thể tiêm vào AuthRepository
+
     @Provides
     @Singleton
     fun provideAuthService(retrofit: Retrofit): AuthApiService =
@@ -123,11 +145,26 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideUserApi(retrofit: Retrofit): UserApiService =
+    fun provideVoucherApi(retrofit: Retrofit): VoucherApiService =
+        retrofit.create(VoucherApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun providePricingApi(retrofit: Retrofit): PricingApiService =
+        retrofit.create(PricingApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideUserService(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
 
     @Provides
     @Singleton
     fun provideFeedbackApi(retrofit: Retrofit): FeedbackApiService =
         retrofit.create(FeedbackApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService =
+        retrofit.create(NotificationApiService::class.java)
 }

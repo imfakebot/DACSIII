@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.ui.component.ReviewItem
-import com.tanh.datsan.utils.FormatReviewTime
+import com.tanh.datsan.utils.DateUtil.formatReviewTime
 
 @Composable
 fun SectionDivider() = HorizontalDivider(
@@ -94,7 +94,7 @@ fun ReviewList(reviews: List<Review>?) {
                 ReviewItem(
                     userName = review.user?.fullName ?: "Khách hàng",
                     rating = review.rating,
-                    date = FormatReviewTime(review.createdAt),
+                    date = formatReviewTime(review.createdAt),
                     comment = review.comment ?: "",
                     avatarUrl = review.user?.avatarUrl
                 )

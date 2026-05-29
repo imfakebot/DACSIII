@@ -110,7 +110,23 @@
     <string name="btn_confirm_caps">XÁC NHẬN</string>
     <string name="btn_select_caps">CHỌN</string>
 
+    <string name ="voucher_icon">Voucher Icon</string>
+    <string name ="voucher_sale">Voucher / Khuyến mãi</string>
+    <string name="voucher_code">Mã %1$s</string>
+    <string name="decrease_money">Đã giảm: %1$s</string>
+    <string name="discount_selection">Chọn mã giảm giá</string>
+    <string name="choose_voucher">Chọn voucher</string>
 
+    <string name="field_type_unknown">Loại sân không xác định</string>
+    <string name="notification">Thông báo</string>
+    <string name="read_all">Đọc tất cả</string>
+    <string name="delete_all_notification">Xóa tất cả</string>
+    <string name="no_notification">Bạn chưa có thông báo nào</string>
+
+
+    <string name="welcome_user">Xin chào %1$s</string>
+    <string name="you">Bạn</string>
+    <string name="back">Quay lại</string>
     <string name="register_title">Tạo Tài Khoản</string>
     <string name="register_subtitle">Điền thông tin để bắt đầu đặt sân bóng</string>
     <string name="label_full_name">Họ và tên</string>

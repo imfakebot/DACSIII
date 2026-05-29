@@ -5,9 +5,12 @@ import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.CreateBookingResponse
 import com.tanh.datsan.data.network.BookingApiService
+import com.tanh.datsan.data.network.CheckInDto
 import retrofit2.Response
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class BookingRepository @Inject constructor(
     private val bookingApiService: BookingApiService
 ){
@@ -21,5 +24,9 @@ class BookingRepository @Inject constructor(
 
     suspend fun getBookingById(bookingId: String): BookingResponse {
         return bookingApiService.getBookingById(bookingId)
+    }
+
+    suspend fun checkIn(identifier: String): BookingResponse {
+        return bookingApiService.checkIn(CheckInDto(identifier))
     }
 }

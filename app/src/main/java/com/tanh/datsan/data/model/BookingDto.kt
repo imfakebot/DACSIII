@@ -8,7 +8,8 @@ data class CreateBookingDto(
     val fieldId: String,
     val startTime: String,
     val durationMinutes: Int,
-    val voucherCode: String? = null
+    val voucherCode: String? = null,
+    val platform: String? = "mobile",
 )
 
 data class BookingResponse(
