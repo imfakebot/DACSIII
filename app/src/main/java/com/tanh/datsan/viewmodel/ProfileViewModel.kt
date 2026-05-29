@@ -2,7 +2,6 @@ package com.tanh.datsan.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.UserMeResponse
 import com.tanh.datsan.data.model.UserProfileDto
 import com.tanh.datsan.data.repository.UserRepository
@@ -21,7 +20,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val tokenManager: TokenManager,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
@@ -34,16 +32,16 @@ class ProfileViewModel @Inject constructor(
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
-    val userAvatarUrl: StateFlow<String?> = tokenManager.getUserAvatar
+    val userAvatarUrl: StateFlow<String?> = userRepository.userAvatarUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val userName: StateFlow<String?> = tokenManager.getUserName
+    val userName: StateFlow<String?> = userRepository.userName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val userPhone: StateFlow<String?> = tokenManager.getUserPhone
+    val userPhone: StateFlow<String?> = userRepository.userPhone
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val userAddress: StateFlow<String?> = tokenManager.getUserAddress
+    val userAddress: StateFlow<String?> = userRepository.userAddress
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
@@ -58,8 +56,8 @@ class ProfileViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val userMe = response.body()
                     _profileState.value = userMe
-                    // Sync with token manager - Lưu tất cả các trường
-                    tokenManager.saveUserInfo(
+                    // Sync with repository local storage
+                    userRepository.saveUserInfo(
                         avatarUrl = userMe?.userProfile?.avatarUrl,
                         userName = userMe?.userProfile?.fullName,
                         phone = userMe?.userProfile?.phoneNumber,
@@ -90,7 +88,7 @@ class ProfileViewModel @Inject constructor(
                 val response = userRepository.updateProfile(fullName, phoneNumber, address)
                 if (response.isSuccessful) {
                     _toastMessage.value = "Cập nhật thành công"
-                    tokenManager.saveUserInfo(
+                    userRepository.saveUserInfo(
                         avatarUrl = userAvatarUrl.value,
                         userName = fullName,
                         phone = phoneNumber,
@@ -115,14 +113,13 @@ class ProfileViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-                // ĐỔI LẠI THÀNH "avatar" THEO YÊU CẦU BACKEND
                 val body = MultipartBody.Part.createFormData("avatar", imageFile.name, requestFile)
                 
                 val response = userRepository.updateAvatar(body)
                 if (response.isSuccessful) {
                     _toastMessage.value = "Tải ảnh đại diện thành công"
                     val newAvatarUrl = response.body()?.avatarUrl
-                    tokenManager.saveUserInfo(
+                    userRepository.saveUserInfo(
                         avatarUrl = newAvatarUrl,
                         userName = userName.value,
                         phone = userPhone.value,
@@ -149,7 +146,7 @@ class ProfileViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
-            tokenManager.clearTokens()
+            userRepository.clearUserData()
         }
     }
 }

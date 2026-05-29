@@ -14,10 +14,10 @@ class FieldRepository @Inject constructor(
     }
 
     suspend fun getAllField(
-        lat: String? = null,
-        lon: String? = null,
-        radius: Int? = 10,
-        cityId: Int? = null
+        lat: String?,
+        lon: String?,
+        radius: Int?,
+        cityId: Int?
     ): List<FieldResponse> {
         return fieldApiService.getAllFields(lat, lon, radius, cityId)
     }

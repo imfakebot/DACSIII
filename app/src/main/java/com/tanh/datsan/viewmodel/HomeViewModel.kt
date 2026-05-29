@@ -3,9 +3,9 @@ package com.tanh.datsan.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.data.repository.UserRepository
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    tokenManager: TokenManager,
+    private val userRepository: UserRepository,
     private val fieldRepository: FieldRepository,
     private val locationHelper: LocationHelper
 ) : ViewModel() {
@@ -27,23 +27,24 @@ class HomeViewModel @Inject constructor(
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
     val fieldList: StateFlow<List<FieldModel>> = _fieldList
 
-    var isLoggedIn: StateFlow<Boolean> = tokenManager.getAccessToken
-        .map { token -> !token.isNullOrBlank() && token != "null" && token != "undefined" }
+    var isLoggedIn: StateFlow<Boolean> = userRepository.isLoggedIn
         .stateIn(
             viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
 
-    val userAvatarUrl: StateFlow<String?> = tokenManager.getUserAvatar
+    val userAvatarUrl: StateFlow<String?> = userRepository.userAvatarUrl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val userName: StateFlow<String?> = tokenManager.getUserName
+    val userName: StateFlow<String?> = userRepository.userName
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun fetchField(lat: String? = null, lng: String? = null) {
         viewModelScope.launch {
             try {
-                val response = fieldRepository.getAllField(lat, lng)
+                // Now passing all parameters explicitly, radius default is 10
+                val response = fieldRepository.getAllField(lat, lng, 10, null)
                 val mappedList = response.map { jsonItem ->
                     val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
                     val fixedUrl = rawUrl.toFullImageUrl()
