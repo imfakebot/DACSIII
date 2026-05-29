@@ -72,7 +72,7 @@ fun MainScreen(
     val userName by viewModel.userName.collectAsState()
     val userAvatar by viewModel.userAvatarUrl.collectAsState()
 
-    val unreadNotiCount = 5
+    val unreadNotiCount by viewModel.unreadNotification.collectAsState(0)
 
 
     Scaffold(
