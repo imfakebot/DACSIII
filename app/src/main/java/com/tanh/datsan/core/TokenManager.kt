@@ -28,16 +28,17 @@ class TokenManager @Inject constructor(
     var cachedToken: String? = null
         private set
 
+
+    val token: Flow<String?> = dataStore.data.map { preferences ->
+        preferences[TOKEN_KEY]
+    }
+
     init {
         CoroutineScope(Dispatchers.IO).launch {
             token.collect { currentToken->
                 cachedToken = currentToken
             }
         }
-    }
-
-    val token: Flow<String?> = dataStore.data.map { preferences ->
-        preferences[TOKEN_KEY]
     }
 
     suspend fun saveToken(token: String) {

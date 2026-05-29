@@ -118,4 +118,13 @@
     <string name="choose_voucher">Chọn voucher</string>
 
     <string name="field_type_unknown">Loại sân không xác định</string>
+    <string name="notification">Thông báo</string>
+    <string name="read_all">Đọc tất cả</string>
+    <string name="delete_all_notification">Xóa tất cả</string>
+    <string name="no_notification">Bạn chưa có thông báo nào</string>
+    
+    
+    <string name="welcome_user">Xin chào %1$s</string>
+    <string name="you">Bạn</string>
+    <string name="back">Quay lại</string>
 </resources>

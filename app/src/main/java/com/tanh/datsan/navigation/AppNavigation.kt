@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.ui.home.review.AllReviewScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
-import com.tanh.datsan.ui.home.BookingSuccessScreen
+import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
 //import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.home.main.MainScreen

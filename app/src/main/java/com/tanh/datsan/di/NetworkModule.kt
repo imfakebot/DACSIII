@@ -5,13 +5,16 @@ import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.FieldApiService
+import com.tanh.datsan.data.network.NotificationApiService
 import com.tanh.datsan.data.network.PricingApiService
 import com.tanh.datsan.data.network.ReviewApiService
+import com.tanh.datsan.data.network.UserApiService
 import com.tanh.datsan.data.network.VoucherApiService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import jakarta.inject.Singleton
 import okhttp3.Authenticator
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -19,7 +22,6 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-import javax.inject.Singleton
 
 
 @Module
@@ -116,4 +118,13 @@ object NetworkModule {
     fun providePricingApi(retrofit: Retrofit): PricingApiService =
         retrofit.create(PricingApiService::class.java)
 
+    @Provides
+    @Singleton
+    fun provideUserService(retrofit: Retrofit): UserApiService =
+        retrofit.create(UserApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService =
+        retrofit.create(NotificationApiService::class.java)
 }

@@ -6,10 +6,11 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-object DateUtil{
+object DateUtil {
     private val zoneId = ZoneId.systemDefault()
     private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
     fun formatReviewTime(isoString: String): String {
         return try {
@@ -25,9 +26,22 @@ object DateUtil{
             val start = Instant.parse(startIso).atZone(zoneId)
             val end = Instant.parse(endIso).atZone(zoneId)
 
-            "${start.format(timeFormatter)} - ${end.format(timeFormatter)} | ${start.format(dateFormatter)}"
+            "${start.format(timeFormatter)} - ${end.format(timeFormatter)} | ${
+                start.format(
+                    dateFormatter
+                )
+            }"
         } catch (e: Exception) {
             "Thời gian không xác định"
+        }
+    }
+
+    fun formatNotificationTime(isoString: String): String {
+        return try {
+            val instant = Instant.parse(isoString)
+            dateTimeFormatter.withZone(zoneId).format(instant)
+        } catch (e: Exception) {
+            isoString
         }
     }
 }

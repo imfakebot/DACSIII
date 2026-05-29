@@ -47,5 +47,4 @@ class BookingSuccessViewModel @Inject constructor(
         return "${BuildConfig.API_BASE_URL}/bookings/$bookingId/download"
     }
 
-
 }

@@ -1,6 +1,7 @@
-package com.tanh.datsan.ui.home
+package com.tanh.datsan.ui.home.booking
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -329,7 +330,7 @@ fun BookingSuccessScreen(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen)
+                        border = BorderStroke(1.dp, PrimaryGreen)
                     ) {
                         Text(
                             stringResource(R.string.home),

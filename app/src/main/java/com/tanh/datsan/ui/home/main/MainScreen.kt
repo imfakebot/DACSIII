@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.home.main
 
+import android.app.Notification
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,13 +12,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -38,6 +39,7 @@ import com.tanh.datsan.ui.component.CustomRefreshLayout
 import java.util.Locale
 
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalFocusManager
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +50,8 @@ fun MainScreen(
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToScanner: () -> Unit = {}
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToNotification: () -> Unit = {}
 ) {
 
     LaunchedEffect(Unit) {
@@ -65,6 +68,11 @@ fun MainScreen(
     var locationName by rememberSaveable { mutableStateOf("") }
     val selectedType by viewModel.selectedType.collectAsState()
     val focusManager = LocalFocusManager.current
+
+    val userName by viewModel.userName.collectAsState()
+    val userAvatar by viewModel.userAvatarUrl.collectAsState()
+
+    val unreadNotiCount = 5
 
 
     Scaffold(
@@ -107,8 +115,6 @@ fun MainScreen(
                             )
                         )
                 ) {
-
-
                     // Các nút góc trên cùng
                     Row(
                         modifier = Modifier
@@ -118,6 +124,7 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        //Logo app
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = stringResource(R.string.app_name),
@@ -125,13 +132,60 @@ fun MainScreen(
                         )
 
                         if (isLoggedIn) {
-                            AsyncImage(
-                                model = "",
-                                contentDescription = stringResource(R.string.cd_user_avatar),
-                                modifier = Modifier
-                                    .size(44.dp)
-                                    .clip(CircleShape)
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                BadgedBox(
+                                    badge = {
+                                        if (unreadNotiCount > 0) {
+                                            Badge(
+                                                containerColor = Color.Red,
+                                                contentColor = Color.White
+                                            ) {
+                                                Text(unreadNotiCount.toString())
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    IconButton(
+                                        onClick = onNavigateToNotification,
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Notifications,
+                                            contentDescription = stringResource(R.string.notification),
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.welcome_user,
+                                            userName ?: stringResource(R.string.you)
+                                        ),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 14.sp,
+                                        maxLines = 2
+                                    )
+                                    AsyncImage(
+                                        model = userAvatar.takeIf { !it.isNullOrEmpty() }
+                                            ?: R.drawable.ic_default_avatar,
+                                        contentDescription = stringResource(R.string.cd_user_avatar),
+                                        modifier = Modifier
+                                            .size(44.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White, CircleShape),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { onLoginClick() }) {

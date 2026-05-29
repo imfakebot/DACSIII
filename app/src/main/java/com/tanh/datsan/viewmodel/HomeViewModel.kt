@@ -7,6 +7,7 @@ import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.repository.FieldRepository
+import com.tanh.datsan.data.repository.NotificationRepository
 import com.tanh.datsan.data.repository.UserRepository
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
@@ -24,7 +25,8 @@ class HomeViewModel @Inject constructor(
     tokenManager: TokenManager,
     private val fieldRepository: FieldRepository,
     private val locationHelper: LocationHelper,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
@@ -42,6 +44,8 @@ class HomeViewModel @Inject constructor(
     private val _userAvatarUrl = MutableStateFlow<String?>(null)
     val userAvatarUrl: StateFlow<String?> = _userAvatarUrl
 
+    val unreadNotification = notificationRepository.unreadCountFlow
+
     private var currentLat: String? = null
     private var currentLng: String? = null
 
@@ -56,9 +60,27 @@ class HomeViewModel @Inject constructor(
     init {
         fetchFieldNearMe()
         fetchFieldTypes()
+        getUnreadCount()
     }
 
+    fun getUnreadCount() {
+        viewModelScope.launch {
+            isLoggedIn.collect { isLoggedIn->
+                if(isLoggedIn){
+                    fetchUserProfileAfterLoggin()
 
+                    try{
+                        notificationRepository.fetchIntialUnreadCount()
+                    } catch(e:Exception){
+                        Log.e("HomeViewModel", "Lỗi lấy thông báo: ${e.message}")
+                    }
+                } else{
+                    _userName.value=null
+                    _userAvatarUrl.value=null
+                }
+            }
+        }
+    }
 
     fun fetchField(
         lat: String? = currentLat,
@@ -68,7 +90,10 @@ class HomeViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                Log.d("HomeViewModel", "Fetching fields with lat=$lat, lng=$lng, typeId=$typeId, name=$name")
+                Log.d(
+                    "HomeViewModel",
+                    "Fetching fields with lat=$lat, lng=$lng, typeId=$typeId, name=$name"
+                )
                 val response =
                     fieldRepository.getAllField(lat = lat, lon = lng, typeId = typeId, name = name)
                 val mappedList = response.map { jsonItem ->
@@ -124,11 +149,11 @@ class HomeViewModel @Inject constructor(
 
     private fun fetchUserProfileAfterLoggin() {
         viewModelScope.launch {
-            try{
+            try {
                 val userProfile = userRepository.getProfileLogginedIn()
                 _userName.value = userProfile.fullName
                 _userAvatarUrl.value = userProfile.avatarUrl
-            }catch(e: Exception){
+            } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching user profile: ${e.message}")
             }
         }
