@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.listenablefuture)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.socket.io.client)
     //   implementation(libs.androidx.compose.material.icons.extended)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)

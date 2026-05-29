@@ -7,6 +7,7 @@ import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.network.AuthApiService
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.FieldApiService
+import com.tanh.datsan.data.network.FeedbackApiService
 import com.tanh.datsan.data.network.ReviewApiService
 import com.tanh.datsan.data.network.UserApiService
 import dagger.Module
@@ -124,4 +125,9 @@ object NetworkModule {
     @Singleton
     fun provideUserApi(retrofit: Retrofit): UserApiService =
         retrofit.create(UserApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFeedbackApi(retrofit: Retrofit): FeedbackApiService =
+        retrofit.create(FeedbackApiService::class.java)
 }
