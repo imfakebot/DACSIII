@@ -8,10 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
+import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.model.VoucherDto
 import com.tanh.datsan.data.repository.BookingRepository
 import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.data.repository.PricingRepository
+import com.tanh.datsan.data.repository.ReviewRepository
 import com.tanh.datsan.data.repository.VoucherRepository
 import com.tanh.datsan.utils.calculateDiscount
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,7 +42,8 @@ class DetailViewModel @Inject constructor(
     tokenManager: TokenManager,
     private val bookingRepository: BookingRepository,
     private val voucherRepository: VoucherRepository,
-    private val pricingRepository: PricingRepository
+    private val pricingRepository: PricingRepository,
+    private val reviewRepository: ReviewRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -79,8 +82,19 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = DetailUiState.Loading
             try {
-                val response = fieldRepository.getFieldDetail(fieldId)
-                _uiState.value = DetailUiState.Success(response)
+                val fieldDeferred = async { fieldRepository.getFieldDetail(fieldId) }
+                val reviewsDeferred = async {
+                    try {
+                        reviewRepository.getFieldReview(fieldId)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+
+                val field = fieldDeferred.await()
+                val reviews = reviewsDeferred.await()
+
+                _uiState.value = DetailUiState.Success(field.copy(reviews = reviews))
             } catch (e: Exception) {
                 _uiState.value = DetailUiState.Error(e.message)
             }

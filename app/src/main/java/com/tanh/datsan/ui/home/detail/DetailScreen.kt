@@ -34,6 +34,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -44,6 +46,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +74,7 @@ import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
 import java.util.Locale
 import androidx.core.net.toUri
+import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,15 +102,18 @@ fun DetailScreen(
 
     val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
 
     val context = LocalContext.current
-    val activity = remember (context){
+    val activity = remember(context) {
         var ctx = context
-        while (ctx is ContextWrapper){
-            if(ctx is ComponentActivity) break
-            ctx=ctx.baseContext
+        while (ctx is ContextWrapper) {
+            if (ctx is ComponentActivity) break
+            ctx = ctx.baseContext
         }
         ctx as? ComponentActivity
     }
@@ -156,6 +163,7 @@ fun DetailScreen(
 
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (uiState is DetailUiState.Success) {
                 BookingBottomBar(
@@ -172,7 +180,12 @@ fun DetailScreen(
                     field = state.field,
                     padding = padding,
                     onBackClick = onBackClick,
-                    onNavigateToReview = onNavigateToReview
+                    onNavigateToReview = onNavigateToReview,
+                    onShowSnackbar = { message ->
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
                 )
             }
         }
@@ -198,10 +211,6 @@ fun DetailScreen(
             )
         }
     }
-
-    // Xử lý mở link thanh toán VNPAY sau khi tạo booking thành côn
-
-
 }
 
 @Composable
@@ -209,7 +218,8 @@ fun DetailContent(
     field: FieldResponse,
     padding: PaddingValues,
     onBackClick: () -> Unit,
-    onNavigateToReview: (String) -> Unit
+    onNavigateToReview: (String) -> Unit,
+    onShowSnackbar: (String) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
     val primaryColor = Color(0xFF2E7D32)
@@ -269,7 +279,7 @@ fun DetailContent(
 
             item {
                 Surface(
-                    modifier = Modifier.fillParentMaxHeight(),
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                     color = Color.White,
                     shadowElevation = 8.dp
@@ -308,6 +318,17 @@ fun DetailContent(
                             address = "${field.branch.address?.street},${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
                             tint = primaryColor
                         )
+
+                        if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
+                            Spacer(Modifier.height(16.dp))
+                            DirectionButton(
+                                lat = field.branch.address.latitude,
+                                lng = field.branch.address.longitude,
+                                primaryColor = primaryColor,
+                                onShowMessage = onShowSnackbar,
+                                tenSan = field.name
+                            )
+                        }
 
                         SectionDivider()
 
@@ -368,3 +389,4 @@ fun DetailContent(
         }
     }
 }
+
