@@ -1,8 +1,8 @@
 package com.tanh.datsan.utils
 
-import com.tanh.datsan.data.model.VoucherDto
+import com.tanh.datsan.data.model.Voucher
 
-fun VoucherDto.calculateDiscount(orderValue: Double): Double {
+fun Voucher.calculateDiscount(orderValue: Double): Double {
     if (orderValue < (this.minOrderValue ?: 0.0)) return 0.0
 
     return if(this.discountAmount!=null && this.discountAmount>0){

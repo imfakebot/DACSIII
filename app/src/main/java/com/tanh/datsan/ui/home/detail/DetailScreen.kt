@@ -2,11 +2,10 @@ package com.tanh.datsan.ui.home.detail
 
 import android.annotation.SuppressLint
 import android.content.ContextWrapper
-import androidx.activity.ComponentActivity
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-import androidx.browser.customtabs.CustomTabsIntent
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,16 +67,18 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
+import com.tanh.datsan.ui.component.FullScreenImageViewer
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
+import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
-import java.util.Locale
-import androidx.core.net.toUri
-import com.tanh.datsan.ui.component.FullScreenImageViewer
+import com.tanh.datsan.viewmodel.UserViewModel
+import com.tanh.datsan.viewmodel.VoucherViewModel
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,13 +86,15 @@ import kotlinx.coroutines.launch
 fun DetailScreen(
     fieldId: String,
     viewModel: DetailViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
+    voucherViewModel: VoucherViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToSuccess: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
     val bookingState by viewModel.bookingState
 
 
@@ -99,9 +102,9 @@ fun DetailScreen(
     var showSheet by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
-    val selectedVoucher by viewModel.selectedVoucher.collectAsState()
-    val discountAmount by viewModel.discountAmount.collectAsState()
-    val voucherList by viewModel.voucher.collectAsState()
+    val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
+    val discountAmount by voucherViewModel.discountAmount.collectAsState()
+    val voucherList by voucherViewModel.vouchers.collectAsState()
 
     val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
 
@@ -110,6 +113,13 @@ fun DetailScreen(
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
+
+    val priceState by viewModel.priceState.collectAsState()
+    LaunchedEffect(priceState) {
+        priceState?.pricing?.totalPrice?.let {
+            voucherViewModel.fetchAvailableVouchers(it)
+        }
+    }
 
     val context = LocalContext.current
     val activity = remember(context) {
@@ -150,16 +160,7 @@ fun DetailScreen(
         if (bookingState is BookingUiState.Success) {
             val url = (bookingState as BookingUiState.Success).paymentUrl
             viewModel.resetBookingState()
-
-
-            try {
-                val builder = CustomTabsIntent.Builder()
-                val customTabsIntent = builder.build()
-                customTabsIntent.launchUrl(context, url.toUri())
-            } catch (_: Exception) {
-                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                context.startActivity(intent)
-            }
+            OpenVNPay.openVnPay(context, url)
         }
     }
 
@@ -203,12 +204,13 @@ fun DetailScreen(
             BookingBottomSheetContent(
                 field = field,
                 viewModel = viewModel,
+                voucherViewModel = voucherViewModel,
                 selectedVoucherCode = selectedVoucher?.code,
                 discountAmount = discountAmount,
                 onOpenVoucherList = voucherList,
                 onConfirm = { date, duration, time ->
                     showSheet = false
-                    viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration)
+                    viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration, selectedVoucher?.code)
                 }
             )
         }

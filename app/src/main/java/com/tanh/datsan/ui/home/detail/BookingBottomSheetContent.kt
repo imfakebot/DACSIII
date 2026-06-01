@@ -31,19 +31,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
-import com.tanh.datsan.utils.generateSlots
-import com.tanh.datsan.utils.getUpcomingDates
+import com.tanh.datsan.utils.DateUtil
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.viewmodel.DetailViewModel
+import com.tanh.datsan.viewmodel.VoucherViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import androidx.compose.ui.platform.LocalLocale
-import com.tanh.datsan.data.model.VoucherDto
+import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.ui.component.VoucherSection
 import com.tanh.datsan.ui.component.VoucherSelectionSheet
 
@@ -53,12 +53,13 @@ import com.tanh.datsan.ui.component.VoucherSelectionSheet
 fun BookingBottomSheetContent(
     field: FieldResponse,
     viewModel: DetailViewModel = hiltViewModel(),
+    voucherViewModel: VoucherViewModel = hiltViewModel(),
     selectedVoucherCode: String? = null,
     discountAmount: Double = 0.0,
-    onOpenVoucherList: List<VoucherDto> = emptyList(),
+    onOpenVoucherList: List<Voucher> = emptyList(),
     onConfirm: (String, Int, String) -> Unit,
 ) {
-    val quickDates = remember { getUpcomingDates("Hôm nay") }
+    val quickDates = remember { DateUtil.getUpcomingDates("Hôm nay") }
     val durations = listOf(60, 90, 120)
     var selectedDate by remember { mutableStateOf(quickDates[0]) }
     var selectedDuration by remember { mutableIntStateOf(durations[0]) }
@@ -81,7 +82,7 @@ fun BookingBottomSheetContent(
     }
 
     val timeSlots = remember(selectedDuration, selectedDate) {
-        generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
+        DateUtil.generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
     }
 
     Column(
@@ -238,10 +239,11 @@ fun BookingBottomSheetContent(
             onSelect = {voucher->
                 showVoucherSheet=false
                 val orderValue = priceState?.pricing?.totalPrice ?: 0.0
-                viewModel.selectVoucher(voucher, orderValue)
+                voucherViewModel.selectVoucher(voucher, orderValue)
             }, onDismiss = {
                 showVoucherSheet=false
-            }
+            },
+            totalPrice = priceState?.pricing?.totalPrice ?: 0.0
         )
     }
 }

@@ -36,6 +36,7 @@ import coil.compose.AsyncImage
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.R
 import com.tanh.datsan.viewmodel.HomeViewModel
+import com.tanh.datsan.viewmodel.UserViewModel
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
@@ -52,6 +53,7 @@ import com.tanh.datsan.utils.LocationUtil
 @Preview
 fun MainScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
@@ -109,17 +111,17 @@ fun MainScreen(
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
 
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
-    val userRole by viewModel.userRole.collectAsState()
+    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
+    val userRole by userViewModel.userRole.collectAsState()
 
     var locationName by rememberSaveable { mutableStateOf("") }
     val selectedType by viewModel.selectedType.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    val userName by viewModel.userName.collectAsState()
-    val userAvatar by viewModel.userAvatarUrl.collectAsState()
+    val userName by userViewModel.userName.collectAsState()
+    val userAvatar by userViewModel.userAvatarUrl.collectAsState()
 
-    val unreadNotiCount by viewModel.unreadNotification.collectAsState(0)
+    val unreadNotiCount by userViewModel.unreadNotification.collectAsState(0)
 
     val suggestionMessage by viewModel.suggestionMessage.collectAsState()
 

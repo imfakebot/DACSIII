@@ -16,7 +16,12 @@ object DownloadHelper {
         token: String
     ) {
         try {
-            val request = DownloadManager.Request(url.toUri())
+
+            val fullUrl= url.toFullImageUrl()
+            val cleanUrl = fullUrl.replace("([^:])//+".toRegex(), "$1/")
+            Log.d("Download helper", "URL đầy đủ: $fullUrl")
+            Log.d("Download helper", "URL đã được làm sạch: $cleanUrl")
+            val request = DownloadManager.Request(cleanUrl.toUri())
                 .setTitle("Vé Đặt Sân - $bookingCode")
                 .setDescription("Đang tải vé PDF...")
                 .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -29,6 +34,8 @@ object DownloadHelper {
             if(token.isNotBlank()){
                 request.addRequestHeader("Authorization","Bearer $token")
             }
+
+            request.addRequestHeader("ngrok-skip-browser-warning", "true")
 
             val dowmLoadManager =
                 context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager

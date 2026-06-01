@@ -3,32 +3,22 @@ package com.tanh.datsan.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.repository.FieldRepository
-import com.tanh.datsan.data.repository.NotificationRepository
-import com.tanh.datsan.data.repository.UserRepository
-import com.tanh.datsan.utils.JwtUtil
 import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.toFullImageUrl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    tokenManager: TokenManager,
     private val fieldRepository: FieldRepository,
     private val locationHelper: LocationHelper,
-    private val userRepository: UserRepository,
-    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val _fieldList = MutableStateFlow<List<FieldModel>>(emptyList())
@@ -40,61 +30,14 @@ class HomeViewModel @Inject constructor(
     private val _selectedType = MutableStateFlow<String?>(null)
     val selectedType: StateFlow<String?> = _selectedType
 
-    private val _userName = MutableStateFlow<String?>(null)
-    val userName: StateFlow<String?> = _userName
-
-    private val _userAvatarUrl = MutableStateFlow<String?>(null)
-    val userAvatarUrl: StateFlow<String?> = _userAvatarUrl
-
     private val _suggestionMessage = MutableStateFlow<String?>(null)
     val suggestionMessage: StateFlow<String?> = _suggestionMessage.asStateFlow()
-
-    val unreadNotification = notificationRepository.unreadCountFlow
 
     private var currentLat: String? = null
     private var currentLng: String? = null
 
-    var isLoggedIn: StateFlow<Boolean> = tokenManager.token
-        .map { token -> !token.isNullOrEmpty() }
-        .stateIn(
-            viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
-        )
-
-    val userRole: StateFlow<String> = tokenManager.token
-        .map{token->
-            JwtUtil.getRoleFromToken(token)
-        }
-        .stateIn(
-            scope=viewModelScope,
-            started= SharingStarted.WhileSubscribed(5000),
-            initialValue = "user"
-        )
-
     init {
-//        fetchFieldNearMe()
         fetchFieldTypes()
-        getUnreadCount()
-    }
-
-    fun getUnreadCount() {
-        viewModelScope.launch {
-            isLoggedIn.collect { isLoggedIn->
-                if(isLoggedIn){
-                    fetchUserProfileAfterLoggin()
-
-                    try{
-                        notificationRepository.fetchIntialUnreadCount()
-                    } catch(e:Exception){
-                        Log.e("HomeViewModel", "Lỗi lấy thông báo: ${e.message}")
-                    }
-                } else{
-                    _userName.value=null
-                    _userAvatarUrl.value=null
-                }
-            }
-        }
     }
 
     fun fetchField(
@@ -175,17 +118,5 @@ class HomeViewModel @Inject constructor(
     fun onFieldTypeSelected(type: FieldType?) {
         _selectedType.value = type?.id
         fetchField(currentLat, currentLng, type?.id)
-    }
-
-    private fun fetchUserProfileAfterLoggin() {
-        viewModelScope.launch {
-            try {
-                val userProfile = userRepository.getProfileLogginedIn()
-                _userName.value = userProfile.fullName
-                _userAvatarUrl.value = userProfile.avatarUrl
-            } catch (e: Exception) {
-                Log.e("HomeViewModel", "Error fetching user profile: ${e.message}")
-            }
-        }
     }
 }

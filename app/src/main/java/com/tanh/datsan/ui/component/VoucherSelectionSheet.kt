@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,18 +28,21 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.tanh.datsan.data.model.VoucherDto
+import com.tanh.datsan.data.model.Voucher
+import java.text.DecimalFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoucherSelectionSheet(
-    vouchers: List<VoucherDto>,
+    vouchers: List<Voucher>,
     selectedVoucherCode: String?,
-    onSelect: (VoucherDto?) -> Unit,
-    onDismiss: () -> Unit
+    onSelect: (Voucher?) -> Unit,
+    onDismiss: () -> Unit,
+    totalPrice: Double
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -85,7 +89,8 @@ fun VoucherSelectionSheet(
                         VoucherItem(
                             voucher = voucher,
                             isSelected = voucher.code == selectedVoucherCode,
-                            onClick = { onSelect(voucher) }
+                            onClick = { onSelect(voucher) },
+                            currentOrderValue = totalPrice
                         )
                     }
                 }
@@ -96,22 +101,43 @@ fun VoucherSelectionSheet(
 
 @Composable
 fun VoucherItem(
-    voucher: VoucherDto,
+    voucher: Voucher,
     isSelected: Boolean,
+    currentOrderValue: Double,
     onClick: () -> Unit
 ) {
+    val formatter = DecimalFormat("#,###")
+
+    val isEnabled = currentOrderValue >= (voucher.minOrderValue ?: 0.0)
+
+    val discountTitle = if (voucher.discountPercentage != null) {
+        "Giảm ${voucher.discountPercentage}% (Tối đa ${formatter.format(voucher.maxDiscountAmount ?: 0)}đ)"
+    } else {
+        "Giảm thẳng ${formatter.format(voucher.discountAmount ?: 0)}đ"
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
+            .padding(vertical = 6.dp)
+            .clickable(enabled = isEnabled) {
+                onClick()
+            },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surfaceVariant
+            containerColor = when {
+                isSelected -> MaterialTheme.colorScheme.primaryContainer
+                !isEnabled -> Color(0xFFF3F4F6)
+                else -> Color(0xFFFAFAFA)
+            }
         ),
-        border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null
+        border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        else BorderStroke(1.dp, Color(0xFFE5E7EB)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
+        val contentAlpha = if (isEnabled) 1f else 0.5f
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .padding(16.dp)
+                .alpha(contentAlpha),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -129,10 +155,31 @@ fun VoucherItem(
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Black
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
                 Text(
-                    text = "Nhấn để áp dụng mã giảm giá",
+                    text = discountTitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (isEnabled) Color(0xFFE53935) else Color.Gray
+                )
+
+                Text(
+                    text = if (isEnabled) {
+                        "Đơn tối thiểu ${formatter.format(voucher.minOrderValue)}đ"
+                    } else {
+
+                        "Chưa đủ điều kiện (Thiếu ${
+                            formatter.format(
+                                voucher.minOrderValue?.minus(
+                                    currentOrderValue
+                                ) ?: 0
+                            )
+                        }đ)"
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    color = if (isEnabled) Color.Gray else MaterialTheme.colorScheme.error
                 )
             }
 
