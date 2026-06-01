@@ -1,7 +1,9 @@
 package com.tanh.datsan.ui.home.detail
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -85,11 +89,14 @@ fun BookingBottomSheetContent(
         DateUtil.generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
     }
 
-    Column(
-        Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
+    val isVoucherLoading by voucherViewModel.isLoading.collectAsState()
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
         Text(
             stringResource(R.string.booking_customize_title),
             style = MaterialTheme.typography.titleLarge,
@@ -229,6 +236,18 @@ fun BookingBottomSheetContent(
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
         ) {
             Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
+        }
+    }
+
+        if (isVoucherLoading) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
     }
 

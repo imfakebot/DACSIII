@@ -22,13 +22,19 @@ class ReviewViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
     fun fetchReview(fieldId: String) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 _reviews.value = repository.getFieldReview(fieldId).data
             } catch (e: Exception) {
                 Log.d("ReviewViewModel", "Error fetching reviews: ${e.message}")
                 _errorMessage.value = e.message
+            } finally {
+                _isLoading.value = false
             }
         }
     }

@@ -105,6 +105,7 @@ fun MainScreen(
     }
 
     val fieldList by viewModel.fieldList.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
 
     val sportList by viewModel.fieldTypes.collectAsState()
@@ -443,6 +444,17 @@ fun MainScreen(
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF007BFF))
             }
         }
     }

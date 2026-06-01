@@ -10,6 +10,7 @@ data class Voucher(
     val validFrom: String,
     val validTo: String,
     val quantity: Int,
+    val isCollectible: Boolean? = false
 )
 
 data class CheckVoucherResponse(

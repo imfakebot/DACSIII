@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
+import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.ui.component.ReviewItem
 import com.tanh.datsan.utils.DateUtil.formatReviewTime
 import com.tanh.datsan.viewmodel.ReviewViewModel
@@ -51,6 +52,7 @@ fun AllReviewScreen(
 
     val reviews by viewModel.reviews.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -87,41 +89,58 @@ fun AllReviewScreen(
             )
         }
     ) { padding ->
-        if (reviews.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF9FAFB))
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(stringResource(R.string.review_empty_or_loading), color = Color.Gray)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF9FAFB))
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(reviews) { reviewItem ->
-                    Surface(
-                        color = Color.White,
-                        shape = RoundedCornerShape(12.dp),
-                        shadowElevation = 2.dp,
-                        modifier = Modifier.fillMaxWidth()
+        CustomRefreshLayout(
+            onRefresh = { viewModel.fetchReview(fieldId) },
+            modifier = Modifier.padding(padding)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (reviews.isEmpty() && !isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFF9FAFB)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(modifier = Modifier.padding(16.dp)) {
-                            ReviewItem(
-                                userName = reviewItem.user?.fullName ?: stringResource(R.string.review_user_fallback),
-                                rating = reviewItem.rating,
-                                date = formatReviewTime(reviewItem.createdAt),
-                                comment = reviewItem.comment ?: "",
-                                avatarUrl = reviewItem.user?.avatarUrl
-                            )
+                        Text(stringResource(R.string.review_empty_or_loading), color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFFF9FAFB)),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(reviews) { reviewItem ->
+                            Surface(
+                                color = Color.White,
+                                shape = RoundedCornerShape(12.dp),
+                                shadowElevation = 2.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Box(modifier = Modifier.padding(16.dp)) {
+                                    ReviewItem(
+                                        userName = reviewItem.user?.fullName
+                                            ?: stringResource(R.string.review_user_fallback),
+                                        rating = reviewItem.rating,
+                                        date = formatReviewTime(reviewItem.createdAt),
+                                        comment = reviewItem.comment ?: "",
+                                        avatarUrl = reviewItem.user?.avatarUrl
+                                    )
+                                }
+                            }
                         }
+                    }
+                }
+
+                if (isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.05f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.CircularProgressIndicator(color = Color(0xFF2E7D32))
                     }
                 }
             }

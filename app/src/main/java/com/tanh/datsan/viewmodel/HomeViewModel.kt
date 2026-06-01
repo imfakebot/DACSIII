@@ -33,6 +33,9 @@ class HomeViewModel @Inject constructor(
     private val _suggestionMessage = MutableStateFlow<String?>(null)
     val suggestionMessage: StateFlow<String?> = _suggestionMessage.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     private var currentLat: String? = null
     private var currentLng: String? = null
 
@@ -47,6 +50,7 @@ class HomeViewModel @Inject constructor(
         name: String? = null
     ) {
         viewModelScope.launch {
+            _isLoading.value = true
             try {
                 Log.d(
                     "HomeViewModel",
@@ -87,6 +91,8 @@ class HomeViewModel @Inject constructor(
                 _fieldList.value = mappedList
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching fields: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
         }
     }

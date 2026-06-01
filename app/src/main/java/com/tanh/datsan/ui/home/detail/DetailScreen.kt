@@ -48,7 +48,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -105,11 +104,16 @@ fun DetailScreen(
     val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
     val discountAmount by voucherViewModel.discountAmount.collectAsState()
     val voucherList by voucherViewModel.vouchers.collectAsState()
-
-    val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
-
+    val voucherError by voucherViewModel.error.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(voucherError) {
+        voucherError?.let {
+            snackbarHostState.showSnackbar(it)
+            voucherViewModel.clearError()
+        }
+    }
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }

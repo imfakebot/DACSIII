@@ -19,6 +19,7 @@ import com.tanh.datsan.ui.staff.QrScannerScreen
 //import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.notification.NotificationScreen
+import com.tanh.datsan.ui.home.voucher.VoucherScreen
 import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 
@@ -75,7 +76,7 @@ fun AppNavigation() {
             }
 
             composable(BottomNavItem.Voucher.route) {
-                // TODO: VouchersScreen()
+                VoucherScreen()
             }
 
             composable(BottomNavItem.Profile.route) {
