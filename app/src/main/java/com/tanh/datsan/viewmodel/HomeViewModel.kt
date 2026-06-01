@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,6 +46,9 @@ class HomeViewModel @Inject constructor(
     private val _userAvatarUrl = MutableStateFlow<String?>(null)
     val userAvatarUrl: StateFlow<String?> = _userAvatarUrl
 
+    private val _suggestionMessage = MutableStateFlow<String?>(null)
+    val suggestionMessage: StateFlow<String?> = _suggestionMessage.asStateFlow()
+
     val unreadNotification = notificationRepository.unreadCountFlow
 
     private var currentLat: String? = null
@@ -69,7 +73,7 @@ class HomeViewModel @Inject constructor(
         )
 
     init {
-        fetchFieldNearMe()
+//        fetchFieldNearMe()
         fetchFieldTypes()
         getUnreadCount()
     }
@@ -107,15 +111,30 @@ class HomeViewModel @Inject constructor(
                 )
                 val response =
                     fieldRepository.getAllField(lat = lat, lon = lng, typeId = typeId, name = name)
-                val mappedList = response.map { jsonItem ->
+
+                if(response.metadata.isSuggestion&& !response.metadata.suggestionMessage.isNullOrBlank()){
+                    _suggestionMessage.value = response.metadata.suggestionMessage
+                } else{
+                    _suggestionMessage.value = null
+                }
+                val mappedList = response.data.map { jsonItem ->
                     val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
                     val fixedUrl = rawUrl.toFullImageUrl()
                     Log.d("HomeViewModel", "Link gốc: $rawUrl --- Link ĐÃ SỬA: $fixedUrl")
+
+                    val ward = jsonItem.branch.address?.wardName?:jsonItem.branch.address?.ward?.name ?: ""
+                    val city = jsonItem.branch.address?.cityName ?: jsonItem.branch.address?.city?.name ?: ""
+                    val street = jsonItem.branch.address?.street ?: ""
+
+                    val fullAddress = listOf(street, ward, city)
+                        .filter { it.isNotBlank() }
+                        .joinToString(", ")
+                        .ifBlank { "Địa chỉ không xác định" }
                     FieldModel(
                         id = jsonItem.id,
                         status = jsonItem.status,
                         name = jsonItem.name,
-                        address = jsonItem.branch.address?.street ?: "Địa chỉ k xác định",
+                        address = fullAddress,
                         rating = jsonItem.averageRating,
                         imageUrl = fixedUrl,
                         distance = jsonItem.distance,

@@ -1,5 +1,6 @@
 package com.tanh.datsan.data.repository
 
+import com.tanh.datsan.data.model.ApiFieldResponse
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.network.FieldApiService
@@ -10,8 +11,8 @@ import javax.inject.Singleton
 class FieldRepository @Inject constructor(
     private val fieldApiService: FieldApiService
 ) {
-    suspend fun getFieldDetail(fieldId: String): FieldResponse {
-        return fieldApiService.getFieldDetail(fieldId)
+    suspend fun getFieldDetail(fieldId: String,latitude:String?,longitude:String?): FieldResponse {
+        return fieldApiService.getFieldDetail(fieldId,latitude,longitude)
     }
 
     suspend fun getAllField(
@@ -22,7 +23,7 @@ class FieldRepository @Inject constructor(
         name: String? = null,
         typeId: String? = null,
         branchId: String? = null
-    ): List<FieldResponse> {
+    ): ApiFieldResponse<List<FieldResponse>>{
         return fieldApiService.getAllFields(
             lat = lat,
             lng = lon,

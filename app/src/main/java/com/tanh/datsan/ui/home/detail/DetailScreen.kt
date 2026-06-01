@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +45,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,6 +76,7 @@ import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
 import java.util.Locale
 import androidx.core.net.toUri
+import com.tanh.datsan.ui.component.FullScreenImageViewer
 import kotlinx.coroutines.launch
 
 @SuppressLint("RememberReturnType")
@@ -161,7 +164,6 @@ fun DetailScreen(
     }
 
 
-
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
@@ -224,62 +226,72 @@ fun DetailContent(
     val lazyListState = rememberLazyListState()
     val primaryColor = Color(0xFF2E7D32)
 
+    var showImageViewer by remember { mutableStateOf(false) }
+    var clickedImageIndex by remember { mutableIntStateOf(0) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF4F7F6))
             .padding(padding)
     ) {
-
-        //  ẢNH SLIDER + HIỆU ỨNG PARALLAX
         val imageUrls = remember(field) {
             field.images?.map { it.imageUrl.toFullImageUrl() } ?: emptyList()
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(320.dp)
-                .graphicsLayer {
-                    // Parallax: ảnh chạy chậm hơn nội dung cuộn
-                    translationY = if (lazyListState.firstVisibleItemIndex == 0) {
-                        lazyListState.firstVisibleItemScrollOffset * 0.5f
-                    } else 0f
-                }
-        ) {
-            if (imageUrls.isNotEmpty()) {
-                FieldImageSlider(images = imageUrls)
-            } else {
+        LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
+
+            // 1. KHỐI ẢNH SLIDER + PARALLAX
+            item {
                 Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color.LightGray)
-                )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp)
+                        .graphicsLayer {
+                            // Parallax: ảnh chạy chậm hơn nội dung cuộn
+                            translationY = if (lazyListState.firstVisibleItemIndex == 0) {
+                                lazyListState.firstVisibleItemScrollOffset * 0.5f
+                            } else 0f
+                        }
+                ) {
+                    if (imageUrls.isNotEmpty()) {
+                        FieldImageSlider(
+                            images = imageUrls,
+                            onImageClick = { index ->
+                                clickedImageIndex = index
+                                showImageViewer = true
+                            }
+                        )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.LightGray)
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.Black.copy(0.4f),
+                                        Color.Transparent,
+                                        Color.Black.copy(0.6f)
+                                    )
+                                )
+                            )
+                    )
+                }
             }
 
-            // Gradient tối để nút quay lại và text nổi bật hơn
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Black.copy(0.4f),
-                                Color.Transparent,
-                                Color.Black.copy(0.6f)
-                            )
-                        )
-                    )
-            )
-        }
-
-        //  NỘI DUNG CHI TIẾT SÂN
-        LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
-            item { Spacer(Modifier.height(280.dp)) } // Tạo khoảng trống để thấy ảnh
-
+            // 2. NỘI DUNG CHI TIẾT SÂN
             item {
                 Surface(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-40).dp), // Kéo nhích lên 40dp để đè lên mép ảnh y như cũ
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                     color = Color.White,
                     shadowElevation = 8.dp
@@ -287,7 +299,7 @@ fun DetailContent(
                     Column(Modifier.padding(24.dp)) {
                         FieldBadge(field.fieldType.name, primaryColor)
 
-                        field.distance.let { dist ->
+                        field.distance?.let { dist ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Rounded.LocationOn,
@@ -312,10 +324,19 @@ fun DetailContent(
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
 
+                        val ward = field.branch.address?.wardName ?: field.branch.address?.ward?.name ?: ""
+                        val city = field.branch.address?.cityName ?: field.branch.address?.city?.name ?: ""
+                        val street = field.branch.address?.street ?: ""
+
+                        val fullAddress = listOf(street, ward, city)
+                            .filter { it.isNotBlank() }
+                            .joinToString(", ")
+                            .ifBlank { "Địa chỉ không xác định" }
+
                         RatingAndLocation(
                             rating = field.averageRating ?: 0f,
                             reviewCount = field.reviewCount ?: 0,
-                            address = "${field.branch.address?.street},${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
+                            address = fullAddress,
                             tint = primaryColor
                         )
 
@@ -332,7 +353,6 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Danh sách tiện ích (Wifi, Gửi xe...)
                         Text(
                             stringResource(R.string.field_amenities_title),
                             fontWeight = FontWeight.Bold,
@@ -366,17 +386,22 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Phần đánh giá khách hàng
-                        ReviewHeader(field.id, onNavigateToReview, primaryColor)
+
+                        ReviewHeader(
+                            fieldId = field.id,
+                            reviewCount = field.reviewCount?:0,
+                            rating = field.averageRating?:0f,
+                            onNavigate= onNavigateToReview,
+                            color=primaryColor
+                        )
                         ReviewList(field.reviews)
 
-                        Spacer(Modifier.height(100.dp)) // Padding cho BottomBar
+                        Spacer(Modifier.height(100.dp))
                     }
                 }
             }
         }
 
-        //  NÚT QUAY LẠI (Nổi trên cùng)
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
@@ -387,6 +412,13 @@ fun DetailContent(
         ) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
         }
+
+        if (showImageViewer) {
+            FullScreenImageViewer(
+                imageUrls = imageUrls,
+                initialIndex = clickedImageIndex,
+                onDismiss = { showImageViewer = false }
+            )
+        }
     }
 }
-

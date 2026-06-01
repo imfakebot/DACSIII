@@ -25,9 +25,7 @@ class ReviewViewModel @Inject constructor(
     fun fetchReview(fieldId: String) {
         viewModelScope.launch {
             try {
-                // có thể thêm tham số phân trang: repository.getFieldReviews(fieldId, page = 1)
-                //Todo
-                _reviews.value = repository.getFieldReview(fieldId)
+                _reviews.value = repository.getFieldReview(fieldId).data
             } catch (e: Exception) {
                 Log.d("ReviewViewModel", "Error fetching reviews: ${e.message}")
                 _errorMessage.value = e.message

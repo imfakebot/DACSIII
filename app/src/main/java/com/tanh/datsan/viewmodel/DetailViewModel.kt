@@ -8,13 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
-import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.data.model.VoucherDto
 import com.tanh.datsan.data.repository.BookingRepository
 import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.data.repository.PricingRepository
 import com.tanh.datsan.data.repository.ReviewRepository
 import com.tanh.datsan.data.repository.VoucherRepository
+import com.tanh.datsan.utils.LocationHelper
 import com.tanh.datsan.utils.calculateDiscount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,8 @@ class DetailViewModel @Inject constructor(
     private val bookingRepository: BookingRepository,
     private val voucherRepository: VoucherRepository,
     private val pricingRepository: PricingRepository,
-    private val reviewRepository: ReviewRepository
+    private val reviewRepository: ReviewRepository,
+    private val locationHelper: LocationHelper
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
@@ -81,22 +82,40 @@ class DetailViewModel @Inject constructor(
     fun fetchFieldDetail(fieldId: String) {
         viewModelScope.launch {
             _uiState.value = DetailUiState.Loading
-            try {
-                val fieldDeferred = async { fieldRepository.getFieldDetail(fieldId) }
-                val reviewsDeferred = async {
+            locationHelper.getCurrentLocation { lat, lon ->
+                viewModelScope.launch {
                     try {
-                        reviewRepository.getFieldReview(fieldId)
+                        val fieldDeferred = async {
+                            fieldRepository.getFieldDetail(
+                                fieldId = fieldId,
+                                latitude = lat,
+                                longitude = lon
+                            )
+                        }
+                        val reviewDeferred = async {
+                            try {
+                                reviewRepository.getFieldReview(fieldId)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+
+                        val field = fieldDeferred.await()
+                        val reviews = reviewDeferred.await()
+
+                        val reviewList = reviews?.data ?: emptyList()
+                        val reviewMeta = reviews?.meta
+
+                        val updatedField = field.copy(
+                            reviews = reviewList,
+                            reviewCount = reviewMeta?.total?:field.reviewCount,
+                            averageRating = reviewMeta?.averageRating?:field.averageRating
+                        )
+
+                        _uiState.value = DetailUiState.Success( updatedField)
                     } catch (e: Exception) {
-                        null
                     }
                 }
-
-                val field = fieldDeferred.await()
-                val reviews = reviewsDeferred.await()
-
-                _uiState.value = DetailUiState.Success(field.copy(reviews = reviews))
-            } catch (e: Exception) {
-                _uiState.value = DetailUiState.Error(e.message)
             }
         }
     }
@@ -113,7 +132,9 @@ class DetailViewModel @Inject constructor(
                             val instant = Instant.parse(booking.startTime)
                             val localTime = instant.atZone(ZoneId.systemDefault())
                             localTime.format(DateTimeFormatter.ofPattern("HH:mm"))
-                        } catch (e: Exception) { null }
+                        } catch (e: Exception) {
+                            null
+                        }
                     }
                     withContext(Dispatchers.Main) {
                         _bookedSlots.value = blockedTimes

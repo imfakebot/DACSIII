@@ -1,6 +1,10 @@
 package com.tanh.datsan.ui.home.main
 
 
+import android.Manifest
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -39,7 +43,9 @@ import java.util.Locale
 
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import com.tanh.datsan.utils.LocationUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,8 +59,47 @@ fun MainScreen(
     onNavigateToNotification: () -> Unit = {}
 ) {
 
+    val context = LocalContext.current
+
+    val gpsSettingLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.fetchFieldNearMe()
+        } else {
+            viewModel.fetchFieldNearMe()
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = {permission->
+            val isFineLocationGranted = permission[Manifest.permission.ACCESS_FINE_LOCATION]?:false
+            val isCoarseLocationGranted = permission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+            if(isFineLocationGranted|| isCoarseLocationGranted){
+                LocationUtil.checkRequestLocationSetting(
+                    context = context,
+                    onEnabled = {
+                        viewModel.fetchFieldNearMe()
+                    },
+                    onDisabled = { intentSenderRequest ->
+                        gpsSettingLauncher.launch(intentSenderRequest)
+                    },
+                )
+            } else{
+                viewModel.fetchFieldNearMe()
+            }
+        }
+    )
+
     LaunchedEffect(Unit) {
-        viewModel.fetchFieldNearMe()
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        )
     }
 
     val fieldList by viewModel.fieldList.collectAsState()
@@ -75,6 +120,8 @@ fun MainScreen(
     val userAvatar by viewModel.userAvatarUrl.collectAsState()
 
     val unreadNotiCount by viewModel.unreadNotification.collectAsState(0)
+
+    val suggestionMessage by viewModel.suggestionMessage.collectAsState()
 
 
     Scaffold(
@@ -370,6 +417,22 @@ fun MainScreen(
 
                 // 4. DANH SÁCH SÂN BÓNG
                 SectionTitle(title = stringResource(R.string.main_section_near_you))
+
+
+                suggestionMessage?.let { msg ->
+                    Text(
+                        text = msg,
+                        color = Color(0xFFD97706),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .background(Color(0xFFFEF3C7), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    )
+                }
+
                 FieldListHorizontal(
                     fieldList,
                     onFieldClick = { fieldId ->
@@ -472,7 +535,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        field.distance.let { dist ->
+                        field.distance?.let { dist ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
                                     imageVector = Icons.Rounded.LocationOn,

@@ -130,4 +130,5 @@
     <string name="timeout">Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!</string>
     
     <string name="qr_scanner">Quét mã checkin</string>
+    <string name="close">Đóng</string>
 </resources>
