@@ -235,12 +235,17 @@ fun ProfileScreen(
                     Text("Địa chỉ liên hệ", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
                     Spacer(modifier = Modifier.height(16.dp))
 
+    val isLoadingCities by viewModel.isLoadingCities.collectAsState()
+
+    // ... (phần code khác)
+
                     LocationDropdown(
                         label = "Tỉnh / Thành phố",
                         items = cities.map { it.id to it.name },
                         selectedId = selectedCityId,
                         isEditing = isEditing,
-                        onItemSelected = { viewModel.onCitySelected(it) }
+                        onItemSelected = { viewModel.onCitySelected(it) },
+                        placeholderText = if (isLoadingCities) "Đang tải dữ liệu..." else if (cities.isEmpty()) "Không có dữ liệu" else "Chọn Tỉnh / Thành phố"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
@@ -250,7 +255,8 @@ fun ProfileScreen(
                         selectedId = selectedWardId,
                         isEditing = isEditing,
                         onItemSelected = { viewModel.selectedWardId.value = it },
-                        enabled = selectedCityId != null
+                        enabled = selectedCityId != null,
+                        placeholderText = if (selectedCityId == null) "Vui lòng chọn Tỉnh/Thành trước" else if (wards.isEmpty()) "Đang tải dữ liệu..." else "Chọn Quận / Huyện"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
@@ -395,7 +401,15 @@ fun BirthdayPicker(dob: String, isEditing: Boolean, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LocationDropdown(label: String, items: List<Pair<Int, String>>, selectedId: Int?, isEditing: Boolean, onItemSelected: (Int) -> Unit, enabled: Boolean = true) {
+fun LocationDropdown(
+    label: String, 
+    items: List<Pair<Int, String>>, 
+    selectedId: Int?, 
+    isEditing: Boolean, 
+    onItemSelected: (Int) -> Unit, 
+    enabled: Boolean = true,
+    placeholderText: String? = null
+) {
     var expanded by remember { mutableStateOf(false) }
     val selectedName = items.find { it.first == selectedId }?.second ?: ""
 
@@ -413,7 +427,7 @@ fun LocationDropdown(label: String, items: List<Pair<Int, String>>, selectedId: 
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = if (items.isEmpty() && enabled) "Đang tải dữ liệu..." else selectedName.ifEmpty { "Chọn $label" },
+                        value = if (placeholderText != null && items.isEmpty() && enabled) placeholderText else selectedName.ifEmpty { placeholderText ?: "Chọn $label" },
                         onValueChange = {},
                         readOnly = true,
                         enabled = enabled && items.isNotEmpty(),

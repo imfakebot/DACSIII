@@ -1,5 +1,6 @@
 package com.tanh.datsan.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.UserMeResponse
@@ -29,6 +30,9 @@ class ProfileViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    private val _isLoadingCities = MutableStateFlow(false)
+    val isLoadingCities: StateFlow<Boolean> = _isLoadingCities.asStateFlow()
+
     private val _isEditing = MutableStateFlow(false)
     val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
 
@@ -55,6 +59,10 @@ class ProfileViewModel @Inject constructor(
     val wards: StateFlow<List<com.tanh.datsan.data.model.WardDto>> = _wards.asStateFlow()
 
     init {
+        refreshAll()
+    }
+
+    fun refreshAll() {
         fetchProfile()
         fetchCities()
     }
@@ -62,31 +70,35 @@ class ProfileViewModel @Inject constructor(
     fun toggleEditing(edit: Boolean) {
         _isEditing.value = edit
         if (!edit) {
-            // If canceling, reset to current profile data
             resetEditingFields()
         }
     }
 
     private fun resetEditingFields() {
-        _profileState.value?.userProfile?.let {
-            fullName.value = it.fullName ?: ""
-            phoneNumber.value = it.phoneNumber ?: ""
-            gender.value = it.gender ?: ""
-            dateOfBirth.value = it.dateOfBirth ?: ""
-            bio.value = it.bio ?: ""
-            street.value = it.street ?: ""
-            selectedCityId.value = it.city?.id
-            selectedWardId.value = it.ward?.id
-            it.city?.id?.let { cityId -> fetchWards(cityId) }
+        val currentProfile = _profileState.value?.userProfile
+        if (currentProfile != null) {
+            fullName.value = currentProfile.fullName ?: ""
+            phoneNumber.value = currentProfile.phoneNumber ?: ""
+            gender.value = currentProfile.gender ?: ""
+            dateOfBirth.value = currentProfile.dateOfBirth ?: ""
+            bio.value = currentProfile.bio ?: ""
+            street.value = currentProfile.street ?: ""
+            selectedCityId.value = currentProfile.city?.id
+            selectedWardId.value = currentProfile.ward?.id
+            currentProfile.city?.id?.let { cityId -> fetchWards(cityId) }
         }
     }
 
     fun fetchCities() {
         viewModelScope.launch {
+            _isLoadingCities.value = true
             try {
-                _cities.value = userRepository.getCities()
+                val result = userRepository.getCities()
+                _cities.value = result
             } catch (e: Exception) {
-                android.util.Log.e("PROFILE_VM", "Error fetching cities: ${e.message}")
+                Log.e("PROFILE_VM", "Error fetching cities: ${e.message}")
+            } finally {
+                _isLoadingCities.value = false
             }
         }
     }
@@ -94,17 +106,17 @@ class ProfileViewModel @Inject constructor(
     fun fetchWards(cityId: Int) {
         viewModelScope.launch {
             try {
-                _wards.value = userRepository.getWards(cityId)
-                android.util.Log.d("PROFILE_VM", "Fetched ${_wards.value.size} wards for city $cityId")
+                val result = userRepository.getWards(cityId)
+                _wards.value = result
             } catch (e: Exception) {
-                android.util.Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
+                Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
             }
         }
     }
 
     fun onCitySelected(cityId: Int) {
         selectedCityId.value = cityId
-        selectedWardId.value = null // Reset ward when city changes
+        selectedWardId.value = null 
         fetchWards(cityId)
     }
 
@@ -116,23 +128,20 @@ class ProfileViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     val userMe = response.body()
                     _profileState.value = userMe
-                    
-                    // Sync fields for editing
                     resetEditingFields()
 
-                    // Sync with repository local storage
                     userRepository.saveUserInfo(
                         avatarUrl = userMe?.userProfile?.avatarUrl,
                         userName = userMe?.userProfile?.fullName,
                         phone = userMe?.userProfile?.phoneNumber,
-                        address = userMe?.userProfile?.address,
+                        address = userMe?.userProfile?.street, // Lưu street làm address
                         gender = userMe?.userProfile?.gender,
                         dob = userMe?.userProfile?.dateOfBirth,
                         bio = userMe?.userProfile?.bio
                     )
                 }
             } catch (e: Exception) {
-                _toastMessage.value = "Lỗi tải thông tin cá nhân"
+                Log.e("PROFILE_VM", "Exception: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
@@ -143,6 +152,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
+                // Cấu trúc address Object như Backend yêu cầu
                 val address = if (selectedCityId.value != null && selectedWardId.value != null) {
                     com.tanh.datsan.data.model.AddressDto(
                         street = street.value,
@@ -152,29 +162,23 @@ class ProfileViewModel @Inject constructor(
                 } else null
 
                 val request = com.tanh.datsan.data.model.UpdateProfileRequest(
-                    fullName = fullName.value,
-                    phoneNumber = phoneNumber.value,
-                    gender = gender.value,
-                    dateOfBirth = dateOfBirth.value,
-                    bio = bio.value,
+                    fullName = fullName.value.ifBlank { null },
+                    gender = gender.value.ifBlank { null },
+                    dateOfBirth = dateOfBirth.value.ifBlank { null },
+                    bio = bio.value.ifBlank { null },
                     address = address
                 )
-
-                android.util.Log.d("PROFILE_UPDATE", "Sending request: $request")
 
                 val response = userRepository.updateProfile(request)
                 if (response.isSuccessful) {
                     _toastMessage.value = "Cập nhật thành công"
                     _isEditing.value = false
-                    fetchProfile() // Refresh data from server
+                    fetchProfile() 
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    android.util.Log.e("PROFILE_ERROR", "Update failed: ${response.code()} - $errorBody")
-                    _toastMessage.value = "Cập nhật thất bại: ${response.code()}"
+                    _toastMessage.value = "Thất bại: ${response.code()}"
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PROFILE_ERROR", "Update exception", e)
-                _toastMessage.value = "Lỗi kết nối: ${e.message}"
+                _toastMessage.value = "Lỗi kết nối"
             } finally {
                 _isLoading.value = false
             }
@@ -186,35 +190,17 @@ class ProfileViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                // Tên Part là 'avatar' đúng như Backend "chốt hạ"
                 val body = MultipartBody.Part.createFormData("avatar", imageFile.name, requestFile)
                 
                 val response = userRepository.updateAvatar(body)
                 if (response.isSuccessful) {
                     _toastMessage.value = "Tải ảnh đại diện thành công"
-                    val newAvatarUrl = response.body()?.avatarUrl
-                    
-                    // Thêm timestamp để ép Flow và Coil cập nhật ảnh mới (tránh cache trùng URL)
-                    val timestampedUrl = if (!newAvatarUrl.isNullOrBlank()) {
-                        if (newAvatarUrl.contains("?")) "$newAvatarUrl&t=${System.currentTimeMillis()}" 
-                        else "$newAvatarUrl?t=${System.currentTimeMillis()}"
-                    } else newAvatarUrl
-
-                    userRepository.saveUserInfo(
-                        avatarUrl = timestampedUrl,
-                        userName = fullName.value,
-                        phone = phoneNumber.value,
-                        address = street.value,
-                        gender = gender.value,
-                        dob = dateOfBirth.value,
-                        bio = bio.value
-                    )
+                    fetchProfile()
                 } else {
-                    val errorBody = response.errorBody()?.string()
-                    android.util.Log.e("PROFILE_ERROR", "Upload failed: ${response.code()} - $errorBody")
                     _toastMessage.value = "Lỗi upload: ${response.code()}"
                 }
             } catch (e: Exception) {
-                android.util.Log.e("PROFILE_ERROR", "Upload exception", e)
                 _toastMessage.value = "Lỗi: ${e.message}"
             } finally {
                 _isLoading.value = false
@@ -222,13 +208,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun clearToast() {
-        _toastMessage.value = null
-    }
-
-    fun logout() {
-        viewModelScope.launch {
-            userRepository.clearUserData()
-        }
-    }
+    fun clearToast() { _toastMessage.value = null }
+    fun logout() { viewModelScope.launch { userRepository.clearUserData() } }
 }

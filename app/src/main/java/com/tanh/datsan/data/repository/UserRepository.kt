@@ -40,7 +40,7 @@ class UserRepository @Inject constructor(
     val userDob = userManager.userDob
     val userBio = userManager.userBio
 
-    val isLoggedIn = tokenManager.getAccessToken.map { token ->
+    val isLoggedIn = tokenManager.tokenFlow.map { token ->
         !token.isNullOrBlank() && token != "null" && token != "undefined"
     }
 

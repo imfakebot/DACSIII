@@ -49,7 +49,7 @@ class DetailViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    val isLoggedIn: StateFlow<Boolean> = tokenManager.token
+    val isLoggedIn: StateFlow<Boolean> = tokenManager.tokenFlow
         .map { token -> !token.isNullOrEmpty() }
         .stateIn(
             scope = viewModelScope,

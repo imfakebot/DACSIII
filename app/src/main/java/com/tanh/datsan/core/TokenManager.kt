@@ -5,20 +5,17 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Tách riêng file lưu trữ auth
 private val Context.authDataStore by preferencesDataStore(name = "auth_prefs")
 
 @Singleton
 class TokenManager @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val dataStore = context.authDataStore
 
@@ -27,41 +24,43 @@ class TokenManager @Inject constructor(
         val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
     }
 
+    // Biến cache trên RAM để truy cập tức thì (High Speed)
     var cachedToken: String? = null
-        private set
     var cachedRefreshToken: String? = null
-        private set
 
-    val token: Flow<String?> = dataStore.data.map { it[TOKEN_KEY] }
-    val getAccessToken: Flow<String?> = token
+    val tokenFlow: Flow<String?> = dataStore.data.map { it[TOKEN_KEY] }
     val getRefreshToken: Flow<String?> = dataStore.data.map { it[REFRESH_TOKEN_KEY] }
 
-    init {
-        CoroutineScope(Dispatchers.IO).launch {
-            token.collect { cachedToken = it }
+    suspend fun getAccessToken(): String? {
+        // Ưu tiên lấy từ RAM, nếu rỗng thì lấy từ Disk
+        if (cachedToken.isNullOrBlank()) {
+            cachedToken = tokenFlow.firstOrNull()
         }
-        CoroutineScope(Dispatchers.IO).launch {
-            getRefreshToken.collect { cachedRefreshToken = it }
-        }
+        return if (cachedToken == "null" || cachedToken == "undefined") null else cachedToken
     }
 
-    suspend fun saveToken(token: String) {
-        dataStore.edit { it[TOKEN_KEY] = token }
-        cachedToken = token
+    suspend fun getRefreshTokenSync(): String? {
+        if (cachedRefreshToken.isNullOrBlank()) {
+            cachedRefreshToken = getRefreshToken.firstOrNull()
+        }
+        return if (cachedRefreshToken == "null" || cachedRefreshToken == "undefined") null else cachedRefreshToken
     }
 
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
+        // Cập nhật RAM trước để các thread khác thấy ngay
+        cachedToken = accessToken
+        cachedRefreshToken = refreshToken
+        
+        // Sau đó mới lưu vào Disk
         dataStore.edit {
             it[TOKEN_KEY] = accessToken
             it[REFRESH_TOKEN_KEY] = refreshToken
         }
-        cachedToken = accessToken
-        cachedRefreshToken = refreshToken
     }
 
     suspend fun clearTokens() {
-        dataStore.edit { it.clear() } // Xóa toàn bộ token nhanh gọn
         cachedToken = null
         cachedRefreshToken = null
+        dataStore.edit { it.clear() }
     }
 }
