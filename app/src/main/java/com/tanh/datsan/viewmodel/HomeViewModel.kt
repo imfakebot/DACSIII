@@ -38,11 +38,11 @@ class HomeViewModel @Inject constructor(
     private val _selectedType = MutableStateFlow<String?>(null)
     val selectedType: StateFlow<String?> = _selectedType
 
-    private val _userName = MutableStateFlow<String?>(null)
-    val userName: StateFlow<String?> = _userName
+    val userName: StateFlow<String?> = userRepository.userName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _userAvatarUrl = MutableStateFlow<String?>(null)
-    val userAvatarUrl: StateFlow<String?> = _userAvatarUrl
+    val userAvatarUrl: StateFlow<String?> = userRepository.userAvatarUrl
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     // Luồng đếm số lượng thông báo chưa đọc từ Git
     val unreadNotification = notificationRepository.unreadCountFlow
@@ -51,8 +51,7 @@ class HomeViewModel @Inject constructor(
     private var currentLng: String? = null
 
     // Kiểm tra trạng thái đăng nhập dựa trên Token thực tế từ TokenManager
-    var isLoggedIn: StateFlow<Boolean> = tokenManager.token
-        .map { token -> !token.isNullOrEmpty() }
+    val isLoggedIn: StateFlow<Boolean> = userRepository.isLoggedIn
         .stateIn(
             viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -76,9 +75,6 @@ class HomeViewModel @Inject constructor(
                     } catch (e: Exception) {
                         Log.e("HomeViewModel", "Lỗi lấy thông báo: ${e.message}")
                     }
-                } else {
-                    _userName.value = null
-                    _userAvatarUrl.value = null
                 }
             }
         }
@@ -159,9 +155,16 @@ class HomeViewModel @Inject constructor(
     private fun fetchUserProfileAfterLoggin() {
         viewModelScope.launch {
             try {
-                val userProfile = userRepository.getProfileLoggedIn()
-                _userName.value = userProfile.fullName
-                _userAvatarUrl.value = userProfile.avatarUrl
+                val response = userRepository.getProfile()
+                if (response.isSuccessful) {
+                    val userMe = response.body()
+                    userRepository.saveUserInfo(
+                        avatarUrl = userMe?.userProfile?.avatarUrl,
+                        userName = userMe?.userProfile?.fullName,
+                        phone = userMe?.userProfile?.phoneNumber,
+                        address = userMe?.userProfile?.address
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error fetching user profile: ${e.message}")
             }

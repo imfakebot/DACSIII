@@ -10,9 +10,14 @@ import javax.inject.Singleton
 
 @Singleton
 class LocationRepository @Inject constructor(
-    @ApplicationContext context: Context
+    @ApplicationContext context: Context,
+    private val locationApiService: com.tanh.datsan.data.network.LocationApiService
 ){
     private val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+    suspend fun getCities() = locationApiService.getCities()
+
+    suspend fun getWards(cityId: Int) = locationApiService.getWards(cityId)
 
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Pair<String,String>?{

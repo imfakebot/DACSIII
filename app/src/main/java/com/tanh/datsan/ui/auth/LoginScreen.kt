@@ -28,16 +28,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.credentials.CredentialManager
-import androidx.credentials.CustomCredential
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
-import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.tanh.datsan.R
-import com.tanh.datsan.utils.GoogleAuthHelper
 import com.tanh.datsan.viewmodel.AuthUiEvent
 import com.tanh.datsan.viewmodel.AuthViewModel
 import kotlinx.coroutines.launch
@@ -189,20 +183,27 @@ fun LoginScreen(
             onClick = {
                 if (isLoading) return@OutlinedButton
                 scope.launch {
-                    try {
-                        val idToken = GoogleAuthHelper.signInWithGoogle(context, errorUnsupportedCredential)
+                    // Gọi hàm thông qua viewModel
+                    val authResult = viewModel.googleAuthHelper.signInWithGoogle(context, errorUnsupportedCredential)
 
+                    authResult.onSuccess { idToken ->
                         Toast.makeText(context, msgConnectingServer, Toast.LENGTH_SHORT).show()
                         viewModel.loginWithGoogle(idToken)
-                    } catch (e: GetCredentialCancellationException) {
-                        Log.w("Auth", "Google Sign-In Cancelled", e)
-                        Toast.makeText(context, errorGoogleCancelled, Toast.LENGTH_SHORT).show()
-                    } catch (e: NoCredentialException) {
-                        Log.e("Auth", "No Google Account Found", e)
-                        Toast.makeText(context, errorNoGoogleAccount, Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        val formattedError = String.format(errorWithPrefixTemplate, e.localizedMessage ?: "")
-                        Toast.makeText(context, formattedError, Toast.LENGTH_LONG).show()
+                    }.onFailure { e ->
+                        when (e) {
+                            is GetCredentialCancellationException -> {
+                                Log.w("Auth", "Google Sign-In Cancelled", e)
+                                Toast.makeText(context, errorGoogleCancelled, Toast.LENGTH_SHORT).show()
+                            }
+                            is NoCredentialException -> {
+                                Log.e("Auth", "No Google Account Found", e)
+                                Toast.makeText(context, errorNoGoogleAccount, Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                val formattedError = String.format(errorWithPrefixTemplate, e.localizedMessage ?: "")
+                                Toast.makeText(context, formattedError, Toast.LENGTH_LONG).show()
+                            }
+                        }
                     }
                 }
             },

@@ -7,6 +7,7 @@ import com.tanh.datsan.data.model.OtpRequest
 import com.tanh.datsan.data.model.RegisterRequest
 import com.tanh.datsan.data.model.ResetPasswordRequest
 import com.tanh.datsan.data.repository.AuthRepository
+import com.tanh.datsan.utils.GoogleAuthHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,12 +27,21 @@ sealed class AuthUiEvent {
     data class NavigateToHome(val message: String) : AuthUiEvent()
     object NavigateBackToLogin : AuthUiEvent()
     object OtpResent : AuthUiEvent()
+    object Logout : AuthUiEvent()
 }
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository // Hilt sẽ tự động tiêm Repository vào đây
+    private val repository: AuthRepository, // Hilt sẽ tự động tiêm Repository vào đây
+    var googleAuthHelper: GoogleAuthHelper
 ) : ViewModel() { // Đổi từ AndroidViewModel sang ViewModel chuẩn
+
+    fun triggerLogout() {
+        viewModelScope.launch {
+            repository.logout()
+            sendEvent(AuthUiEvent.Logout)
+        }
+    }
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -70,8 +80,8 @@ class AuthViewModel @Inject constructor(
                 val response = repository.googleAuthNative(idToken)
                 if (response.isSuccessful && !response.body()?.accessToken.isNullOrBlank()) {
                     val result = response.body()!!
-                    // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
-                    repository.saveTokens(result.accessToken, "")
+                    // Lưu cả access token và refresh token
+                    repository.saveTokens(result.accessToken, result.refreshToken ?: "")
                     android.util.Log.d("AUTH_DEBUG", "avatarUrl = ${result.user?.avatarUrl}")
                     android.util.Log.d("AUTH_DEBUG", "userName = ${result.user?.userName}")
                     repository.saveUserInfo(
@@ -151,8 +161,8 @@ class AuthViewModel @Inject constructor(
                     val response = repository.loginComplete(request)
                     if (response.isSuccessful && !response.body()?.accessToken.isNullOrBlank()) {
                         val result = response.body()!!
-                        // Backend hiện trả refresh token qua HttpOnly cookie, không nằm trong JSON body.
-                        repository.saveTokens(result.accessToken, "")
+                        // Lưu cả access token và refresh token
+                        repository.saveTokens(result.accessToken, result.refreshToken ?: "")
                         repository.saveUserInfo(
                             avatarUrl = result.user?.avatarUrl,
                             userName = result.user?.userName ?: result.user?.email

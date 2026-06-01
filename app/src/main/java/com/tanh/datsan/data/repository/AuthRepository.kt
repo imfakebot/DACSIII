@@ -1,15 +1,17 @@
 package com.tanh.datsan.data.repository
 
 import com.tanh.datsan.core.TokenManager
-import com.tanh.datsan.data.model.* // Nhập toàn bộ model từ package data.model mà chúng ta đã di dời
-import com.tanh.datsan.data.network.AuthApiService // Dùng interface đã được tách riêng
+import com.tanh.datsan.core.UserManager
+import com.tanh.datsan.data.model.*
+import com.tanh.datsan.data.network.AuthApiService
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class AuthRepository @Inject constructor(
-    private val authApiService: AuthApiService, // Hilt sẽ tự động tiêm cái này vào
-    private val tokenManager: TokenManager
+    private val authApiService: AuthApiService,
+    private val tokenManager: TokenManager,
+    private val userManager: UserManager
 ) {
     suspend fun loginInitiate(request: LoginRequest) = authApiService.loginInitiate(request)
     suspend fun registerInitiate(request: RegisterRequest) = authApiService.registerInitiate(request)
@@ -23,7 +25,13 @@ class AuthRepository @Inject constructor(
     suspend fun saveTokens(accessToken: String, refreshToken: String) {
         tokenManager.saveTokens(accessToken, refreshToken)
     }
-    suspend fun saveUserInfo(avatarUrl: String?, userName: String?) {
-        tokenManager.saveUserInfo(avatarUrl, userName)
+
+    fun saveUserInfo(avatarUrl: String?, userName: String?) {
+        userManager.setUserInfo(userName, avatarUrl)
+    }
+
+    suspend fun logout() {
+        tokenManager.clearTokens()
+        userManager.clearUserInfo()
     }
 }

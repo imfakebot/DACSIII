@@ -29,6 +29,9 @@ import java.util.Locale
 class MainActivity : ComponentActivity() {
     private val mainViewModel: MainViewModel by viewModels()
 
+    @javax.inject.Inject
+    lateinit var globalEventBus: com.tanh.datsan.core.GlobalEventBus
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -58,6 +61,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             val theme by mainViewModel.theme.collectAsState()
             val language by mainViewModel.language.collectAsState()
+            
+            // Lắng nghe Logout toàn cục
+            LaunchedEffect(Unit) {
+                globalEventBus.events.collect { event ->
+                    if (event is com.tanh.datsan.core.GlobalEvent.Logout) {
+                        // Restart App or Navigate to Login
+                        val intent = packageManager.getLaunchIntentForPackage(packageName)
+                        intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        finish()
+                    }
+                }
+            }
 
             // Handle language change
             LaunchedEffect(language) {

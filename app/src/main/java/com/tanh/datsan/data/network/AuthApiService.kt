@@ -32,4 +32,11 @@ interface AuthApiService {
 
     @POST("auth/reset-password")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<AuthMessageResponse>
+
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshTokenRequest): Response<LoginResponse>
 }
+
+data class RefreshTokenRequest(
+    val refreshToken: String?
+)

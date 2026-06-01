@@ -37,6 +37,7 @@ import coil.compose.AsyncImage
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
+import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.HomeViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.util.Locale
@@ -177,7 +178,7 @@ fun MainScreen(
                                         maxLines = 2
                                     )
                                     AsyncImage(
-                                        model = userAvatar.takeIf { !it.isNullOrEmpty() }
+                                        model = userAvatar?.toFullImageUrl()?.takeIf { it.isNotEmpty() }
                                             ?: R.drawable.ic_default_avatar,
                                         contentDescription = stringResource(R.string.cd_user_avatar),
                                         modifier = Modifier

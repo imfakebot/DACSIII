@@ -7,7 +7,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -30,7 +31,10 @@ import com.tanh.datsan.viewmodel.MainViewModel
 import com.tanh.datsan.viewmodel.AuthViewModel
 import com.tanh.datsan.viewmodel.AuthUiEvent
 import kotlinx.coroutines.flow.collectLatest
+import java.util.*
+import java.text.SimpleDateFormat
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel(),
@@ -41,43 +45,37 @@ fun ProfileScreen(
     onNavigateToResetPassword: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    
+    // States from ViewModel
     val profile by viewModel.profileState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isEditing by viewModel.isEditing.collectAsState()
     val authIsLoading by authViewModel.isLoading.collectAsState()
     val toastMessage by viewModel.toastMessage.collectAsState()
     val avatarUrl by viewModel.userAvatarUrl.collectAsState()
-    val initialUserName by viewModel.userName.collectAsState()
-    val initialPhone by viewModel.userPhone.collectAsState()
-    val initialAddress by viewModel.userAddress.collectAsState()
+    
+    val cities by viewModel.cities.collectAsState()
+    val wards by viewModel.wards.collectAsState()
+
+    // Editable fields from ViewModel
+    val fullName by viewModel.fullName.collectAsState()
+    val phoneNumber by viewModel.phoneNumber.collectAsState()
+    val gender by viewModel.gender.collectAsState()
+    val dateOfBirth by viewModel.dateOfBirth.collectAsState()
+    val bio by viewModel.bio.collectAsState()
+    val street by viewModel.street.collectAsState()
+    val selectedCityId by viewModel.selectedCityId.collectAsState()
+    val selectedWardId by viewModel.selectedWardId.collectAsState()
 
     // Global settings from MainViewModel
     val currentTheme by mainViewModel.theme.collectAsState()
     val currentLanguage by mainViewModel.language.collectAsState()
 
-    // Local states for editing
-    var fullName by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(false) }
+    // Dialog states
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    // Khởi tạo giá trị từ TokenManager ngay khi vào màn hình để hiển thị ngay lập tức
-    LaunchedEffect(initialUserName, initialPhone, initialAddress) {
-        if (!isEditing) {
-            if (fullName.isEmpty()) fullName = initialUserName ?: ""
-            if (phone.isEmpty()) phone = initialPhone ?: ""
-            if (address.isEmpty()) address = initialAddress ?: ""
-        }
-    }
-
-    // Sync local state when profile data arrives
-    LaunchedEffect(profile) {
-        profile?.userProfile?.let {
-            fullName = it.fullName ?: ""
-            phone = it.phoneNumber ?: ""
-            address = it.address ?: ""
-        }
-    }
+    var showAvatarConfirmDialog by remember { mutableStateOf(false) }
+    var pendingAvatarFile by remember { mutableStateOf<java.io.File?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
 
     // Handle Toast
     LaunchedEffect(toastMessage) {
@@ -87,7 +85,7 @@ fun ProfileScreen(
         }
     }
 
-    // Handle Auth UI Events (for forgot password navigation)
+    // Handle Auth UI Events
     LaunchedEffect(Unit) {
         authViewModel.uiEvent.collectLatest { event ->
             when (event) {
@@ -109,7 +107,8 @@ fun ProfileScreen(
         uri?.let {
             val file = it.toFile(context)
             if (file != null) {
-                viewModel.uploadAvatar(file)
+                pendingAvatarFile = file
+                showAvatarConfirmDialog = true
             }
         }
     }
@@ -118,7 +117,7 @@ fun ProfileScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(if (isSystemInDarkTheme()) Color(0xFF121212) else Color(0xFFF5F7FA))) {
 
-        // ── HEADER nền xanh gradient ──
+        // ── HEADER ──
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -141,44 +140,19 @@ fun ProfileScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBackClick) {
-                    Icon(
-                        Icons.Default.ArrowBack,
-                        contentDescription = "Quay lại",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.ArrowBack, contentDescription = "Quay lại", tint = Color.White)
                 }
-                Text(
-                    "Thông tin cá nhân",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
+                Text("Thông tin cá nhân", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 IconButton(onClick = { 
-                    if (isEditing) {
-                        // Cancel editing -> reset state
-                        profile?.userProfile?.let {
-                            fullName = it.fullName ?: ""
-                            phone = it.phoneNumber ?: ""
-                            address = it.address ?: ""
-                        }
-                    }
-                    isEditing = !isEditing 
+                    viewModel.toggleEditing(!isEditing)
                 }) {
-                    Icon(
-                        if (isEditing) Icons.Default.Close else Icons.Default.Edit,
-                        contentDescription = "Chỉnh sửa",
-                        tint = Color.White
-                    )
+                    Icon(if (isEditing) Icons.Default.Close else Icons.Default.Edit, contentDescription = "Chỉnh sửa", tint = Color.White)
                 }
             }
 
             // ── AVATAR ──
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 Box(contentAlignment = Alignment.BottomEnd) {
-                    // Avatar circle
                     Box(
                         modifier = Modifier
                             .size(110.dp)
@@ -195,18 +169,12 @@ fun ProfileScreen(
                             placeholder = androidx.compose.ui.res.painterResource(id = com.tanh.datsan.R.drawable.avartar_default),
                             error = androidx.compose.ui.res.painterResource(id = com.tanh.datsan.R.drawable.avartar_default)
                         )
-                        
                         if (isLoading || authIsLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)),
-                                contentAlignment = Alignment.Center
-                            ) {
+                            Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(30.dp))
                             }
                         }
                     }
-
-                    // Nút camera đổi ảnh
                     Box(
                         modifier = Modifier
                             .size(36.dp)
@@ -216,80 +184,77 @@ fun ProfileScreen(
                             .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.CameraAlt,
-                            contentDescription = "Đổi ảnh",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Icon(Icons.Default.CameraAlt, contentDescription = "Đổi ảnh", tint = Color.White, modifier = Modifier.size(20.dp))
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Tên hiển thị
-            Text(
-                text = profile?.userProfile?.fullName ?: "Người dùng",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = Color.White
-            )
-            Text(
-                text = profile?.email ?: "",
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center,
-                fontSize = 14.sp,
-                color = Color.White.copy(alpha = 0.8f)
-            )
+            Text(text = fullName.ifEmpty { "Người dùng" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+            Text(text = profile?.email ?: "", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ── CARD THÔNG TIN ──
+            // ── CARD THÔNG TIN TÀI KHOẢN ──
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        "Thông tin tài khoản",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color(0xFF0056B3)
-                    )
+                    Text("Thông tin tài khoản", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    ProfileField(
-                        icon = Icons.Default.Person,
-                        label = "Họ và tên",
-                        value = fullName,
+                    ProfileField(icon = Icons.Default.Person, label = "Họ và tên", value = fullName, isEditing = isEditing, onValueChange = { viewModel.fullName.value = it })
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    ProfileField(icon = Icons.Default.Phone, label = "Số điện thoại", value = phoneNumber, isEditing = isEditing, onValueChange = { viewModel.phoneNumber.value = it }, keyboardType = KeyboardType.Phone)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    GenderDropdown(gender = gender, isEditing = isEditing, onGenderSelected = { viewModel.gender.value = it })
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    BirthdayPicker(dob = dateOfBirth, isEditing = isEditing, onClick = { showDatePicker = true })
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    ProfileField(icon = Icons.Default.Info, label = "Tiểu sử", value = bio, isEditing = isEditing, onValueChange = { viewModel.bio.value = it })
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ── CARD ĐỊA CHỈ ──
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Địa chỉ liên hệ", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    LocationDropdown(
+                        label = "Tỉnh / Thành phố",
+                        items = cities.map { it.id to it.name },
+                        selectedId = selectedCityId,
                         isEditing = isEditing,
-                        onValueChange = { fullName = it }
+                        onItemSelected = { viewModel.onCitySelected(it) }
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    ProfileField(
-                        icon = Icons.Default.Phone,
-                        label = "Số điện thoại",
-                        value = phone,
+                    LocationDropdown(
+                        label = "Quận / Huyện / Phường",
+                        items = wards.map { it.id to it.name },
+                        selectedId = selectedWardId,
                         isEditing = isEditing,
-                        onValueChange = { phone = it }
+                        onItemSelected = { viewModel.selectedWardId.value = it },
+                        enabled = selectedCityId != null
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    ProfileField(
-                        icon = Icons.Default.LocationOn,
-                        label = "Địa chỉ",
-                        value = address,
-                        isEditing = isEditing,
-                        onValueChange = { address = it }
-                    )
+                    ProfileField(icon = Icons.Default.Map, label = "Số nhà, tên đường", value = street, isEditing = isEditing, onValueChange = { viewModel.street.value = it })
                 }
             }
 
@@ -297,87 +262,28 @@ fun ProfileScreen(
 
             // ── CARD CÀI ĐẶT ──
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        "Cài đặt & Bảo mật",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = Color(0xFF0056B3)
-                    )
+                    Text("Cài đặt & Bảo mật", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Theme setting
-                    SettingItem(
-                        icon = if (currentTheme == "dark") Icons.Default.DarkMode else Icons.Default.LightMode,
-                        label = "Chế độ hiển thị",
-                        value = when (currentTheme) {
-                            "light" -> "Sáng"
-                            "dark" -> "Tối"
-                            else -> "Theo hệ thống"
-                        },
-                        onClick = {
-                            val nextTheme = when (currentTheme) {
-                                "light" -> "dark"
-                                "dark" -> "system"
-                                else -> "light"
-                            }
-                            mainViewModel.setTheme(nextTheme)
-                        }
-                    )
-                    
+                    SettingItem(icon = if (currentTheme == "dark") Icons.Default.DarkMode else Icons.Default.LightMode, label = "Chế độ hiển thị", value = when (currentTheme) { "light" -> "Sáng"; "dark" -> "Tối"; else -> "Theo hệ thống" }, onClick = { mainViewModel.setTheme(if (currentTheme == "light") "dark" else if (currentTheme == "dark") "system" else "light") })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
-
-                    // Language setting
-                    SettingItem(
-                        icon = Icons.Default.Language,
-                        label = "Ngôn ngữ",
-                        value = if (currentLanguage == "vi") "Tiếng Việt" else "English",
-                        onClick = {
-                            val nextLang = if (currentLanguage == "vi") "en" else "vi"
-                            mainViewModel.setLanguage(nextLang)
-                        }
-                    )
-
+                    SettingItem(icon = Icons.Default.Language, label = "Ngôn ngữ", value = if (currentLanguage == "vi") "Tiếng Việt" else "English", onClick = { mainViewModel.setLanguage(if (currentLanguage == "vi") "en" else "vi") })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
-
-                    // Change Password
-                    SettingItem(
-                        icon = Icons.Default.Lock,
-                        label = "Đổi mật khẩu",
-                        value = "Gửi mã xác nhận qua email",
-                        onClick = { 
-                            profile?.email?.let { email ->
-                                authViewModel.forgotPassword(email)
-                            } ?: run {
-                                Toast.makeText(context, "Không tìm thấy email người dùng", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    )
+                    SettingItem(icon = Icons.Default.Lock, label = "Đổi mật khẩu", value = "Gửi mã xác nhận qua email", onClick = { profile?.email?.let { authViewModel.forgotPassword(it) } })
                 }
             }
 
             // ── NÚT LƯU ──
-            AnimatedVisibility(
-                visible = isEditing,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
+            AnimatedVisibility(visible = isEditing, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
                 Button(
-                    onClick = {
-                        viewModel.updateProfile(fullName, phone, address)
-                        isEditing = false
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                        .height(52.dp),
+                    onClick = { viewModel.updateProfile() },
+                    modifier = Modifier.fillMaxWidth().padding(16.dp).height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
                     enabled = !isLoading
@@ -393,169 +299,205 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // ── NÚT ĐĂNG XUẤT ──
-            OutlinedButton(
-                onClick = { showLogoutDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(1.5.dp, Color(0xFFE53935).copy(alpha = 0.5f)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE53935))
-            ) {
-                Icon(Icons.Default.Logout, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Đăng xuất", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            OutlinedButton(onClick = { showLogoutDialog = true }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(52.dp), shape = RoundedCornerShape(12.dp), border = BorderStroke(1.5.dp, Color(0xFFE53935).copy(alpha = 0.5f)), colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE53935))) {
+                Icon(Icons.Default.Logout, contentDescription = null); Spacer(modifier = Modifier.width(8.dp)); Text("Đăng xuất", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
-
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // Loading Overlay for full screen actions
-        if ((isLoading || authIsLoading) && !isEditing) {
-            Box(
-                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = Color(0xFF007BFF))
-            }
+        // DIALOGS
+        if (showLogoutDialog) {
+            AlertDialog(onDismissRequest = { showLogoutDialog = false }, shape = RoundedCornerShape(16.dp), title = { Text("Đăng xuất", fontWeight = FontWeight.Bold) }, text = { Text("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?") }, confirmButton = { Button(onClick = { showLogoutDialog = false; viewModel.logout(); onLogoutClick() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))) { Text("Đăng xuất", color = Color.White) } }, dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("Huỷ", color = Color(0xFF007BFF)) } })
         }
 
-        // ── DIALOG XÁC NHẬN ĐĂNG XUẤT ──
-        if (showLogoutDialog) {
-            AlertDialog(
-                onDismissRequest = { showLogoutDialog = false },
-                shape = RoundedCornerShape(16.dp),
-                title = { Text("Đăng xuất", fontWeight = FontWeight.Bold) },
-                text = { Text("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?") },
+        if (showAvatarConfirmDialog) {
+            AlertDialog(onDismissRequest = { showAvatarConfirmDialog = false }, shape = RoundedCornerShape(16.dp), title = { Text("Đổi ảnh đại diện", fontWeight = FontWeight.Bold) }, text = { Text("Bạn có chắc chắn muốn thay đổi ảnh đại diện này không?") }, confirmButton = { Button(onClick = { showAvatarConfirmDialog = false; pendingAvatarFile?.let { viewModel.uploadAvatar(it) } }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))) { Text("Đồng ý", color = Color.White) } }, dismissButton = { TextButton(onClick = { showAvatarConfirmDialog = false; pendingAvatarFile = null }) { Text("Huỷ", color = Color.Gray) } })
+        }
+
+        if (showDatePicker) {
+            val datePickerState = rememberDatePickerState()
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
                 confirmButton = {
-                    Button(
-                        onClick = {
-                            showLogoutDialog = false
-                            viewModel.logout()
-                            onLogoutClick()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE53935))
-                    ) {
-                        Text("Đăng xuất", color = Color.White)
-                    }
+                    TextButton(onClick = {
+                        val selectedDate = datePickerState.selectedDateMillis
+                        if (selectedDate != null) {
+                            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                            viewModel.dateOfBirth.value = formatter.format(Date(selectedDate))
+                        }
+                        showDatePicker = false
+                    }) { Text("Chọn") }
                 },
-                dismissButton = {
-                    TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Huỷ", color = Color(0xFF007BFF))
+                dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Huỷ") } }
+            ) {
+                DatePicker(state = datePickerState)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GenderDropdown(gender: String, isEditing: Boolean, onGenderSelected: (String) -> Unit) {
+    val options = listOf("male", "female", "other")
+    val labels = mapOf("male" to "Nam", "female" to "Nữ", "other" to "Khác")
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE3F2FD)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Wc, contentDescription = null, tint = Color(0xFF007BFF), modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Giới tính", fontSize = 12.sp, color = Color.Gray)
+            if (isEditing) {
+                ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+                    OutlinedTextField(
+                        value = labels[gender] ?: "Chọn giới tính",
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 15.sp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color(0xFF007BFF).copy(alpha = 0.3f),
+                            focusedBorderColor = Color(0xFF007BFF)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        options.forEach { option ->
+                            DropdownMenuItem(text = { Text(labels[option]!!) }, onClick = { onGenderSelected(option); expanded = false })
+                        }
                     }
                 }
-            )
+            } else {
+                Text(text = labels[gender] ?: "Chưa cập nhật", fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (gender.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun BirthdayPicker(dob: String, isEditing: Boolean, onClick: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable(enabled = isEditing) { onClick() }) {
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE3F2FD)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color(0xFF007BFF), modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Ngày sinh", fontSize = 12.sp, color = Color.Gray)
+            Text(text = dob.ifEmpty { "Chọn ngày sinh" }, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (dob.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+        }
+        if (isEditing) Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = Color.Gray)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LocationDropdown(label: String, items: List<Pair<Int, String>>, selectedId: Int?, isEditing: Boolean, onItemSelected: (Int) -> Unit, enabled: Boolean = true) {
+    var expanded by remember { mutableStateOf(false) }
+    val selectedName = items.find { it.first == selectedId }?.second ?: ""
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE3F2FD)), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color(0xFF007BFF), modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, fontSize = 12.sp, color = Color.Gray)
+            if (isEditing) {
+                ExposedDropdownMenuBox(
+                    expanded = expanded && enabled, 
+                    onExpandedChange = { if (enabled) expanded = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = if (items.isEmpty() && enabled) "Đang tải dữ liệu..." else selectedName.ifEmpty { "Chọn $label" },
+                        onValueChange = {},
+                        readOnly = true,
+                        enabled = enabled && items.isNotEmpty(),
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 15.sp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            unfocusedBorderColor = Color(0xFF007BFF).copy(alpha = 0.3f),
+                            focusedBorderColor = Color(0xFF007BFF),
+                            disabledBorderColor = Color.LightGray.copy(alpha = 0.2f)
+                        )
+                    )
+                    if (items.isNotEmpty()) {
+                        ExposedDropdownMenu(
+                            expanded = expanded && enabled, 
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            items.forEach { (id, name) ->
+                                DropdownMenuItem(
+                                    text = { Text(name, fontSize = 15.sp) }, 
+                                    onClick = { onItemSelected(id); expanded = false }
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text(text = selectedName.ifEmpty { "Chưa cập nhật" }, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (selectedName.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+            }
         }
     }
 }
 
 @Composable
 fun ProfileField(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    isEditing: Boolean,
-    onValueChange: (String) -> Unit
+    icon: ImageVector, 
+    label: String, 
+    value: String, 
+    isEditing: Boolean, 
+    onValueChange: (String) -> Unit,
+    keyboardType: KeyboardType = KeyboardType.Text
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFE3F2FD)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = Color(0xFF007BFF),
-                modifier = Modifier.size(20.dp)
-            )
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE3F2FD)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = Color(0xFF007BFF), modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(label, fontSize = 12.sp, color = Color.Gray)
             if (isEditing) {
-                BasicTextField(
+                OutlinedTextField(
                     value = value,
                     onValueChange = onValueChange,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    decorationBox = { innerTextField ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(1.dp, Color(0xFF007BFF).copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                        ) {
-                            if (value.isEmpty()) {
-                                Text("Nhập $label...", color = Color.LightGray, fontSize = 15.sp)
-                            }
-                            innerTextField()
-                        }
-                    }
+                    textStyle = LocalTextStyle.current.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
+                    placeholder = { Text("Nhập $label...", color = Color.LightGray, fontSize = 15.sp) },
+                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = Color(0xFF007BFF).copy(alpha = 0.3f),
+                        focusedBorderColor = Color(0xFF007BFF)
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    singleLine = label != "Tiểu sử"
                 )
             } else {
-                Text(
-                    text = value.ifEmpty { "Chưa cập nhật" },
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = if (value.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
+                Text(text = value.ifEmpty { "Chưa cập nhật" }, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (value.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
             }
         }
     }
 }
 
 @Composable
-fun SettingItem(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    onClick: () -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-            .padding(vertical = 4.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFE3F2FD).copy(alpha = 0.5f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = Color(0xFF007BFF),
-                modifier = Modifier.size(20.dp)
-            )
+fun SettingItem(icon: ImageVector, label: String, value: String, onClick: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable { onClick() }.padding(vertical = 4.dp)) {
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFFE3F2FD).copy(alpha = 0.5f)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = Color(0xFF007BFF), modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
             Text(value, fontSize = 12.sp, color = Color.Gray)
         }
-        Icon(
-            Icons.Default.ChevronRight,
-            contentDescription = null,
-            tint = Color.LightGray,
-            modifier = Modifier.size(20.dp)
-        )
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(20.dp))
     }
 }
