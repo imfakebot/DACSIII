@@ -13,67 +13,76 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+data class ChatUiState(
+    val messages: List<ChatMessage> = emptyList(),
+    val feedbackDetail: FeedbackResponse? = null,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val currentUserId: String? = null,
+    val isConnected: Boolean = false
+)
+
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val feedbackRepository: FeedbackRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
-    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
-
-    private val _feedbackDetail = MutableStateFlow<FeedbackResponse?>(null)
-    val feedbackDetail = _feedbackDetail.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading = _isLoading.asStateFlow()
-
-    private val _error = MutableStateFlow<String?>(null)
-    val error = _error.asStateFlow()
-
-    // Lấy ID của user hiện tại để phân biệt tin nhắn bên trái/phải
-    private val _currentUserId = MutableStateFlow<String?>(null)
-    val currentUserId = _currentUserId.asStateFlow()
+    private val _uiState = MutableStateFlow(ChatUiState())
+    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
 
     init {
-        // Kết nối socket khi ViewModel được khởi tạo
+        // Kết nối socket
         feedbackRepository.connectSocket()
         
-        // Lắng nghe tin nhắn real-time từ Repository
+        // Theo dõi tin nhắn real-time
         viewModelScope.launch {
             feedbackRepository.realTimeMessages.collect { newMessage ->
-                _messages.value = _messages.value + newMessage
+                _uiState.value = _uiState.value.copy(
+                    messages = _uiState.value.messages + newMessage
+                )
             }
         }
 
-        // Lấy thông tin user hiện tại (giả định bạn đã có hàm này trong UserRepository)
-        // Nếu chưa có, ta có thể lấy từ profile state
+        // Lấy Profile ID để phân biệt tin nhắn (Backend dùng Profile ID cho responder.id)
         viewModelScope.launch {
-            userRepository.getProfile().body()?.let {
-                _currentUserId.value = it.id
+            try {
+                val response = userRepository.getProfile()
+                if (response.isSuccessful) {
+                    val profileId = response.body()?.userProfile?.id
+                    _uiState.value = _uiState.value.copy(currentUserId = profileId)
+                }
+            } catch (e: Exception) {
+                // Ignore profile fetch error for chat
             }
         }
     }
 
     fun loadChatHistory(feedbackId: String) {
         viewModelScope.launch {
-            _isLoading.value = true
+            _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val response = feedbackRepository.getFeedbackDetail(feedbackId)
                 if (response.isSuccessful) {
                     val detail = response.body()
-                    _feedbackDetail.value = detail
-                    _messages.value = detail?.responses ?: emptyList()
-                    
-                    // Sau khi load history thành công thì join vào room để nhận tin mới
+                    _uiState.value = _uiState.value.copy(
+                        feedbackDetail = detail,
+                        messages = detail?.responses ?: emptyList(),
+                        isLoading = false
+                    )
+                    // Tham gia room sau khi có history
                     feedbackRepository.joinRoom(feedbackId)
                 } else {
-                    _error.value = "Không thể tải lịch sử trò chuyện"
+                    _uiState.value = _uiState.value.copy(
+                        error = "Không thể tải lịch sử trò chuyện",
+                        isLoading = false
+                    )
                 }
             } catch (e: Exception) {
-                _error.value = "Lỗi kết nối: ${e.message}"
-            } finally {
-                _isLoading.value = false
+                _uiState.value = _uiState.value.copy(
+                    error = "Lỗi kết nối: ${e.message}",
+                    isLoading = false
+                )
             }
         }
     }
@@ -85,24 +94,21 @@ class ChatViewModel @Inject constructor(
             try {
                 val response = feedbackRepository.replyFeedback(feedbackId, content)
                 if (!response.isSuccessful) {
-                    _error.value = "Gửi tin nhắn thất bại"
+                    _uiState.value = _uiState.value.copy(error = "Gửi tin nhắn thất bại")
                 }
-                // Lưu ý: Chúng ta không tự add tin nhắn vào list ở đây, 
-                // vì Backend sẽ emit tin nhắn đó qua Socket và ta nhận ở collect { ... } bên trên.
             } catch (e: Exception) {
-                _error.value = "Lỗi: ${e.message}"
+                _uiState.value = _uiState.value.copy(error = "Lỗi: ${e.message}")
             }
         }
     }
 
     fun clearError() {
-        _error.value = null
+        _uiState.value = _uiState.value.copy(error = null)
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Rời phòng và ngắt kết nối khi thoát màn hình chat
-        _feedbackDetail.value?.id?.let {
+        _uiState.value.feedbackDetail?.id?.let {
             feedbackRepository.leaveRoom(it)
         }
         feedbackRepository.disconnectSocket()

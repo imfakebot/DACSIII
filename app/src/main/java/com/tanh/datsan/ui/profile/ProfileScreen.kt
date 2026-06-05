@@ -47,25 +47,8 @@ fun ProfileScreen(
     val context = LocalContext.current
     
     // States from ViewModel
-    val profile by viewModel.profileState.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isEditing by viewModel.isEditing.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val authIsLoading by authViewModel.isLoading.collectAsState()
-    val toastMessage by viewModel.toastMessage.collectAsState()
-    val avatarUrl by viewModel.userAvatarUrl.collectAsState()
-    
-    val cities by viewModel.cities.collectAsState()
-    val wards by viewModel.wards.collectAsState()
-
-    // Editable fields from ViewModel
-    val fullName by viewModel.fullName.collectAsState()
-    val phoneNumber by viewModel.phoneNumber.collectAsState()
-    val gender by viewModel.gender.collectAsState()
-    val dateOfBirth by viewModel.dateOfBirth.collectAsState()
-    val bio by viewModel.bio.collectAsState()
-    val street by viewModel.street.collectAsState()
-    val selectedCityId by viewModel.selectedCityId.collectAsState()
-    val selectedWardId by viewModel.selectedWardId.collectAsState()
 
     // Global settings from MainViewModel
     val currentTheme by mainViewModel.theme.collectAsState()
@@ -78,8 +61,8 @@ fun ProfileScreen(
     var showDatePicker by remember { mutableStateOf(false) }
 
     // Handle Toast
-    LaunchedEffect(toastMessage) {
-        toastMessage?.let {
+    LaunchedEffect(uiState.toastMessage) {
+        uiState.toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             viewModel.clearToast()
         }
@@ -144,9 +127,9 @@ fun ProfileScreen(
                 }
                 Text("Thông tin cá nhân", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 IconButton(onClick = { 
-                    viewModel.toggleEditing(!isEditing)
+                    viewModel.toggleEditing(!uiState.isEditing)
                 }) {
-                    Icon(if (isEditing) Icons.Default.Close else Icons.Default.Edit, contentDescription = "Chỉnh sửa", tint = Color.White)
+                    Icon(if (uiState.isEditing) Icons.Default.Close else Icons.Default.Edit, contentDescription = "Chỉnh sửa", tint = Color.White)
                 }
             }
 
@@ -162,14 +145,14 @@ fun ProfileScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         AsyncImage(
-                            model = avatarUrl?.toFullImageUrl(),
+                            model = uiState.avatarUrl?.toFullImageUrl(),
                             contentDescription = "Avatar",
                             modifier = Modifier.fillMaxSize().clip(CircleShape),
                             contentScale = ContentScale.Crop,
                             placeholder = androidx.compose.ui.res.painterResource(id = com.tanh.datsan.R.drawable.avartar_default),
                             error = androidx.compose.ui.res.painterResource(id = com.tanh.datsan.R.drawable.avartar_default)
                         )
-                        if (isLoading || authIsLoading) {
+                        if (uiState.isLoading || authIsLoading) {
                             Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(color = Color.White, modifier = Modifier.size(30.dp))
                             }
@@ -190,8 +173,8 @@ fun ProfileScreen(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = fullName.ifEmpty { "Người dùng" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-            Text(text = profile?.email ?: "", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
+            Text(text = uiState.fullName.ifEmpty { "Người dùng" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+            Text(text = uiState.profile?.email ?: "", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, fontSize = 14.sp, color = Color.White.copy(alpha = 0.8f))
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -206,19 +189,19 @@ fun ProfileScreen(
                     Text("Thông tin tài khoản", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    ProfileField(icon = Icons.Default.Person, label = "Họ và tên", value = fullName, isEditing = isEditing, onValueChange = { viewModel.fullName.value = it })
+                    ProfileField(icon = Icons.Default.Person, label = "Họ và tên", value = uiState.fullName, isEditing = uiState.isEditing, onValueChange = { viewModel.onFullNameChange(it) })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    ProfileField(icon = Icons.Default.Phone, label = "Số điện thoại", value = phoneNumber, isEditing = isEditing, onValueChange = { viewModel.phoneNumber.value = it }, keyboardType = KeyboardType.Phone)
+                    ProfileField(icon = Icons.Default.Phone, label = "Số điện thoại", value = uiState.phoneNumber, isEditing = uiState.isEditing, onValueChange = { viewModel.onPhoneNumberChange(it) }, keyboardType = KeyboardType.Phone)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    GenderDropdown(gender = gender, isEditing = isEditing, onGenderSelected = { viewModel.gender.value = it })
+                    GenderDropdown(gender = uiState.gender, isEditing = uiState.isEditing, onGenderSelected = { viewModel.onGenderChange(it) })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    BirthdayPicker(dob = dateOfBirth, isEditing = isEditing, onClick = { showDatePicker = true })
+                    BirthdayPicker(dob = uiState.dateOfBirth, isEditing = uiState.isEditing, onClick = { showDatePicker = true })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    ProfileField(icon = Icons.Default.Info, label = "Tiểu sử", value = bio, isEditing = isEditing, onValueChange = { viewModel.bio.value = it })
+                    ProfileField(icon = Icons.Default.Info, label = "Tiểu sử", value = uiState.bio, isEditing = uiState.isEditing, onValueChange = { viewModel.onBioChange(it) })
                 }
             }
 
@@ -235,32 +218,28 @@ fun ProfileScreen(
                     Text("Địa chỉ liên hệ", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF0056B3))
                     Spacer(modifier = Modifier.height(16.dp))
 
-    val isLoadingCities by viewModel.isLoadingCities.collectAsState()
-
-    // ... (phần code khác)
-
                     LocationDropdown(
                         label = "Tỉnh / Thành phố",
-                        items = cities.map { it.id to it.name },
-                        selectedId = selectedCityId,
-                        isEditing = isEditing,
+                        items = uiState.cities.map { it.id to it.name },
+                        selectedId = uiState.selectedCityId,
+                        isEditing = uiState.isEditing,
                         onItemSelected = { viewModel.onCitySelected(it) },
-                        placeholderText = if (isLoadingCities) "Đang tải dữ liệu..." else if (cities.isEmpty()) "Không có dữ liệu" else "Chọn Tỉnh / Thành phố"
+                        placeholderText = if (uiState.isLoadingCities) "Đang tải dữ liệu..." else if (uiState.cities.isEmpty()) "Không có dữ liệu" else "Chọn Tỉnh / Thành phố"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
                     LocationDropdown(
                         label = "Quận / Huyện / Phường",
-                        items = wards.map { it.id to it.name },
-                        selectedId = selectedWardId,
-                        isEditing = isEditing,
-                        onItemSelected = { viewModel.selectedWardId.value = it },
-                        enabled = selectedCityId != null,
-                        placeholderText = if (selectedCityId == null) "Vui lòng chọn Tỉnh/Thành trước" else if (wards.isEmpty()) "Đang tải dữ liệu..." else "Chọn Quận / Huyện"
+                        items = uiState.wards.map { it.id to it.name },
+                        selectedId = uiState.selectedWardId,
+                        isEditing = uiState.isEditing,
+                        onItemSelected = { viewModel.onWardSelected(it) },
+                        enabled = uiState.selectedCityId != null,
+                        placeholderText = if (uiState.selectedCityId == null) "Vui lòng chọn Tỉnh/Thành trước" else if (uiState.wards.isEmpty()) "Đang tải dữ liệu..." else "Chọn Quận / Huyện"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    ProfileField(icon = Icons.Default.Map, label = "Số nhà, tên đường", value = street, isEditing = isEditing, onValueChange = { viewModel.street.value = it })
+                    ProfileField(icon = Icons.Default.Map, label = "Số nhà, tên đường", value = uiState.street, isEditing = uiState.isEditing, onValueChange = { viewModel.onStreetChange(it) })
                 }
             }
 
@@ -281,20 +260,20 @@ fun ProfileScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
                     SettingItem(icon = Icons.Default.Language, label = "Ngôn ngữ", value = if (currentLanguage == "vi") "Tiếng Việt" else "English", onClick = { mainViewModel.setLanguage(if (currentLanguage == "vi") "en" else "vi") })
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
-                    SettingItem(icon = Icons.Default.Lock, label = "Đổi mật khẩu", value = "Gửi mã xác nhận qua email", onClick = { profile?.email?.let { authViewModel.forgotPassword(it) } })
+                    SettingItem(icon = Icons.Default.Lock, label = "Đổi mật khẩu", value = "Gửi mã xác nhận qua email", onClick = { uiState.profile?.email?.let { authViewModel.forgotPassword(it) } })
                 }
             }
 
             // ── NÚT LƯU ──
-            AnimatedVisibility(visible = isEditing, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
+            AnimatedVisibility(visible = uiState.isEditing, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
                 Button(
                     onClick = { viewModel.updateProfile() },
                     modifier = Modifier.fillMaxWidth().padding(16.dp).height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF)),
-                    enabled = !isLoading
+                    enabled = !uiState.isLoading
                 ) {
-                    if (isLoading) {
+                    if (uiState.isLoading) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                     } else {
                         Icon(Icons.Default.Save, contentDescription = null)
@@ -329,7 +308,7 @@ fun ProfileScreen(
                         val selectedDate = datePickerState.selectedDateMillis
                         if (selectedDate != null) {
                             val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                            viewModel.dateOfBirth.value = formatter.format(Date(selectedDate))
+                            viewModel.onDobChange(formatter.format(Date(selectedDate)))
                         }
                         showDatePicker = false
                     }) { Text("Chọn") }

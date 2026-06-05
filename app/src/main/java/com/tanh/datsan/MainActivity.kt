@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateLocale(lang: String) {
-        val locale = Locale(lang)
+        val locale = Locale.forLanguageTag(lang)
         Locale.setDefault(locale)
         val config = resources.configuration
         config.setLocale(locale)

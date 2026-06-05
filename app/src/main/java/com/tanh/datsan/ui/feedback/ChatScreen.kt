@@ -34,11 +34,7 @@ fun ChatScreen(
     onBackClick: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
 ) {
-    val messages by viewModel.messages.collectAsState()
-    val feedbackDetail by viewModel.feedbackDetail.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val currentUserId by viewModel.currentUserId.collectAsState()
-    val error by viewModel.error.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     var textState by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -49,9 +45,9 @@ fun ChatScreen(
     }
 
     // Tự động scroll xuống cuối khi có tin nhắn mới
-    LaunchedEffect(messages.size) {
-        if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.size - 1)
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
+            listState.animateScrollToItem(uiState.messages.size)
         }
     }
 
@@ -61,14 +57,14 @@ fun ChatScreen(
                 title = {
                     Column {
                         Text(
-                            text = feedbackDetail?.title ?: "Hỗ trợ khách hàng",
+                            text = uiState.feedbackDetail?.title ?: "Hỗ trợ khách hàng",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = if (isLoading) "Đang kết nối..." else "Trực tuyến",
+                            text = if (uiState.isLoading) "Đang kết nối..." else "Trực tuyến",
                             fontSize = 12.sp,
-                            color = if (isLoading) Color.Gray else Color(0xFF4CAF50)
+                            color = if (uiState.isLoading) Color.Gray else Color(0xFF4CAF50)
                         )
                     }
                 },
@@ -107,19 +103,19 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Hiển thị mô tả của Feedback như tin nhắn đầu tiên
-                feedbackDetail?.let { detail ->
+                uiState.feedbackDetail?.let { detail ->
                     item {
                         FeedbackDescriptionItem(detail)
                     }
                 }
 
-                items(messages) { message ->
-                    val isMe = message.responder?.id == currentUserId
+                items(uiState.messages) { message ->
+                    val isMe = message.responder?.id == uiState.currentUserId
                     ChatMessageItem(message = message, isMe = isMe)
                 }
             }
 
-            if (isLoading && messages.isEmpty()) {
+            if (uiState.isLoading && uiState.messages.isEmpty()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
         }
@@ -135,6 +131,19 @@ fun ChatMessageItem(message: ChatMessage, isMe: Boolean) {
         RoundedCornerShape(16.dp, 16.dp, 2.dp, 16.dp)
     } else {
         RoundedCornerShape(16.dp, 16.dp, 16.dp, 2.dp)
+    }
+
+    // Format thời gian từ ISO 8601 sang HH:mm
+    val timeString = remember(message.createdAt) {
+        try {
+            val inputFormat = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault())
+            inputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            val date = inputFormat.parse(message.createdAt)
+            val outputFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+            outputFormat.format(date ?: java.util.Date())
+        } catch (e: Exception) {
+            ""
+        }
     }
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = alignment) {
@@ -169,12 +178,19 @@ fun ChatMessageItem(message: ChatMessage, isMe: Boolean) {
                     shape = shape,
                     shadowElevation = 1.dp
                 ) {
-                    Text(
-                        text = message.content,
-                        color = contentColor,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        fontSize = 14.sp
-                    )
+                    Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+                        Text(
+                            text = message.content,
+                            color = contentColor,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            text = timeString,
+                            color = contentColor.copy(alpha = 0.7f),
+                            fontSize = 10.sp,
+                            modifier = Modifier.align(Alignment.End).padding(top = 2.dp)
+                        )
+                    }
                 }
             }
         }

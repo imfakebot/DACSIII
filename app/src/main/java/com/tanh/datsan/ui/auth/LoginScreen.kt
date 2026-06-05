@@ -2,7 +2,6 @@ package com.tanh.datsan.ui.auth
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -48,7 +47,7 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
     val primaryBlue = MaterialTheme.colorScheme.primary
 
-    // 1. ĐỊNH NGHĨA TẤT CẢ CHUỖI Ở ĐẦU COMPOSABLE ĐỂ TRÁNH LỖI LINT LỘC-CONTEXT
+    // 1. ĐỊNH NGHĨA CHUỖI
     val textLoginTitle = stringResource(R.string.login_title)
     val textEmailHint = stringResource(R.string.login_email_hint)
     val textPasswordHint = stringResource(R.string.login_password_hint)
@@ -84,20 +83,29 @@ fun LoginScreen(
     var showForgotDialog by remember { mutableStateOf(false) }
     var forgotEmail by remember { mutableStateOf("") }
 
-    // Logic đăng nhập dùng chung
+    // Khởi tạo SnackbarHostState
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Logic đăng nhập dùng chung (Chuyển Toast -> Snackbar sử dụng scope)
     val handleLogin = {
         val validEmail = email.trim()
         if (validEmail.isEmpty() || password.isEmpty()) {
-            Toast.makeText(context, errorEmptyFields, Toast.LENGTH_SHORT).show()
+            scope.launch { snackbarHostState.showSnackbar(errorEmptyFields) }
         } else {
             viewModel.login(validEmail, password)
         }
     }
 
-    LaunchedEffect(Unit) {
+    // Lắng nghe sự kiện từ ViewModel
+    LaunchedEffect(viewModel.uiEvent) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                is AuthUiEvent.ShowToast -> Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
+                is AuthUiEvent.ShowToast -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
                 is AuthUiEvent.NavigateToOtp -> onNavigateToOtp(event.email, event.isLoginMode)
                 is AuthUiEvent.NavigateToHome -> onNavigateToHome(event.message)
                 is AuthUiEvent.NavigateToResetPassword -> {
@@ -110,121 +118,128 @@ fun LoginScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = textLoginTitle, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryBlue)
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Ô nhập Email
-        OutlinedTextField(
-            value = email, onValueChange = { email = it },
-            label = { Text(text = textEmailHint) },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            )
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Ô nhập Mật khẩu
-        OutlinedTextField(
-            value = password, onValueChange = { password = it },
-            label = { Text(text = textPasswordHint) },
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = cdTogglePassword)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
-            keyboardActions = KeyboardActions(
-                onDone = { handleLogin() }
-            )
-        )
-
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-            Text(
-                text = textForgotPassword, color = primaryBlue, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp).clickable { showForgotDialog = true }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Nút Đăng nhập
-        Button(
-            onClick = { handleLogin() },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-            enabled = !isLoading
+    // BẮT BUỘC: Phải bọc giao diện trong Scaffold và truyền snackbarHost vào
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues) // Đảm bảo UI không bị đè bởi hệ thống
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text(text = textBtnSubmit, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(text = textLoginTitle, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = primaryBlue)
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Ô nhập Email
+            OutlinedTextField(
+                value = email, onValueChange = { email = it },
+                label = { Text(text = textEmailHint) },
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                )
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Ô nhập Mật khẩu
+            OutlinedTextField(
+                value = password, onValueChange = { password = it },
+                label = { Text(text = textPasswordHint) },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = cdTogglePassword)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { handleLogin() }
+                )
+            )
+
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                Text(
+                    text = textForgotPassword, color = primaryBlue, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(vertical = 8.dp).clickable { showForgotDialog = true }
+                )
             }
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = textLoginOr, color = Color.Gray, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
+            // Nút Đăng nhập
+            Button(
+                onClick = { handleLogin() },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text(text = textBtnSubmit, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
 
-        // Nút Đăng nhập Google
-        OutlinedButton(
-            onClick = {
-                if (isLoading) return@OutlinedButton
-                scope.launch {
-                    // Gọi hàm thông qua viewModel
-                    val authResult = viewModel.googleAuthHelper.signInWithGoogle(context, errorUnsupportedCredential)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = textLoginOr, color = Color.Gray, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(16.dp))
 
-                    authResult.onSuccess { idToken ->
-                        Toast.makeText(context, msgConnectingServer, Toast.LENGTH_SHORT).show()
-                        viewModel.loginWithGoogle(idToken)
-                    }.onFailure { e ->
-                        when (e) {
-                            is GetCredentialCancellationException -> {
-                                Log.w("Auth", "Google Sign-In Cancelled", e)
-                                Toast.makeText(context, errorGoogleCancelled, Toast.LENGTH_SHORT).show()
-                            }
-                            is NoCredentialException -> {
-                                Log.e("Auth", "No Google Account Found", e)
-                                Toast.makeText(context, errorNoGoogleAccount, Toast.LENGTH_SHORT).show()
-                            }
-                            else -> {
-                                val formattedError = String.format(errorWithPrefixTemplate, e.localizedMessage ?: "")
-                                Toast.makeText(context, formattedError, Toast.LENGTH_LONG).show()
+            // Nút Đăng nhập Google (Chuyển đổi Toast -> Snackbar trực tiếp trong scope.launch)
+            OutlinedButton(
+                onClick = {
+                    if (isLoading) return@OutlinedButton
+                    scope.launch {
+                        val authResult = viewModel.googleAuthHelper.signInWithGoogle(context, errorUnsupportedCredential)
+
+                        authResult.onSuccess { idToken ->
+                            snackbarHostState.showSnackbar(msgConnectingServer)
+                            viewModel.loginWithGoogle(idToken)
+                        }.onFailure { e ->
+                            when (e) {
+                                is GetCredentialCancellationException -> {
+                                    Log.w("Auth", "Google Sign-In Cancelled", e)
+                                    snackbarHostState.showSnackbar(errorGoogleCancelled)
+                                }
+                                is NoCredentialException -> {
+                                    Log.e("Auth", "No Google Account Found", e)
+                                    snackbarHostState.showSnackbar(errorNoGoogleAccount)
+                                }
+                                else -> {
+                                    val formattedError = String.format(errorWithPrefixTemplate, e.localizedMessage ?: "")
+                                    snackbarHostState.showSnackbar(formattedError)
+                                }
                             }
                         }
                     }
+                },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(width = 1.dp, color = Color.LightGray),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryBlue, strokeWidth = 2.dp)
+                } else {
+                    Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = cdGoogleLogo, modifier = Modifier.size(24.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(text = textLoginGoogle, color = Color.Black, fontWeight = FontWeight.SemiBold)
                 }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(width = 1.dp, color = Color.LightGray),
-            enabled = !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = primaryBlue, strokeWidth = 2.dp)
-            } else {
-                Image(painter = painterResource(id = R.drawable.ic_google), contentDescription = cdGoogleLogo, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(text = textLoginGoogle, color = Color.Black, fontWeight = FontWeight.SemiBold)
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
-            Text(text = textNoAccountPrompt, color = Color.Gray)
-            Text(text = textRegisterLink, color = primaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
+                Text(text = textNoAccountPrompt, color = Color.Gray)
+                Text(text = textRegisterLink, color = primaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { onNavigateToRegister() })
+            }
         }
     }
 
@@ -233,7 +248,7 @@ fun LoginScreen(
         val handleForgotSubmit = {
             val validEmail = forgotEmail.trim()
             if (validEmail.isEmpty()) {
-                Toast.makeText(context, errorEmptyEmail, Toast.LENGTH_SHORT).show()
+                scope.launch { snackbarHostState.showSnackbar(errorEmptyEmail) }
             } else {
                 viewModel.forgotPassword(validEmail)
             }

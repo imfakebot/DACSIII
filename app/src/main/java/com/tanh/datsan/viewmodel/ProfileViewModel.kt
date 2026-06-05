@@ -19,46 +19,41 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import java.io.File
 import javax.inject.Inject
 
+data class ProfileUiState(
+    val profile: UserMeResponse? = null,
+    val isLoading: Boolean = false,
+    val isLoadingCities: Boolean = false,
+    val isEditing: Boolean = false,
+    val toastMessage: String? = null,
+    val avatarUrl: String? = null,
+    val cities: List<com.tanh.datsan.data.model.CityDto> = emptyList(),
+    val wards: List<com.tanh.datsan.data.model.WardDto> = emptyList(),
+    // Editable fields
+    val fullName: String = "",
+    val phoneNumber: String = "",
+    val gender: String = "",
+    val dateOfBirth: String = "",
+    val bio: String = "",
+    val street: String = "",
+    val selectedCityId: Int? = null,
+    val selectedWardId: Int? = null
+)
+
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    private val _profileState = MutableStateFlow<UserMeResponse?>(null)
-    val profileState: StateFlow<UserMeResponse?> = _profileState.asStateFlow()
-
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
-    private val _isLoadingCities = MutableStateFlow(false)
-    val isLoadingCities: StateFlow<Boolean> = _isLoadingCities.asStateFlow()
-
-    private val _isEditing = MutableStateFlow(false)
-    val isEditing: StateFlow<Boolean> = _isEditing.asStateFlow()
-
-    // --- Editable Fields ---
-    val fullName = MutableStateFlow("")
-    val phoneNumber = MutableStateFlow("")
-    val gender = MutableStateFlow("")
-    val dateOfBirth = MutableStateFlow("")
-    val bio = MutableStateFlow("")
-    val street = MutableStateFlow("")
-    val selectedCityId = MutableStateFlow<Int?>(null)
-    val selectedWardId = MutableStateFlow<Int?>(null)
-
-    private val _toastMessage = MutableStateFlow<String?>(null)
-    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
-
-    val userAvatarUrl: StateFlow<String?> = userRepository.userAvatarUrl
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    private val _cities = MutableStateFlow<List<com.tanh.datsan.data.model.CityDto>>(emptyList())
-    val cities: StateFlow<List<com.tanh.datsan.data.model.CityDto>> = _cities.asStateFlow()
-
-    private val _wards = MutableStateFlow<List<com.tanh.datsan.data.model.WardDto>>(emptyList())
-    val wards: StateFlow<List<com.tanh.datsan.data.model.WardDto>> = _wards.asStateFlow()
+    private val _uiState = MutableStateFlow(ProfileUiState())
+    val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
+        // Collect userAvatarUrl from repository and update uiState
+        viewModelScope.launch {
+            userRepository.userAvatarUrl.collect { url ->
+                _uiState.value = _uiState.value.copy(avatarUrl = url)
+            }
+        }
         refreshAll()
     }
 
@@ -68,37 +63,39 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun toggleEditing(edit: Boolean) {
-        _isEditing.value = edit
+        _uiState.value = _uiState.value.copy(isEditing = edit)
         if (!edit) {
             resetEditingFields()
         }
     }
 
     private fun resetEditingFields() {
-        val currentProfile = _profileState.value?.userProfile
+        val currentProfile = _uiState.value.profile?.userProfile
         if (currentProfile != null) {
-            fullName.value = currentProfile.fullName ?: ""
-            phoneNumber.value = currentProfile.phoneNumber ?: ""
-            gender.value = currentProfile.gender ?: ""
-            dateOfBirth.value = currentProfile.dateOfBirth ?: ""
-            bio.value = currentProfile.bio ?: ""
-            street.value = currentProfile.street ?: ""
-            selectedCityId.value = currentProfile.city?.id
-            selectedWardId.value = currentProfile.ward?.id
+            _uiState.value = _uiState.value.copy(
+                fullName = currentProfile.fullName ?: "",
+                phoneNumber = currentProfile.phoneNumber ?: "",
+                gender = currentProfile.gender ?: "",
+                dateOfBirth = currentProfile.dateOfBirth ?: "",
+                bio = currentProfile.bio ?: "",
+                street = currentProfile.street ?: "",
+                selectedCityId = currentProfile.city?.id,
+                selectedWardId = currentProfile.ward?.id
+            )
             currentProfile.city?.id?.let { cityId -> fetchWards(cityId) }
         }
     }
 
     fun fetchCities() {
         viewModelScope.launch {
-            _isLoadingCities.value = true
+            _uiState.value = _uiState.value.copy(isLoadingCities = true)
             try {
                 val result = userRepository.getCities()
-                _cities.value = result
+                _uiState.value = _uiState.value.copy(cities = result)
             } catch (e: Exception) {
                 Log.e("PROFILE_VM", "Error fetching cities: ${e.message}")
             } finally {
-                _isLoadingCities.value = false
+                _uiState.value = _uiState.value.copy(isLoadingCities = false)
             }
         }
     }
@@ -107,7 +104,7 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val result = userRepository.getWards(cityId)
-                _wards.value = result
+                _uiState.value = _uiState.value.copy(wards = result)
             } catch (e: Exception) {
                 Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
             }
@@ -115,26 +112,29 @@ class ProfileViewModel @Inject constructor(
     }
 
     fun onCitySelected(cityId: Int) {
-        selectedCityId.value = cityId
-        selectedWardId.value = null 
+        _uiState.value = _uiState.value.copy(
+            selectedCityId = cityId,
+            selectedWardId = null,
+            wards = emptyList()
+        )
         fetchWards(cityId)
     }
 
     fun fetchProfile() {
         viewModelScope.launch {
-            _isLoading.value = true
+            _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val response = userRepository.getProfile()
                 if (response.isSuccessful) {
                     val userMe = response.body()
-                    _profileState.value = userMe
+                    _uiState.value = _uiState.value.copy(profile = userMe)
                     resetEditingFields()
 
                     userRepository.saveUserInfo(
                         avatarUrl = userMe?.userProfile?.avatarUrl,
                         userName = userMe?.userProfile?.fullName,
                         phone = userMe?.userProfile?.phoneNumber,
-                        address = userMe?.userProfile?.street, // Lưu street làm address
+                        address = userMe?.userProfile?.street,
                         gender = userMe?.userProfile?.gender,
                         dob = userMe?.userProfile?.dateOfBirth,
                         bio = userMe?.userProfile?.bio
@@ -143,71 +143,81 @@ class ProfileViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("PROFILE_VM", "Exception: ${e.message}")
             } finally {
-                _isLoading.value = false
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
 
     fun updateProfile() {
         viewModelScope.launch {
-            _isLoading.value = true
+            _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                // Cấu trúc address Object như Backend yêu cầu
-                val address = if (selectedCityId.value != null && selectedWardId.value != null) {
+                val state = _uiState.value
+                val address = if (state.selectedCityId != null && state.selectedWardId != null) {
                     com.tanh.datsan.data.model.AddressDto(
-                        street = street.value,
-                        cityId = selectedCityId.value!!,
-                        wardId = selectedWardId.value!!
+                        street = state.street,
+                        cityId = state.selectedCityId,
+                        wardId = state.selectedWardId
                     )
                 } else null
 
                 val request = com.tanh.datsan.data.model.UpdateProfileRequest(
-                    fullName = fullName.value.ifBlank { null },
-                    gender = gender.value.ifBlank { null },
-                    dateOfBirth = dateOfBirth.value.ifBlank { null },
-                    bio = bio.value.ifBlank { null },
+                    fullName = state.fullName.ifBlank { null },
+                    gender = state.gender.ifBlank { null },
+                    dateOfBirth = state.dateOfBirth.ifBlank { null },
+                    bio = state.bio.ifBlank { null },
                     address = address
                 )
 
                 val response = userRepository.updateProfile(request)
                 if (response.isSuccessful) {
-                    _toastMessage.value = "Cập nhật thành công"
-                    _isEditing.value = false
+                    _uiState.value = _uiState.value.copy(
+                        toastMessage = "Cập nhật thành công",
+                        isEditing = false
+                    )
                     fetchProfile() 
                 } else {
-                    _toastMessage.value = "Thất bại: ${response.code()}"
+                    _uiState.value = _uiState.value.copy(toastMessage = "Thất bại: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _toastMessage.value = "Lỗi kết nối"
+                _uiState.value = _uiState.value.copy(toastMessage = "Lỗi kết nối")
             } finally {
-                _isLoading.value = false
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
 
     fun uploadAvatar(imageFile: File) {
         viewModelScope.launch {
-            _isLoading.value = true
+            _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-                // Tên Part là 'avatar' đúng như Backend "chốt hạ"
                 val body = MultipartBody.Part.createFormData("avatar", imageFile.name, requestFile)
                 
                 val response = userRepository.updateAvatar(body)
                 if (response.isSuccessful) {
-                    _toastMessage.value = "Tải ảnh đại diện thành công"
+                    _uiState.value = _uiState.value.copy(toastMessage = "Tải ảnh đại diện thành công")
                     fetchProfile()
                 } else {
-                    _toastMessage.value = "Lỗi upload: ${response.code()}"
+                    _uiState.value = _uiState.value.copy(toastMessage = "Lỗi upload: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _toastMessage.value = "Lỗi: ${e.message}"
+                _uiState.value = _uiState.value.copy(toastMessage = "Lỗi: ${e.message}")
             } finally {
-                _isLoading.value = false
+                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
 
-    fun clearToast() { _toastMessage.value = null }
+    // Input handlers
+    fun onFullNameChange(value: String) { _uiState.value = _uiState.value.copy(fullName = value) }
+    fun onPhoneNumberChange(value: String) { _uiState.value = _uiState.value.copy(phoneNumber = value) }
+    fun onGenderChange(value: String) { _uiState.value = _uiState.value.copy(gender = value) }
+    fun onDobChange(value: String) { _uiState.value = _uiState.value.copy(dateOfBirth = value) }
+    fun onBioChange(value: String) { _uiState.value = _uiState.value.copy(bio = value) }
+    fun onStreetChange(value: String) { _uiState.value = _uiState.value.copy(street = value) }
+    fun onWardSelected(value: Int) { _uiState.value = _uiState.value.copy(selectedWardId = value) }
+
+    fun clearToast() { _uiState.value = _uiState.value.copy(toastMessage = null) }
     fun logout() { viewModelScope.launch { userRepository.clearUserData() } }
 }

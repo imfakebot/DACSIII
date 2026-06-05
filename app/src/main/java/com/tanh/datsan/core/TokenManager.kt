@@ -25,6 +25,7 @@ class TokenManager @Inject constructor(
     }
 
     // Biến cache trên RAM để truy cập tức thì (High Speed)
+    @Volatile
     var cachedToken: String? = null
     var cachedRefreshToken: String? = null
 

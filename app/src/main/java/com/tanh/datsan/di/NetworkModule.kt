@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import dagger.Lazy
+import com.tanh.datsan.core.GlobalEventBus
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -36,8 +38,8 @@ object NetworkModule {
     @Singleton
     fun provideAuthInterceptor(
         tokenManager: TokenManager,
-        authService: dagger.Lazy<AuthApiService>,
-        globalEventBus: com.tanh.datsan.core.GlobalEventBus
+        authService: Lazy<AuthApiService>,
+        globalEventBus: GlobalEventBus
     ): Interceptor {
         return Interceptor { chain ->
             val originalRequest = chain.request()
