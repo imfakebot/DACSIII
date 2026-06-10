@@ -1,8 +1,6 @@
 package com.tanh.datsan
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -18,11 +16,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.core.content.ContextCompat
 import com.tanh.datsan.navigation.AppNavigation
 import com.tanh.datsan.ui.theme.DatsanTheme
 import com.tanh.datsan.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
+
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -50,18 +48,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-
         setContent {
             val theme by mainViewModel.theme.collectAsState()
             val language by mainViewModel.language.collectAsState()
-            
+
             // Lắng nghe Logout toàn cục
             LaunchedEffect(Unit) {
                 globalEventBus.events.collect { event ->
@@ -107,6 +97,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        setIntent(intent) // Cập nhật intent mới để xử lý trong NavHost
+        setIntent(intent)
     }
 }
+

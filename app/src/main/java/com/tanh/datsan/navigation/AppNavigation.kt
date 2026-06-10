@@ -13,29 +13,36 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+
+// Import Auth
 import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
 import com.tanh.datsan.ui.auth.ResetPasswordScreen
 import com.tanh.datsan.ui.auth.VerifyOtpScreen
+import com.tanh.datsan.viewmodel.AuthViewModel
+
+// Import Home & Features
 import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.notification.NotificationScreen
 import com.tanh.datsan.ui.home.review.AllReviewScreen
+import com.tanh.datsan.ui.home.voucher.VoucherScreen // Lấy từ Git
+
+// Import Navigation & Profile
 import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
-import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // Khởi tạo dùng chung MỘT ViewModel cho toàn bộ luồng Auth từ bản Local của bạn
+    // Khởi tạo dùng chung MỘT ViewModel cho toàn bộ luồng Auth từ bản Local
     val authViewModel: AuthViewModel = viewModel()
 
-    // Lấy trạng thái Route hiện tại để ẩn/hiện Bottom Bar từ bản Git
+    // Lấy trạng thái Route hiện tại để ẩn/hiện Bottom Bar
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -55,15 +62,14 @@ fun AppNavigation() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavItem.Home.route, // Bắt đầu bằng trang chủ có BottomBar từ Git
+            startDestination = BottomNavItem.Home.route,
             modifier = if (currentRoute in bottomBarRoutes) Modifier.padding(innerPadding) else Modifier
         ) {
 
             // =======================================================
-            // NHÓM 1: CÁC TAB THUỘC BOTTOM NAVIGATION BAR (Từ bản Git)
+            // NHÓM 1: CÁC TAB THUỘC BOTTOM NAVIGATION BAR
             // =======================================================
 
-            // Tab 1: Trang chủ (MainScreen)
             composable(BottomNavItem.Home.route) {
                 MainScreen(
                     onLoginClick = { navController.navigate("login") },
@@ -74,15 +80,14 @@ fun AppNavigation() {
                 )
             }
 
-            // Tab 2: Lịch sử đặt sân
             composable(BottomNavItem.History.route) {
                 // TODO: MyBookingsScreen()
             }
 
-            // Tab 3: Khuyến mãi
             composable(BottomNavItem.Voucher.route) {
-                // TODO: VouchersScreen()
+                VoucherScreen()
             }
+
 
             composable(BottomNavItem.Profile.route) {
                 ProfileScreen(
@@ -103,7 +108,6 @@ fun AppNavigation() {
             // NHÓM 2: CHI TIẾT & TIỆN ÍCH MỞ RỘNG
             // =======================================================
 
-            // Màn hình chi tiết sân
             composable(
                 route = "detail/{fieldId}",
                 arguments = listOf(navArgument("fieldId") { type = NavType.StringType })
@@ -121,7 +125,6 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình xem tất cả đánh giá
             composable(
                 route = "reviews/{fieldId}",
                 arguments = listOf(navArgument("fieldId") { type = NavType.StringType })
@@ -134,7 +137,6 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình đặt sân thành công
             composable(
                 route = "booking_success/{bookingId}",
                 arguments = listOf(navArgument("bookingId") { type = NavType.StringType })
@@ -150,21 +152,18 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình quét QR (Nhân viên)
             composable("scanner") {
                 QrScannerScreen(onBackClick = { navController.popBackStack() })
             }
 
-            // Màn hình thông báo
             composable("notification") {
                 NotificationScreen(onBackClick = { navController.popBackStack() })
             }
 
             // =======================================================
-            // NHÓM 3: LUỒNG XÁC THỰC TÀI KHOẢN (Được giữ lại hoàn toàn từ LOCAL)
+            // NHÓM 3: LUỒNG XÁC THỰC TÀI KHOẢN
             // =======================================================
 
-            // Màn hình Đăng nhập
             composable("login") {
                 LoginScreen(
                     viewModel = authViewModel,
@@ -183,7 +182,6 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình Đăng ký
             composable("register") {
                 RegisterScreen(
                     viewModel = authViewModel,
@@ -194,7 +192,6 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình Xác thực OTP
             composable(
                 route = "verify_otp/{email}/{isLoginMode}",
                 arguments = listOf(
@@ -225,7 +222,6 @@ fun AppNavigation() {
                 )
             }
 
-            // Màn hình Đặt lại mật khẩu
             composable(
                 route = "reset_password/{email}",
                 arguments = listOf(navArgument("email") { type = NavType.StringType })

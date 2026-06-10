@@ -1,6 +1,6 @@
 package com.tanh.datsan.data.model
 
-data class VoucherDto(
+data class Voucher(
     val id: String,
     val code: String,
     val discountAmount: Double?,
@@ -10,7 +10,10 @@ data class VoucherDto(
     val validFrom: String,
     val validTo: String,
     val quantity: Int,
-    val userProfileId: String?,
-    val createdAt: String,
-    val updatedAt: String
+    val isCollectible: Boolean? = false
+)
+
+data class CheckVoucherResponse(
+    val discountAmount: Double,
+    val finalAmount: Double
 )

@@ -89,7 +89,7 @@
     <string name="booking_success_ticket">Thanh toán đã được xác nhận. Chúc bạn có trận đấu vui vẻ!</string>
     <string name="booking_in4">Thông tin đặt sân</string>
     <string name="booking_code">Mã đặt chỗ</string>
-    <string name="field">Sân</string>
+    <string name="field">Sân bóng</string>
     <string name="updating">Đang cập nhật</string>
     <string name="time">Thời gian</string>
     <string name="customer">Khách hàng</string>
@@ -122,8 +122,8 @@
     <string name="read_all">Đọc tất cả</string>
     <string name="delete_all_notification">Xóa tất cả</string>
     <string name="no_notification">Bạn chưa có thông báo nào</string>
-
-
+    
+    
     <string name="welcome_user">Xin chào %1$s</string>
     <string name="you">Bạn</string>
     <string name="back">Quay lại</string>
@@ -166,5 +166,6 @@
     <string name="error_unsupported_credential">Định dạng tài khoản không được hỗ trợ.</string>
     <string name="cd_google_logo">Logo Google</string>
 
+    <string name="close">Đóng</string>
 
 </resources>

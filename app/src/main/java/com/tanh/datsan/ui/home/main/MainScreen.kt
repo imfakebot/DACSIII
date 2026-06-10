@@ -1,6 +1,9 @@
 package com.tanh.datsan.ui.home.main
 
-import android.util.Log
+import android.Manifest
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -33,13 +37,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
+import com.tanh.datsan.utils.LocationUtil
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.HomeViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.tanh.datsan.viewmodel.UserViewModel
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,46 +53,90 @@ import java.util.Locale
 @Preview
 fun MainScreen(
     viewModel: HomeViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},      // Giữ lại từ Local
-    onNavigateToScanner: () -> Unit = {},      // Thêm từ Git
-    onNavigateToNotification: () -> Unit = {}   // Thêm từ Git
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToNotification: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    // Cấp quyền GPS và Location từ bản Git
+    val gpsSettingLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            viewModel.fetchFieldNearMe()
+        } else {
+            viewModel.fetchFieldNearMe()
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+        onResult = { permission ->
+            val isFineLocationGranted = permission[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val isCoarseLocationGranted = permission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+            if (isFineLocationGranted || isCoarseLocationGranted) {
+                LocationUtil.checkRequestLocationSetting(
+                    context = context,
+                    onEnabled = {
+                        viewModel.fetchFieldNearMe()
+                    },
+                    onDisabled = { intentSenderRequest ->
+                        gpsSettingLauncher.launch(intentSenderRequest)
+                    },
+                )
+            } else {
+                viewModel.fetchFieldNearMe()
+            }
+        }
+    )
 
     LaunchedEffect(Unit) {
-        viewModel.fetchFieldNearMe()
+        locationPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        )
     }
 
     val fieldList by viewModel.fieldList.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     var isSportMenuExpanded by remember { mutableStateOf(false) }
 
-    // Danh sách môn thể thao tải động từ API theo bản nâng cấp trên Git
     val sportList by viewModel.fieldTypes.collectAsState()
     val defaultSportLabel = stringResource(R.string.main_sport_placeholder)
     var selectedSport by remember { mutableStateOf(defaultSportLabel) }
 
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
+    val userRole by userViewModel.userRole.collectAsState()
+
     var locationName by rememberSaveable { mutableStateOf("") }
     val selectedType by viewModel.selectedType.collectAsState()
     val focusManager = LocalFocusManager.current
 
-    val userName by viewModel.userName.collectAsState()
-    val userAvatar by viewModel.userAvatarUrl.collectAsState()
-    val unreadNotiCount by viewModel.unreadNotification.collectAsState(0)
+    val userName by userViewModel.userName.collectAsState()
+    val userAvatar by userViewModel.userAvatarUrl.collectAsState()
+
+    val unreadNotiCount by userViewModel.unreadNotification.collectAsState(0)
+    val suggestionMessage by viewModel.suggestionMessage.collectAsState()
 
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
-        // Nút bấm nổi quét mã check-in từ Git
         floatingActionButton = {
-            if (isLoggedIn) {
+            // Giới hạn hiển thị QR Scanner theo Role từ bản Git
+            if (isLoggedIn && (userRole == "admin" || userRole == "staff")) {
                 FloatingActionButton(
                     onClick = onNavigateToScanner,
                     containerColor = Color(0xFF007BFF),
                     contentColor = Color.White
                 ) {
-                    Icon(Icons.Default.QrCodeScanner, contentDescription = "Quét mã check-in")
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = stringResource(R.string.qr_scanner))
                 }
             }
         }
@@ -100,9 +150,12 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
+                // ==========================================
                 // 1. KHỐI HEADER MÀU XANH
+                // ==========================================
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -124,7 +177,6 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Logo ứng dụng
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = stringResource(R.string.app_name),
@@ -136,7 +188,6 @@ fun MainScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                // Icon thông báo tích hợp Badge số đếm từ Git
                                 BadgedBox(
                                     badge = {
                                         if (unreadNotiCount > 0) {
@@ -161,7 +212,7 @@ fun MainScreen(
                                     }
                                 }
 
-                                // Thông tin User (Bổ sung tính năng click chuyển sang trang cá nhân từ Local)
+                                // Tích hợp sự kiện click chuyển sang Profile từ Local
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -178,6 +229,7 @@ fun MainScreen(
                                         maxLines = 2
                                     )
                                     AsyncImage(
+                                        // Sử dụng toFullImageUrl() để đảm bảo load đúng đường dẫn như Local
                                         model = userAvatar?.toFullImageUrl()?.takeIf { it.isNotEmpty() }
                                             ?: R.drawable.ic_default_avatar,
                                         contentDescription = stringResource(R.string.cd_user_avatar),
@@ -212,7 +264,6 @@ fun MainScreen(
                         }
                     }
 
-                    // Khối Slogan giữa Header
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -235,7 +286,9 @@ fun MainScreen(
                     }
                 }
 
+                // ==========================================
                 // 2. KHỐI TÌM KIẾM NỔI
+                // ==========================================
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -246,7 +299,6 @@ fun MainScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Dropdown chọn môn thể thao động từ Server
                         Box {
                             OutlinedButton(
                                 onClick = { isSportMenuExpanded = true },
@@ -291,8 +343,6 @@ fun MainScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        // Ô tìm kiếm văn bản
                         OutlinedTextField(
                             value = locationName,
                             onValueChange = { locationName = it },
@@ -312,8 +362,6 @@ fun MainScreen(
                             )
                         )
                         Spacer(modifier = Modifier.height(12.dp))
-
-                        // Nút Thực hiện Tìm kiếm kết nối API thực tế từ Git
                         Button(
                             onClick = {
                                 val searchQuery = locationName.ifBlank { null }
@@ -333,7 +381,9 @@ fun MainScreen(
                     }
                 }
 
-                // 3. KHỐI PROMO (Khuyến mãi)
+                // ==========================================
+                // 3. KHỐI PROMO
+                // ==========================================
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -374,14 +424,44 @@ fun MainScreen(
                     }
                 }
 
-                // 4. DANH SÁCH SÂN BÓNG GẦN BẠN
+                // ==========================================
+                // 4. DANH SÁCH SÂN BÓNG
+                // ==========================================
                 SectionTitle(title = stringResource(R.string.main_section_near_you))
+
+                suggestionMessage?.let { msg ->
+                    Text(
+                        text = msg,
+                        color = Color(0xFFD97706),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .background(Color(0xFFFEF3C7), RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    )
+                }
+
                 FieldListHorizontal(
-                    fieldList = fieldList,
-                    onFieldClick = { fieldId -> onNavigateToDetail(fieldId) }
+                    fieldList,
+                    onFieldClick = { fieldId ->
+                        onNavigateToDetail(fieldId)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
+            }
+        }
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(color = Color(0xFF007BFF))
             }
         }
     }
@@ -408,9 +488,10 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
         items(fieldList.size) { index ->
             val field = fieldList[index]
             Card(
+                // Giữ lại chiều cao 245.dp từ bản Local để thẻ hiển thị thoáng hơn
                 modifier = Modifier
                     .width(180.dp)
-                    .height(245.dp), // Tăng nhẹ chiều cao để giao diện không bị chen chúc
+                    .height(245.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -429,7 +510,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                     )
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = field.name,
+                            field.name,
                             fontWeight = FontWeight.Bold,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1
@@ -437,7 +518,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                         Spacer(modifier = Modifier.height(4.dp))
                         field.address?.let {
                             Text(
-                                text = it,
+                                it,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.Gray,
                                 maxLines = 1
@@ -445,7 +526,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                         }
                         Spacer(modifier = Modifier.weight(1f))
 
-                        // Hàng hiển thị: Điểm đánh giá Star & Nhãn loại sân bóng (Đã căn đều SpaceBetween)
+                        // Giữ lại layout căn lề 2 bên (SpaceBetween) từ Local
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -453,14 +534,14 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Star,
+                                    Icons.Rounded.Star,
                                     contentDescription = null,
                                     tint = Color(0xFFFFC107),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = field.rating.toString(),
+                                    field.rating.toString(),
                                     style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -478,7 +559,6 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // Khoảng cách định vị (Đã sửa lỗi Safe Null-Check bằng ?.let giúp chống crash)
                         field.distance?.let { dist ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -489,7 +569,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                                 )
                                 Spacer(modifier = Modifier.width(2.dp))
                                 Text(
-                                    text = "${String.format(Locale.US, "%.1f", dist)} km",
+                                    text = "${String.format(Locale.US, format = "%.1f", dist)} km",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Color.Gray
                                 )

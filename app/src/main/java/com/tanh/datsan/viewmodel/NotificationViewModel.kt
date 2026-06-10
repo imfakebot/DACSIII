@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.NotificationModel
 import com.tanh.datsan.data.repository.NotificationRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import jakarta.inject.Inject
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -39,7 +39,7 @@ class NotificationViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e("NotificationVM", "Lỗi tải thông báo: ${e.message}")
             } finally {
-                _isLoading.value=true
+                _isLoading.value = false
             }
         }
     }

@@ -6,9 +6,21 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,8 +28,28 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,18 +62,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import androidx.core.util.Consumer
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.ui.component.FieldImageSlider
+import com.tanh.datsan.ui.component.FullScreenImageViewer
 import com.tanh.datsan.ui.component.RatingAndLocation
 import com.tanh.datsan.ui.component.UtilityItem
+import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.BookingUiState
 import com.tanh.datsan.viewmodel.DetailUiState
 import com.tanh.datsan.viewmodel.DetailViewModel
+import com.tanh.datsan.viewmodel.UserViewModel
+import com.tanh.datsan.viewmodel.VoucherViewModel
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @SuppressLint("RememberReturnType")
@@ -50,28 +86,50 @@ import java.util.Locale
 fun DetailScreen(
     fieldId: String,
     viewModel: DetailViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
+    voucherViewModel: VoucherViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToSuccess: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
     val bookingState by viewModel.bookingState
 
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
 
-    // Các trạng thái liên quan đến Voucher được tích hợp từ Git
-    val selectedVoucher by viewModel.selectedVoucher.collectAsState()
-    val discountAmount by viewModel.discountAmount.collectAsState()
-    val voucherList by viewModel.voucher.collectAsState()
+    val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
+    val discountAmount by voucherViewModel.discountAmount.collectAsState()
+    val voucherList by voucherViewModel.vouchers.collectAsState()
+    val voucherError by voucherViewModel.error.collectAsState()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Bọc callback điều hướng để an toàn với vòng đời Compose
     val currentNavigateSuccess by rememberUpdatedState(onNavigateToSuccess)
 
-    // Gọi API lấy dữ liệu khi vào màn hình
+    // Hiển thị lỗi Voucher nếu có
+    LaunchedEffect(voucherError) {
+        voucherError?.let {
+            snackbarHostState.showSnackbar(it)
+            voucherViewModel.clearError()
+        }
+    }
+
+    // Gọi API lấy dữ liệu chi tiết sân khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
+
+    // Tự động load danh sách Voucher khả dụng dựa trên tổng tiền hiện tại
+    val priceState by viewModel.priceState.collectAsState()
+    LaunchedEffect(priceState) {
+        priceState?.pricing?.totalPrice?.let {
+            voucherViewModel.fetchAvailableVouchers(it)
+        }
+    }
 
     val context = LocalContext.current
     val activity = remember(context) {
@@ -83,7 +141,7 @@ fun DetailScreen(
         ctx as? ComponentActivity
     }
 
-    // Lắng nghe kết quả trả về từ Deep Link hệ thống (Xử lý thanh toán VNPAY từ Git)
+    // Lắng nghe kết quả trả về từ Deep Link hệ thống (Thanh toán VNPAY)
     DisposableEffect(activity) {
         val intentListener = Consumer<Intent> { intent ->
             val uri = intent.data
@@ -92,6 +150,7 @@ fun DetailScreen(
             if (uri != null && uri.scheme == "dacsii" && uri.host == "payment") {
                 val path = uri.path
                 val bookingId = uri.getQueryParameter("bookingId")
+
                 if (path?.contains("payment-success") == true) {
                     currentNavigateSuccess(bookingId ?: "UNKNOWN")
                 } else if (path?.contains("payment-failed") == true) {
@@ -108,24 +167,17 @@ fun DetailScreen(
         onDispose { activity?.removeOnNewIntentListener(intentListener) }
     }
 
-    // Xử lý mở cổng thanh toán qua CustomTabsIntent (Git upgrade từ WebView cũ)
+    // Mở cổng thanh toán VNPAY
     LaunchedEffect(bookingState) {
         if (bookingState is BookingUiState.Success) {
             val url = (bookingState as BookingUiState.Success).paymentUrl
             viewModel.resetBookingState()
-
-            try {
-                val builder = CustomTabsIntent.Builder()
-                val customTabsIntent = builder.build()
-                customTabsIntent.launchUrl(context, url.toUri())
-            } catch (_: Exception) {
-                val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                context.startActivity(intent)
-            }
+            OpenVNPay.openVnPay(context, url)
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
             if (uiState is DetailUiState.Success) {
                 BookingBottomBar(
@@ -142,13 +194,18 @@ fun DetailScreen(
                     field = state.field,
                     padding = padding,
                     onBackClick = onBackClick,
-                    onNavigateToReview = onNavigateToReview
+                    onNavigateToReview = onNavigateToReview,
+                    onShowSnackbar = { message ->
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(message)
+                        }
+                    }
                 )
             }
         }
     }
 
-    // Modal Bottom Sheet chứa thông tin đặt chỗ và Voucher gộp từ Git
+    // Modal Bottom Sheet chọn giờ đặt sân và Voucher
     if (showSheet && uiState is DetailUiState.Success) {
         val field = (uiState as DetailUiState.Success).field
         ModalBottomSheet(
@@ -158,12 +215,18 @@ fun DetailScreen(
             BookingBottomSheetContent(
                 field = field,
                 viewModel = viewModel,
+                voucherViewModel = voucherViewModel,
                 selectedVoucherCode = selectedVoucher?.code,
                 discountAmount = discountAmount,
                 onOpenVoucherList = voucherList,
                 onConfirm = { date, duration, time ->
                     showSheet = false
-                    viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration)
+                    viewModel.createBooking(
+                        fieldId = fieldId,
+                        timeStart = "${date}T${time}:00+07:00",
+                        duration = duration,
+                        voucherCode = selectedVoucher?.code
+                    )
                 }
             )
         }
@@ -175,10 +238,14 @@ fun DetailContent(
     field: FieldResponse,
     padding: PaddingValues,
     onBackClick: () -> Unit,
-    onNavigateToReview: (String) -> Unit
+    onNavigateToReview: (String) -> Unit,
+    onShowSnackbar: (String) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
     val primaryColor = Color(0xFF2E7D32)
+
+    var showImageViewer by remember { mutableStateOf(false) }
+    var clickedImageIndex by remember { mutableIntStateOf(0) }
 
     Box(
         modifier = Modifier
@@ -186,54 +253,68 @@ fun DetailContent(
             .background(Color(0xFFF4F7F6))
             .padding(padding)
     ) {
-
-        // ẢNH SLIDER + HIỆU ỨNG PARALLAX
         val imageUrls = remember(field) {
             field.images?.map { it.imageUrl.toFullImageUrl() } ?: emptyList()
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(320.dp)
-                .graphicsLayer {
-                    translationY = if (lazyListState.firstVisibleItemIndex == 0) {
-                        lazyListState.firstVisibleItemScrollOffset * 0.5f
-                    } else 0f
-                }
-        ) {
-            if (imageUrls.isNotEmpty()) {
-                FieldImageSlider(images = imageUrls)
-            } else {
+        LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
+
+            // =========================================================
+            // 1. KHỐI ẢNH SLIDER + HIỆU ỨNG PARALLAX
+            // =========================================================
+            item {
                 Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color.LightGray)
-                )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp)
+                        .graphicsLayer {
+                            // Parallax: ảnh cuộn chậm hơn nội dung
+                            translationY = if (lazyListState.firstVisibleItemIndex == 0) {
+                                lazyListState.firstVisibleItemScrollOffset * 0.5f
+                            } else 0f
+                        }
+                ) {
+                    if (imageUrls.isNotEmpty()) {
+                        FieldImageSlider(
+                            images = imageUrls,
+                            onImageClick = { index ->
+                                clickedImageIndex = index
+                                showImageViewer = true
+                            }
+                        )
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.LightGray)
+                        )
+                    }
+
+                    // Gradient overlay cho ảnh dễ nhìn hơn
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.Black.copy(0.4f),
+                                        Color.Transparent,
+                                        Color.Black.copy(0.6f)
+                                    )
+                                )
+                            )
+                    )
+                }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(
-                                Color.Black.copy(0.4f),
-                                Color.Transparent,
-                                Color.Black.copy(0.6f)
-                            )
-                        )
-                    )
-            )
-        }
-
-        // NỘI DUNG CHI TIẾT SÂN
-        LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
-            item { Spacer(Modifier.height(280.dp)) }
-
+            // =========================================================
+            // 2. NỘI DUNG CHI TIẾT SÂN
+            // =========================================================
             item {
                 Surface(
-                    modifier = Modifier.fillParentMaxHeight(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset(y = (-40).dp), // Kéo box lên đè mép ảnh
                     shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
                     color = Color.White,
                     shadowElevation = 8.dp
@@ -241,7 +322,7 @@ fun DetailContent(
                     Column(Modifier.padding(24.dp)) {
                         FieldBadge(field.fieldType.name, primaryColor)
 
-                        // Hiển thị khoảng cách (Tích hợp tính năng định vị từ Git)
+                        // Khoảng cách
                         field.distance?.let { dist ->
                             Row(
                                 modifier = Modifier.padding(top = 4.dp),
@@ -263,6 +344,7 @@ fun DetailContent(
                             }
                         }
 
+                        // Tên sân
                         Text(
                             text = field.name,
                             style = MaterialTheme.typography.headlineMedium,
@@ -270,12 +352,34 @@ fun DetailContent(
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
 
+                        // Địa chỉ
+                        val ward = field.branch.address?.wardName ?: field.branch.address?.ward?.name ?: ""
+                        val city = field.branch.address?.cityName ?: field.branch.address?.city?.name ?: ""
+                        val street = field.branch.address?.street ?: ""
+
+                        val fullAddress = listOf(street, ward, city)
+                            .filter { it.isNotBlank() }
+                            .joinToString(", ")
+                            .ifBlank { "Địa chỉ không xác định" }
+
                         RatingAndLocation(
-                            rating = field.averageRating?.toFloat() ?: 0f,
+                            rating = field.averageRating ?: 0f,
                             reviewCount = field.reviewCount ?: 0,
-                            address = "${field.branch.address?.street}, ${field.branch.address?.ward?.name}, ${field.branch.address?.city?.name}",
+                            address = fullAddress,
                             tint = primaryColor
                         )
+
+                        // Nút chỉ đường (Map)
+                        if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
+                            Spacer(Modifier.height(16.dp))
+                            DirectionButton(
+                                lat = field.branch.address.latitude,
+                                lng = field.branch.address.longitude,
+                                primaryColor = primaryColor,
+                                onShowMessage = onShowSnackbar,
+                                tenSan = field.name
+                            )
+                        }
 
                         SectionDivider()
 
@@ -313,8 +417,14 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Phần đánh giá khách hàng
-                        ReviewHeader(field.id, onNavigateToReview, primaryColor)
+                        // Phần đánh giá
+                        ReviewHeader(
+                            fieldId = field.id,
+                            reviewCount = field.reviewCount ?: 0,
+                            rating = field.averageRating ?: 0f,
+                            onNavigate = onNavigateToReview,
+                            color = primaryColor
+                        )
                         ReviewList(field.reviews)
 
                         Spacer(Modifier.height(100.dp))
@@ -323,7 +433,7 @@ fun DetailContent(
             }
         }
 
-        // NÚT QUAY LẠI
+        // NÚT BACK (Góc trái trên cùng)
         IconButton(
             onClick = onBackClick,
             modifier = Modifier
@@ -333,6 +443,15 @@ fun DetailContent(
                 .clip(CircleShape)
         ) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+        }
+
+        // DIALOG XEM ẢNH FULL MÀN HÌNH
+        if (showImageViewer) {
+            FullScreenImageViewer(
+                imageUrls = imageUrls,
+                initialIndex = clickedImageIndex,
+                onDismiss = { showImageViewer = false }
+            )
         }
     }
 }

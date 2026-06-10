@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.data.model.NotificationModel
@@ -31,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.rounded.Delete
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
+import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.utils.DateUtil.formatNotificationTime
 
 
@@ -102,39 +102,51 @@ fun NotificationScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when {
-                isLoading && notification.isEmpty() -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color(0xFF007BFF)
-                    )
-                }
-
-                !isLoading && notification.isEmpty() -> {
-                    Text(
-                        text = stringResource(R.string.no_notification),
-                        color = Color.Gray,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        // Nạp biến notifications vào đây
-                        items(notification) { noti ->
-                            NotificationItem(
-                                notification = noti,
-                                onReadClick = {
-                                    if (!noti.isRead) viewModel.markAsRead(noti.id)
-                                },
-                                onDeleteClick = {
-                                    viewModel.deleteNotification(noti.id)
-                                }
+            CustomRefreshLayout(
+                onRefresh = {
+                    viewModel.fetchNotification()
+                },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when {
+                        isLoading && notification.isEmpty() -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.align(Alignment.Center),
+                                color = Color(0xFF007BFF)
                             )
+                        }
+
+                        !isLoading && notification.isEmpty() -> {
+                            Text(
+                                text = stringResource(R.string.no_notification),
+                                color = Color.Gray,
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        }
+
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                items(notification) { noti ->
+                                    NotificationItem(
+                                        notification = noti,
+                                        onReadClick = {
+                                            if (!noti.isRead) viewModel.markAsRead(noti.id)
+                                        },
+                                        onDeleteClick = {
+                                            viewModel.deleteNotification(noti.id)
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }

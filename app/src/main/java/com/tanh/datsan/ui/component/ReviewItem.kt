@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.tanh.datsan.BuildConfig
+import com.tanh.datsan.utils.toFullImageUrl
 
 @Composable
 fun ReviewItem(
@@ -43,8 +43,7 @@ fun ReviewItem(
             contentAlignment = Alignment.Center
         ) {
             if (!avatarUrl.isNullOrEmpty()) {
-                val fullAvatarUrl =
-                    if (avatarUrl.startsWith("http")) avatarUrl else "${BuildConfig.API_HOST}$avatarUrl"
+                val fullAvatarUrl =avatarUrl.toFullImageUrl()
                 AsyncImage(
                     model = fullAvatarUrl,
                     contentDescription = null,

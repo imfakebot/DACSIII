@@ -1,7 +1,9 @@
 package com.tanh.datsan.ui.home.detail
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +27,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -31,19 +35,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
-import com.tanh.datsan.utils.generateSlots
-import com.tanh.datsan.utils.getUpcomingDates
+import com.tanh.datsan.utils.DateUtil
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.viewmodel.DetailViewModel
+import com.tanh.datsan.viewmodel.VoucherViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import androidx.compose.ui.platform.LocalLocale
-import com.tanh.datsan.data.model.VoucherDto
+import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.ui.component.VoucherSection
 import com.tanh.datsan.ui.component.VoucherSelectionSheet
 
@@ -53,12 +57,13 @@ import com.tanh.datsan.ui.component.VoucherSelectionSheet
 fun BookingBottomSheetContent(
     field: FieldResponse,
     viewModel: DetailViewModel = hiltViewModel(),
+    voucherViewModel: VoucherViewModel = hiltViewModel(),
     selectedVoucherCode: String? = null,
     discountAmount: Double = 0.0,
-    onOpenVoucherList: List<VoucherDto> = emptyList(),
+    onOpenVoucherList: List<Voucher> = emptyList(),
     onConfirm: (String, Int, String) -> Unit,
 ) {
-    val quickDates = remember { getUpcomingDates("Hôm nay") }
+    val quickDates = remember { DateUtil.getUpcomingDates("Hôm nay") }
     val durations = listOf(60, 90, 120)
     var selectedDate by remember { mutableStateOf(quickDates[0]) }
     var selectedDuration by remember { mutableIntStateOf(durations[0]) }
@@ -70,7 +75,7 @@ fun BookingBottomSheetContent(
     var showVoucherSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDate.second) {
-        viewModel.fetchBookedSlots(field.id.toString(), selectedDate.second)
+        viewModel.fetchBookedSlots(field.id, selectedDate.second)
     }
 
     LaunchedEffect(selectedDate.second, selectedDuration, selectedTime) {
@@ -81,14 +86,17 @@ fun BookingBottomSheetContent(
     }
 
     val timeSlots = remember(selectedDuration, selectedDate) {
-        generateSlots(field.branch!!.openTime, field.branch!!.closeTime, selectedDuration)
+        DateUtil.generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
     }
 
-    Column(
-        Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())
-    ) {
+    val isVoucherLoading by voucherViewModel.isLoading.collectAsState()
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
         Text(
             stringResource(R.string.booking_customize_title),
             style = MaterialTheme.typography.titleLarge,
@@ -231,6 +239,18 @@ fun BookingBottomSheetContent(
         }
     }
 
+        if (isVoucherLoading) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+    }
+
     if (showVoucherSheet){
         VoucherSelectionSheet(
             vouchers = onOpenVoucherList,
@@ -238,10 +258,11 @@ fun BookingBottomSheetContent(
             onSelect = {voucher->
                 showVoucherSheet=false
                 val orderValue = priceState?.pricing?.totalPrice ?: 0.0
-                viewModel.selectVoucher(voucher, orderValue)
+                voucherViewModel.selectVoucher(voucher, orderValue)
             }, onDismiss = {
                 showVoucherSheet=false
-            }
+            },
+            totalPrice = priceState?.pricing?.totalPrice ?: 0.0
         )
     }
 }

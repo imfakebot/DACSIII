@@ -1,6 +1,7 @@
 package com.tanh.datsan.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -26,7 +27,8 @@ import com.tanh.datsan.BuildConfig
 
 @Composable
 fun FieldImageSlider(
-    images: List<String>
+    images: List<String>,
+    onImageClick: ((Int) -> Unit)? = null
 ) {
     val formattedUrl = remember(images) {
         images.map { url ->
@@ -54,7 +56,14 @@ fun FieldImageSlider(
                 model = formattedUrl[page],
                 contentDescription = "Ảnh sân bóng ${page + 1}",
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        enabled = true,
+                        onClick = {
+                            onImageClick?.invoke(page)
+                        }
+                    )
             )
         }
 
@@ -71,15 +80,15 @@ fun FieldImageSlider(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                repeat(pagerState.pageCount){index->
-                   val isSelected = pagerState.currentPage==index
-                   Box(
-                       modifier = Modifier
-                           .size(if(isSelected) 8.dp else 6.dp)
-                           .clip(CircleShape)
-                           .background(if(isSelected) Color.White else Color.Gray)
+                repeat(pagerState.pageCount) { index ->
+                    val isSelected = pagerState.currentPage == index
+                    Box(
+                        modifier = Modifier
+                            .size(if (isSelected) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(if (isSelected) Color.White else Color.Gray)
 
-                   )
+                    )
                 }
             }
         }

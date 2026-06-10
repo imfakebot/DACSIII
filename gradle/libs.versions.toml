@@ -27,6 +27,7 @@ ksp = "2.3.6"
 socket-io = "2.1.1"
 camerax = "1.6.1"
 barcode-scanning = "17.3.0"
+roomKtx = "2.8.4"
 
 
 compiler = "3.2.0-alpha11"
@@ -83,6 +84,7 @@ androidx-credentials-play-services-auth = { group = "androidx.credentials", name
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 listenablefuture = { group = "com.google.guava", name = "listenablefuture", version.ref = "listenablefuture" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 
 
 [plugins]

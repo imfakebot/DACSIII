@@ -16,7 +16,7 @@ object NotificationHelper {
     private const val CHANNEL_DESC = "Notifications for booking status updates"
 
     fun createNotificationChannel(context: Context) {
-        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
             description = CHANNEL_DESC
         }
@@ -38,7 +38,7 @@ object NotificationHelper {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(context.getString(R.string.booking_success))
             .setContentText("Bạn đã đặt sân $fieldName thành công. Mã: $bookingCode")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
