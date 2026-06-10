@@ -40,7 +40,6 @@ data class RegisterRequest(
     val full_name: String,
     val email: String,
     val phone_number: String,
-    val address: String,
     val gender: String,
     val password: String
 )

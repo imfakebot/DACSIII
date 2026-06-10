@@ -6,9 +6,8 @@ import com.google.gson.annotations.SerializedName
 
 data class AddressDto(
     @SerializedName("street") val street: String,
-    // Backend yêu cầu gửi cityId và wardId kiểu Số (Integer)
-    @SerializedName("cityId") val cityId: Int,
-    @SerializedName("wardId") val wardId: Int
+    // Backend yêu cầu gửi cityId kiểu Số (Integer)
+    @SerializedName("cityId") val cityId: Int
 )
 
 data class UpdateProfileRequest(

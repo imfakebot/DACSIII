@@ -27,7 +27,6 @@ data class ProfileUiState(
     val toastMessage: String? = null,
     val avatarUrl: String? = null,
     val cities: List<com.tanh.datsan.data.model.CityDto> = emptyList(),
-    val wards: List<com.tanh.datsan.data.model.WardDto> = emptyList(),
     // Editable fields
     val fullName: String = "",
     val phoneNumber: String = "",
@@ -35,8 +34,7 @@ data class ProfileUiState(
     val dateOfBirth: String = "",
     val bio: String = "",
     val street: String = "",
-    val selectedCityId: Int? = null,
-    val selectedWardId: Int? = null
+    val selectedCityId: Int? = null
 )
 
 @HiltViewModel
@@ -79,10 +77,8 @@ class ProfileViewModel @Inject constructor(
                 dateOfBirth = currentProfile.dateOfBirth ?: "",
                 bio = currentProfile.bio ?: "",
                 street = currentProfile.street ?: "",
-                selectedCityId = currentProfile.city?.id,
-                selectedWardId = currentProfile.ward?.id
+                selectedCityId = currentProfile.city?.id
             )
-            currentProfile.city?.id?.let { cityId -> fetchWards(cityId) }
         }
     }
 
@@ -100,24 +96,10 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun fetchWards(cityId: Int) {
-        viewModelScope.launch {
-            try {
-                val result = userRepository.getWards(cityId)
-                _uiState.value = _uiState.value.copy(wards = result)
-            } catch (e: Exception) {
-                Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
-            }
-        }
-    }
-
     fun onCitySelected(cityId: Int) {
         _uiState.value = _uiState.value.copy(
-            selectedCityId = cityId,
-            selectedWardId = null,
-            wards = emptyList()
+            selectedCityId = cityId
         )
-        fetchWards(cityId)
     }
 
     fun fetchProfile() {
@@ -150,14 +132,23 @@ class ProfileViewModel @Inject constructor(
 
     fun updateProfile() {
         viewModelScope.launch {
+            val state = _uiState.value
+            
+            // Validate: Nếu đã chọn Tỉnh thì phải nhập tên đường và ngược lại
+            val isAddressIncomplete = (state.selectedCityId != null || state.street.isNotBlank()) &&
+                                     (state.selectedCityId == null || state.street.isBlank())
+
+            if (isAddressIncomplete) {
+                _uiState.value = _uiState.value.copy(toastMessage = "Vui lòng nhập đầy đủ Tỉnh và Tên đường")
+                return@launch
+            }
+
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val state = _uiState.value
-                val address = if (state.selectedCityId != null && state.selectedWardId != null) {
+                val address = if (state.selectedCityId != null) {
                     com.tanh.datsan.data.model.AddressDto(
-                        street = state.street,
-                        cityId = state.selectedCityId,
-                        wardId = state.selectedWardId
+                        street = state.street.trim(),
+                        cityId = state.selectedCityId
                     )
                 } else null
 
@@ -216,7 +207,6 @@ class ProfileViewModel @Inject constructor(
     fun onDobChange(value: String) { _uiState.value = _uiState.value.copy(dateOfBirth = value) }
     fun onBioChange(value: String) { _uiState.value = _uiState.value.copy(bio = value) }
     fun onStreetChange(value: String) { _uiState.value = _uiState.value.copy(street = value) }
-    fun onWardSelected(value: Int) { _uiState.value = _uiState.value.copy(selectedWardId = value) }
 
     fun clearToast() { _uiState.value = _uiState.value.copy(toastMessage = null) }
     fun logout() { viewModelScope.launch { userRepository.clearUserData() } }

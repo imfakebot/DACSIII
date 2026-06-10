@@ -18,8 +18,6 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import javax.inject.Inject
 
-
-
 sealed class AuthUiEvent {
     data class ShowToast(val message: String) : AuthUiEvent()
     data class NavigateToOtp(val email: String, val isLoginMode: Boolean) : AuthUiEvent()
@@ -32,9 +30,9 @@ sealed class AuthUiEvent {
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: AuthRepository, // Hilt sẽ tự động tiêm Repository vào đây
+    private val repository: AuthRepository, 
     var googleAuthHelper: GoogleAuthHelper
-) : ViewModel() { // Đổi từ AndroidViewModel sang ViewModel chuẩn
+) : ViewModel() {
 
     fun triggerLogout() {
         viewModelScope.launch {

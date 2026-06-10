@@ -44,14 +44,13 @@ fun RegisterScreen(
 
     var fullName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
     // Quản lý trạng thái giới tính bằng Enum nội bộ
     var selectedGender by remember { mutableStateOf<GenderType?>(null) }
-    var expanded by remember { mutableStateOf(false) }
+    var genderExpanded by remember { mutableStateOf(false) }
 
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
@@ -114,30 +113,24 @@ fun RegisterScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = address, onValueChange = { address = it },
-            label = { Text("Địa chỉ") }, // TODO: Add to strings.xml
-            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), singleLine = true
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-
         ExposedDropdownMenuBox(
-            expanded = expanded, onExpandedChange = { expanded = !expanded },
+            expanded = genderExpanded, onExpandedChange = { genderExpanded = !genderExpanded },
         ) {
             val genderText = selectedGender?.let { stringResource(it.resId) } ?: stringResource(R.string.label_gender_placeholder)
             OutlinedTextField(
                 value = genderText,
                 onValueChange = {}, readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                label = { Text(stringResource(R.string.label_gender)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
                 modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp)
             )
-            ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            ExposedDropdownMenu(expanded = genderExpanded, onDismissRequest = { genderExpanded = false }) {
                 GenderType.values().forEach { gender ->
                     DropdownMenuItem(
                         text = { Text(stringResource(gender.resId)) },
                         onClick = {
                             selectedGender = gender
-                            expanded = false
+                            genderExpanded = false
                         }
                     )
                 }
@@ -195,7 +188,6 @@ fun RegisterScreen(
                     full_name = fullName.trim(),
                     email = email.trim(),
                     phone_number = phoneNumber.trim(),
-                    address = address.trim(),
                     gender = genderApi,
                     password = password
                 )
@@ -212,6 +204,14 @@ fun RegisterScreen(
                 Text(text = stringResource(R.string.btn_register), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
+
+        Spacer(modifier = Modifier.height(20.dp))
+        TextButton(onClick = onBackToLogin) {
+            Text(text = stringResource(R.string.btn_already_have_account), color = primaryColor)
+        }
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
 
         Spacer(modifier = Modifier.height(20.dp))
         TextButton(onClick = onBackToLogin) {

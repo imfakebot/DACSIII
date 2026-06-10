@@ -228,17 +228,6 @@ fun ProfileScreen(
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
-                    LocationDropdown(
-                        label = "Quận / Huyện / Phường",
-                        items = uiState.wards.map { it.id to it.name },
-                        selectedId = uiState.selectedWardId,
-                        isEditing = uiState.isEditing,
-                        onItemSelected = { viewModel.onWardSelected(it) },
-                        enabled = uiState.selectedCityId != null,
-                        placeholderText = if (uiState.selectedCityId == null) "Vui lòng chọn Tỉnh/Thành trước" else if (uiState.wards.isEmpty()) "Đang tải dữ liệu..." else "Chọn Quận / Huyện"
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
-
                     ProfileField(icon = Icons.Default.Map, label = "Số nhà, tên đường", value = uiState.street, isEditing = uiState.isEditing, onValueChange = { viewModel.onStreetChange(it) })
                 }
             }
