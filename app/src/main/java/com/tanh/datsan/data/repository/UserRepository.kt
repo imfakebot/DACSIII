@@ -7,7 +7,7 @@ import jakarta.inject.Inject
 class UserRepository @Inject constructor(
     private val userApiService: UserApiService
 ) {
-    suspend fun getProfileLogginedIn(): UserProfileLoggedInResponseDto {
+    suspend fun getProfileLoggedIn(): UserProfileLoggedInResponseDto {
         return userApiService.getCurrentUserProfileWhenLoggedIn()
     }
 }

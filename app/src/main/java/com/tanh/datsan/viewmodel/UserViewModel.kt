@@ -75,7 +75,7 @@ class UserViewModel @Inject constructor(
     fun fetchUserProfile() {
         viewModelScope.launch {
             try {
-                val userProfile = userRepository.getProfileLogginedIn()
+                val userProfile = userRepository.getProfileLoggedIn()
                 _userName.value = userProfile.fullName
                 _userAvatarUrl.value = userProfile.avatarUrl
             } catch (e: Exception) {
