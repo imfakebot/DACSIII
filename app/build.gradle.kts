@@ -1,8 +1,8 @@
 import java.util.Properties
 
 val localProperties = Properties()
-val localPropertiesFile: File = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
+val localPropertiesFile: File? = rootProject.file("local.properties")
+if (localPropertiesFile?.exists() ==true ) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 
 }
@@ -26,9 +26,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        val baseUrl = localProperties.getProperty("API_BASE_URL")
-        val apiHost = localProperties.getProperty("API_HOST")
-        val apiBackend = localProperties.getProperty("API_BACKEND")
+        val baseUrl = localProperties.getProperty("API_BASE_URL") ?: ""
+        val apiHost = localProperties.getProperty("API_HOST") ?: ""
+        val apiBackend = localProperties.getProperty("API_BACKEND") ?: ""
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
 
         buildConfigField("String", "API_HOST", "\"$apiHost\"")
@@ -53,6 +53,7 @@ android {
         compose = true
         buildConfig=true
     }
+    buildToolsVersion = "36.1.0"
 }
 
 dependencies {
@@ -82,6 +83,13 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.places)
     implementation(libs.hilt.core)
+    implementation(libs.play.services.cloud.messaging)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.listenablefuture)
+    implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.socket.io.client)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.camera.core)
@@ -89,6 +97,12 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.barcode.scanning)
+
+    // ViewModel & Navigation cho Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose.android)
+    implementation(libs.androidx.navigation.compose)
+//    implementation(libs.androidx.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

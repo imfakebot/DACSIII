@@ -10,6 +10,6 @@ class ReviewRepository @Inject constructor(
     private val reviewApiService: ReviewApiService
 ) {
     suspend fun getFieldReview(fieldId: String): ReviewPaginateResponse {
-        return reviewApiService.getFieldReview(fieldId)
+        return reviewApiService.getFieldReviews(fieldId)
     }
 }

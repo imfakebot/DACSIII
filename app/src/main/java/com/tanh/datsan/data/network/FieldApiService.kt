@@ -8,6 +8,7 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface FieldApiService {
+
     @GET("fields")
     suspend fun getAllFields(
         @Query("latitude") lat: String? = null,
@@ -22,8 +23,8 @@ interface FieldApiService {
     @GET("fields/{id}")
     suspend fun getFieldDetail(
         @Path("id") fieldId: String,
-        @Query("latitude") latitude: String?,
-        @Query("longitude") longitude: String?
+        @Query("latitude") latitude: String? = null,
+        @Query("longitude") longitude: String? = null
     ): FieldResponse
 
     @GET("field-types")

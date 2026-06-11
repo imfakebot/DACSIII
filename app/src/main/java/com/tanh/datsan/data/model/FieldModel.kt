@@ -2,6 +2,9 @@ package com.tanh.datsan.data.model
 
 import com.google.gson.annotations.SerializedName
 
+// ==========================================
+// 1. API RESPONSE WRAPPERS (Phân trang, Metadata)
+// ==========================================
 data class Metadata(
     val total: Int,
     val page: Int,
@@ -16,6 +19,9 @@ data class ApiFieldResponse<T>(
     val metadata: Metadata
 )
 
+// ==========================================
+// 2. MODEL DÀNH CHO NETWORK (Hứng dữ liệu từ API)
+// ==========================================
 data class FieldType(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String,
@@ -32,7 +38,7 @@ data class Utility(
     val id: Int,
     val name: String,
     @SerializedName("iconUrl") val iconUrl: String?,
-    val price: Double?,
+    val price: Double?, // Dùng Double theo Git để tránh crash Gson
     val type: String
 )
 
@@ -74,8 +80,8 @@ data class Branch(
 data class FieldResponse(
     val id: String,
     val name: String,
-    val description: String?,
-    val status: Boolean,
+    val description: String?, // Cập nhật kiểu Nullable
+    val status: Boolean,      // Trạng thái đã chuyển sang Boolean
     @SerializedName("createdAt") val createdAt: String,
     @SerializedName("updatedAt") val updatedAt: String,
     @SerializedName("fieldType") val fieldType: FieldType,
@@ -84,10 +90,42 @@ data class FieldResponse(
     val utilities: List<Utility>?,
     @SerializedName("averageRating") val averageRating: Float?,
     @SerializedName("reviewCount") val reviewCount: Int?,
-    val reviews : List<Review>?= null,
+    val reviews : List<Review>? = null,
     val distance: Double?
 )
 
+// ==========================================
+// 3. MODEL ĐÁNH GIÁ (REVIEW)
+// ==========================================
+data class ReviewUser(
+    @SerializedName("full_name") val fullName: String?,
+    @SerializedName("avatar_url") val avatarUrl : String?
+)
+
+data class Review(
+    val id: String,
+    val rating: Int,
+    val comment: String?,
+    val createdAt: String,
+    @SerializedName("userProfile") val user: ReviewUser? // Key Backend đổi thành userProfile
+)
+
+data class ReviewMeta(
+    val total: Int,
+    val page: Int,
+    val limit: Int,
+    val lastPage: Int,
+    val averageRating: Float?
+)
+
+data class ReviewPaginateResponse(
+    val data: List<Review>,
+    val meta : ReviewMeta
+)
+
+// ==========================================
+// 4. MODEL DÀNH CHO UI (Hiển thị danh sách, RecyclerView/LazyColumn)
+// ==========================================
 data class FieldModel(
     val id: String,
     val name: String,
@@ -98,33 +136,4 @@ data class FieldModel(
     val utilities: List<Utility>? = emptyList(),
     @SerializedName("fieldType") val fieldType: FieldType? = null,
     val distance: Double?
-)
-
-data class ReviewPaginateResponse(
-    val data: List<Review>,
-    val meta :ReviewMeta
-)
-
-data class ReviewUser(
-    @SerializedName("full_name")
-    val fullName:String?,
-    @SerializedName("avatar_url")
-    val avatarUrl : String?
-)
-
-data class Review(
-    val id:String,
-    val rating:Int,
-    val comment:String?,
-    val createdAt: String,
-    @SerializedName("userProfile")
-    val user: ReviewUser?
-)
-
-data class ReviewMeta(
-    val total: Int,
-    val page: Int,
-    val limit: Int,
-    val lastPage: Int,
-    val averageRating: Float?
 )

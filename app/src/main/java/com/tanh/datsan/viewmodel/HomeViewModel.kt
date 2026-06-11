@@ -40,6 +40,8 @@ class HomeViewModel @Inject constructor(
     private var currentLng: String? = null
 
     init {
+        // Lưu ý: fetchFieldNearMe() đã được gỡ khỏi init
+        // vì ở MainScreen, Launcher xin quyền vị trí sẽ chịu trách nhiệm gọi hàm này.
         fetchFieldTypes()
     }
 
@@ -56,20 +58,23 @@ class HomeViewModel @Inject constructor(
                     "HomeViewModel",
                     "Fetching fields with lat=$lat, lng=$lng, typeId=$typeId, name=$name"
                 )
-                val response =
-                    fieldRepository.getAllField(lat = lat, lon = lng, typeId = typeId, name = name)
+                val response = fieldRepository.getAllField(lat = lat, lon = lng, typeId = typeId, name = name)
 
-                if(response.metadata.isSuggestion&& !response.metadata.suggestionMessage.isNullOrBlank()){
+                // Bóc tách metadata từ cục API nâng cấp của Git
+                if (response.metadata.isSuggestion && !response.metadata.suggestionMessage.isNullOrBlank()) {
                     _suggestionMessage.value = response.metadata.suggestionMessage
-                } else{
+                } else {
                     _suggestionMessage.value = null
                 }
+
+                // Parse dữ liệu sân bóng
                 val mappedList = response.data.map { jsonItem ->
                     val rawUrl = jsonItem.images?.firstOrNull()?.imageUrl
                     val fixedUrl = rawUrl.toFullImageUrl()
                     Log.d("HomeViewModel", "Link gốc: $rawUrl --- Link ĐÃ SỬA: $fixedUrl")
 
-                    val ward = jsonItem.branch.address?.wardName?:jsonItem.branch.address?.ward?.name ?: ""
+                    // Lắp ráp địa chỉ an toàn, tránh bị chuỗi rỗng
+                    val ward = jsonItem.branch.address?.wardName ?: jsonItem.branch.address?.ward?.name ?: ""
                     val city = jsonItem.branch.address?.cityName ?: jsonItem.branch.address?.city?.name ?: ""
                     val street = jsonItem.branch.address?.street ?: ""
 
@@ -77,6 +82,7 @@ class HomeViewModel @Inject constructor(
                         .filter { it.isNotBlank() }
                         .joinToString(", ")
                         .ifBlank { "Địa chỉ không xác định" }
+
                     FieldModel(
                         id = jsonItem.id,
                         status = jsonItem.status,

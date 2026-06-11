@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Datsan</string>
-    <string name="default_web_client_id">317056862654-fforaeivr0mckkru88p9qrhuudf924cn.apps.googleusercontent.com</string>
+    <string name="default_web_client_id">54269365989-8v14na7br989nnnj9rtud93i73n52qoq.apps.googleusercontent.com</string>
     <string name="btn_confirm">Xác nhận</string>
     <string name="btn_back">Quay lại</string>
     <string name="loading">Đang xử lý…</string>
@@ -127,8 +127,45 @@
     <string name="welcome_user">Xin chào %1$s</string>
     <string name="you">Bạn</string>
     <string name="back">Quay lại</string>
-    <string name="timeout">Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!</string>
-    
-    <string name="qr_scanner">Quét mã checkin</string>
+    <string name="register_title">Tạo Tài Khoản</string>
+    <string name="register_subtitle">Điền thông tin để bắt đầu đặt sân bóng</string>
+    <string name="label_full_name">Họ và tên</string>
+    <string name="label_email">Email liên hệ</string>
+    <string name="label_phone">Số điện thoại</string>
+    <string name="label_gender_placeholder">--Giới tính--</string>
+    <string name="label_password">Mật khẩu (Tối thiểu 8 ký tự)</string>
+    <string name="label_confirm_password">Xác nhận mật khẩu</string>
+    <string name="btn_register">Đăng ký</string>
+    <string name="btn_already_have_account">Đã có tài khoản? Đăng nhập ngay</string>
+
+    <string name="gender_male">Nam</string>
+    <string name="gender_female">Nữ</string>
+    <string name="gender_other">Khác</string>
+
+    <string name="error_empty_fields">Vui lòng nhập đủ các trường bắt buộc</string>
+    <string name="error_password_mismatch">Mật khẩu xác nhận không khớp</string>
+    <string name="error_password_too_short">Mật khẩu phải có nhất 8 ký tự</string>
+
+    <string name="cd_toggle_password">Thay đổi hiển thị mật khẩu</string>
+
+    <string name="login_forgot_password">Quên mật khẩu?</string>
+    <string name="login_or">HOẶC</string>
+    <string name="login_no_account_prompt">Chưa có tài khoản? </string>
+    <string name="login_register_link">Đăng ký ngay</string>
+
+    <string name="dialog_forgot_password_title">Quên mật khẩu</string>
+    <string name="dialog_forgot_password_desc">Nhập email của bạn để nhận mã OTP khôi phục mật khẩu.</string>
+    <string name="dialog_forgot_password_email_hint">Email</string>
+    <string name="btn_send_code">Gửi mã</string>
+    <string name="btn_cancel">Hủy</string>
+    <string name="error_empty_email">Vui lòng nhập email</string>
+
+    <string name="msg_connecting_server">Đang kết nối với Server…</string>
+    <string name="error_google_cancelled">Đã hủy chọn tài khoản.</string>
+    <string name="error_no_google_account">Không tìm thấy tài khoản Google.</string>
+    <string name="error_unsupported_credential">Định dạng tài khoản không được hỗ trợ.</string>
+    <string name="cd_google_logo">Logo Google</string>
+
     <string name="close">Đóng</string>
+
 </resources>

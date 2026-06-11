@@ -1,12 +1,12 @@
 package com.tanh.datsan.ui.home.main
 
-
 import android.Manifest
 import android.app.Activity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -16,37 +16,37 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.R
+import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.ui.component.CustomRefreshLayout
+import com.tanh.datsan.utils.LocationUtil
+import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.HomeViewModel
 import com.tanh.datsan.viewmodel.UserViewModel
-import androidx.compose.ui.res.stringResource
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.tanh.datsan.ui.component.CustomRefreshLayout
 import java.util.Locale
-
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import com.tanh.datsan.utils.LocationUtil
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,12 +57,13 @@ fun MainScreen(
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
+    onNavigateToProfile: () -> Unit = {},      // Giữ lại từ Local
     onNavigateToScanner: () -> Unit = {},
     onNavigateToNotification: () -> Unit = {}
 ) {
-
     val context = LocalContext.current
 
+    // Cấp quyền GPS và Location từ bản Git
     val gpsSettingLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -75,10 +76,10 @@ fun MainScreen(
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
-        onResult = {permission->
-            val isFineLocationGranted = permission[Manifest.permission.ACCESS_FINE_LOCATION]?:false
+        onResult = { permission ->
+            val isFineLocationGranted = permission[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
             val isCoarseLocationGranted = permission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-            if(isFineLocationGranted|| isCoarseLocationGranted){
+            if (isFineLocationGranted || isCoarseLocationGranted) {
                 LocationUtil.checkRequestLocationSetting(
                     context = context,
                     onEnabled = {
@@ -88,7 +89,7 @@ fun MainScreen(
                         gpsSettingLauncher.launch(intentSenderRequest)
                     },
                 )
-            } else{
+            } else {
                 viewModel.fetchFieldNearMe()
             }
         }
@@ -123,14 +124,13 @@ fun MainScreen(
     val userAvatar by userViewModel.userAvatarUrl.collectAsState()
 
     val unreadNotiCount by userViewModel.unreadNotification.collectAsState(0)
-
     val suggestionMessage by viewModel.suggestionMessage.collectAsState()
-
 
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
         floatingActionButton = {
-            if (isLoggedIn && (userRole=="admin"|| userRole=="staff")) {
+            // Giới hạn hiển thị QR Scanner theo Role từ bản Git
+            if (isLoggedIn && (userRole == "admin" || userRole == "staff")) {
                 FloatingActionButton(
                     onClick = onNavigateToScanner,
                     containerColor = Color(0xFF007BFF),
@@ -153,7 +153,9 @@ fun MainScreen(
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
             ) {
+                // ==========================================
                 // 1. KHỐI HEADER MÀU XANH
+                // ==========================================
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -161,13 +163,12 @@ fun MainScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color(0xFF0056B3), // Xanh đậm ở trên
-                                    Color(0xFF00A2FF)  // Xanh nhạt ở dưới
+                                    Color(0xFF0056B3),
+                                    Color(0xFF00A2FF)
                                 )
                             )
                         )
                 ) {
-                    // Các nút góc trên cùng
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -176,7 +177,6 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        //Logo app
                         Image(
                             painter = painterResource(id = R.drawable.ic_app_logo),
                             contentDescription = stringResource(R.string.app_name),
@@ -211,9 +211,12 @@ fun MainScreen(
                                         )
                                     }
                                 }
+
+                                // Tích hợp sự kiện click chuyển sang Profile từ Local
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.clickable { onNavigateToProfile() }
                                 ) {
                                     Text(
                                         text = stringResource(
@@ -226,7 +229,8 @@ fun MainScreen(
                                         maxLines = 2
                                     )
                                     AsyncImage(
-                                        model = userAvatar.takeIf { !it.isNullOrEmpty() }
+                                        // Sử dụng toFullImageUrl() để đảm bảo load đúng đường dẫn như Local
+                                        model = userAvatar?.toFullImageUrl()?.takeIf { it.isNotEmpty() }
                                             ?: R.drawable.ic_default_avatar,
                                         contentDescription = stringResource(R.string.cd_user_avatar),
                                         modifier = Modifier
@@ -237,7 +241,6 @@ fun MainScreen(
                                     )
                                 }
                             }
-
                         } else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(onClick = { onLoginClick() }) {
@@ -261,7 +264,6 @@ fun MainScreen(
                         }
                     }
 
-                    // Chữ Slogan lớn ở giữa
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -271,7 +273,7 @@ fun MainScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.main_app_slogan_title),
-                            color = Color(0xFFFFD700), // Màu vàng nổi bật
+                            color = Color(0xFFFFD700),
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold
                         )
@@ -284,18 +286,19 @@ fun MainScreen(
                     }
                 }
 
-                // 2. KHỐI TÌM KIẾM NỔI (Nằm đè lên viền xanh)
+                // ==========================================
+                // 2. KHỐI TÌM KIẾM NỔI
+                // ==========================================
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .offset(y = (-40).dp), // Kéo thẻ này chìm vào khối xanh 40dp
+                        .offset(y = (-40).dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        // Dropdown chọn môn thể thao
                         Box {
                             OutlinedButton(
                                 onClick = { isSportMenuExpanded = true },
@@ -328,17 +331,18 @@ fun MainScreen(
                                     }
                                 )
                                 sportList.forEach { sport ->
-                                    DropdownMenuItem(text = { Text(sport.name) }, onClick = {
-                                        selectedSport = sport.name
-                                        viewModel.onFieldTypeSelected(sport)
-                                        isSportMenuExpanded = false
-                                    }
+                                    DropdownMenuItem(
+                                        text = { Text(sport.name) },
+                                        onClick = {
+                                            selectedSport = sport.name
+                                            viewModel.onFieldTypeSelected(sport)
+                                            isSportMenuExpanded = false
+                                        }
                                     )
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(8.dp))
-                        // Ô nhập địa điểm, tên sân
                         OutlinedTextField(
                             value = locationName,
                             onValueChange = { locationName = it },
@@ -377,7 +381,9 @@ fun MainScreen(
                     }
                 }
 
+                // ==========================================
                 // 3. KHỐI PROMO
+                // ==========================================
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -418,9 +424,10 @@ fun MainScreen(
                     }
                 }
 
+                // ==========================================
                 // 4. DANH SÁCH SÂN BÓNG
+                // ==========================================
                 SectionTitle(title = stringResource(R.string.main_section_near_you))
-
 
                 suggestionMessage?.let { msg ->
                     Text(
@@ -481,9 +488,10 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
         items(fieldList.size) { index ->
             val field = fieldList[index]
             Card(
+                // Giữ lại chiều cao 245.dp từ bản Local để thẻ hiển thị thoáng hơn
                 modifier = Modifier
                     .width(180.dp)
-                    .height(230.dp),
+                    .height(245.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -518,8 +526,11 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                         }
                         Spacer(modifier = Modifier.weight(1f))
 
+                        // Giữ lại layout căn lề 2 bên (SpaceBetween) từ Local
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -536,8 +547,7 @@ fun FieldListHorizontal(fieldList: List<FieldModel>, onFieldClick: (String) -> U
                                 )
                             }
                             Text(
-                                text = field.fieldType?.name
-                                    ?: stringResource(R.string.field_type_unknown),
+                                text = field.fieldType?.name ?: stringResource(R.string.field_type_unknown),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF0056B3),
                                 fontWeight = FontWeight.Bold,

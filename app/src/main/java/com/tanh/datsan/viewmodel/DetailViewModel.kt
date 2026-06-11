@@ -40,7 +40,6 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
-
     private val _bookingState = mutableStateOf<BookingUiState>(BookingUiState.Idle)
     val bookingState: State<BookingUiState> = _bookingState
 
@@ -59,6 +58,7 @@ class DetailViewModel @Inject constructor(
             locationHelper.getCurrentLocation { lat, lon ->
                 viewModelScope.launch {
                     try {
+                        // Gọi song song 2 API giúp load nhanh hơn
                         val fieldDeferred = async {
                             fieldRepository.getFieldDetail(
                                 fieldId = fieldId,
@@ -77,17 +77,20 @@ class DetailViewModel @Inject constructor(
                         val field = fieldDeferred.await()
                         val reviews = reviewDeferred.await()
 
+                        // Gộp dữ liệu Đánh giá vào Model Chi tiết sân
                         val reviewList = reviews?.data ?: emptyList()
                         val reviewMeta = reviews?.meta
 
                         val updatedField = field.copy(
                             reviews = reviewList,
-                            reviewCount = reviewMeta?.total?:field.reviewCount,
-                            averageRating = reviewMeta?.averageRating?:field.averageRating
+                            reviewCount = reviewMeta?.total ?: field.reviewCount,
+                            averageRating = reviewMeta?.averageRating ?: field.averageRating
                         )
 
-                        _uiState.value = DetailUiState.Success( updatedField)
+                        _uiState.value = DetailUiState.Success(updatedField)
                     } catch (e: Exception) {
+                        // Bổ sung bắt lỗi để UI không bị Loading vô tận nếu mất mạng
+                        _uiState.value = DetailUiState.Error(e.message)
                     }
                 }
             }

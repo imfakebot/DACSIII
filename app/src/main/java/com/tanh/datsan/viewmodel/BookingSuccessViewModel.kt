@@ -23,7 +23,7 @@ class BookingSuccessViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<BookingReceiptUiState>(BookingReceiptUiState.Loading)
     val uiState : StateFlow<BookingReceiptUiState> = _uiState.asStateFlow()
 
-    val tokenFlow : StateFlow<String> = tokenManager.token
+    val tokenFlow : StateFlow<String> = tokenManager.tokenFlow
         .map { it ?:"" }
         .stateIn(
             scope= viewModelScope,
