@@ -15,14 +15,13 @@ data class UserResponse(
     val id: String,
     val email: String,
     val role: String,
-    @SerializedName("is_profile_complete")
+    @SerializedName("is_profile_complete", alternate = ["isProfileComplete"])
     val isProfileComplete: Boolean,
     val branch: UserBranch?,
-    @SerializedName("avatarUrl")  // chờ xem log để sửa tên cho đúng
+    @SerializedName("avatar_url", alternate = ["avatarUrl"])
     val avatarUrl: String?,
-    @SerializedName("userName")   // chờ xem log để sửa tên cho đúng
+    @SerializedName("full_name", alternate = ["fullName", "userName"])
     val userName: String?
-
 )
 
 data class LoginResponse(

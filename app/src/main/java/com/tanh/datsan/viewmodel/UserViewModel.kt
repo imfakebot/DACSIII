@@ -32,16 +32,16 @@ class UserViewModel @Inject constructor(
 
     val unreadNotification = notificationRepository.unreadCountFlow
 
-    val isLoggedIn: StateFlow<Boolean> = tokenManager.token
-        .map { !it.isNullOrEmpty() }
+    val isLoggedIn: StateFlow<Boolean> = tokenManager.tokenFlow
+        .map { !it.isNullOrBlank() && it != "null" && it != "undefined" }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
 
-    val userRole: StateFlow<String> = tokenManager.token
-        .map { JwtUtil.getRoleFromToken(it) }
+    val userRole: StateFlow<String> = tokenManager.tokenFlow
+        .map { JwtUtil.getRoleFromToken(it ?: "") }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -75,9 +75,23 @@ class UserViewModel @Inject constructor(
     fun fetchUserProfile() {
         viewModelScope.launch {
             try {
-                val userProfile = userRepository.getProfileLogginedIn()
-                _userName.value = userProfile.fullName
-                _userAvatarUrl.value = userProfile.avatarUrl
+                val response = userRepository.getProfile()
+                if (response.isSuccessful) {
+                    val profile = response.body()?.userProfile
+                    _userName.value = profile?.fullName
+                    _userAvatarUrl.value = profile?.avatarUrl
+                    
+                    // Lưu vào local cache nếu cần
+                    userRepository.saveUserInfo(
+                        avatarUrl = profile?.avatarUrl,
+                        userName = profile?.fullName,
+                        phone = profile?.phoneNumber,
+                        address = profile?.address?.street,
+                        gender = profile?.gender,
+                        dob = profile?.dateOfBirth,
+                        bio = profile?.bio
+                    )
+                }
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Error fetching user profile: ${e.message}")
             }

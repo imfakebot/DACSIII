@@ -92,6 +92,7 @@ class AuthViewModel @Inject constructor(
                     sendEvent(AuthUiEvent.ShowToast(extractErrorMessage(response.errorBody()?.string(), "Server từ chối yêu cầu!")))
                 }
             } catch (e: Exception) {
+                android.util.Log.e("AUTH_DEBUG", "Google login exception: ${e.message}", e)
                 sendEvent(AuthUiEvent.ShowToast("Lỗi đăng nhập Google!"))
             } finally {
                 _isLoading.value = false

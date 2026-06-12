@@ -49,7 +49,10 @@ object NetworkModule {
 
             val requestBuilder = originalRequest.newBuilder()
             if (!token.isNullOrBlank()) {
+                Log.d("NETWORK_DEBUG", "Adding Token to Request: ${originalRequest.url}")
                 requestBuilder.header("Authorization", "Bearer $token")
+            } else {
+                Log.w("NETWORK_DEBUG", "NO TOKEN FOUND for Request: ${originalRequest.url}")
             }
 
             var response = chain.proceed(requestBuilder.build())

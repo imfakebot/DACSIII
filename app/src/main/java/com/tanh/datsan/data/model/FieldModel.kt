@@ -35,7 +35,7 @@ data class FieldImage(
 )
 
 data class Utility(
-    val id: Int,
+    val id: String,
     val name: String,
     @SerializedName("iconUrl") val iconUrl: String?,
     val price: Double?, // Dùng Double theo Git để tránh crash Gson
@@ -43,13 +43,13 @@ data class Utility(
 )
 
 data class City(
-    val id: Int,
+    val id: String,
     val name: String,
     val type: String?
 )
 
 data class Ward(
-    val id: Int,
+    val id: String,
     val name: String,
     val type: String?,
     val city: City?

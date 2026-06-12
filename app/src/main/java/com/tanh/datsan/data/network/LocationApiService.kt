@@ -10,5 +10,5 @@ interface LocationApiService {
     suspend fun getCities(): List<CityDto>
 
     @GET("locations/wards/{cityId}")
-    suspend fun getWards(@Path("cityId") cityId: Int): List<WardDto>
+    suspend fun getWards(@Path("cityId") cityId: String): List<WardDto>
 }

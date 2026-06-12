@@ -223,8 +223,8 @@ fun DetailScreen(
                     showSheet = false
                     viewModel.createBooking(
                         fieldId = fieldId,
-                        timeStart = "${date}T${time}:00+07:00",
-                        duration = duration,
+                        startTime = "${date}T${time}:00+07:00",
+                        durationMinutes = duration,
                         voucherCode = selectedVoucher?.code
                     )
                 }

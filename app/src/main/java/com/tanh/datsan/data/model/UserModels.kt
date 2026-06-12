@@ -6,12 +6,13 @@ import com.google.gson.annotations.SerializedName
 
 data class AddressDto(
     @SerializedName("street") val street: String,
-    // Backend yêu cầu gửi cityId kiểu Số (Integer)
-    @SerializedName("cityId") val cityId: Int
+    @SerializedName("cityId") val cityId: String,
+    @SerializedName("wardId") val wardId: String
 )
 
 data class UpdateProfileRequest(
     @SerializedName("full_name") val fullName: String? = null,
+    @SerializedName("phone_number") val phoneNumber: String? = null,
     @SerializedName("gender") val gender: String? = null,
     @SerializedName("date_of_birth") val dateOfBirth: String? = null,
     @SerializedName("bio") val bio: String? = null,
@@ -20,13 +21,17 @@ data class UpdateProfileRequest(
 
 // --- PHẦN NHẬN VỀ (RESPONSE) ---
 
+data class AddressResponseDto(
+    @SerializedName("street") val street: String?,
+    @SerializedName("city_name") val cityName: String?,
+    @SerializedName("ward_name") val wardName: String?
+)
+
 data class UserProfileDto(
     @SerializedName("id") val id: String,
     @SerializedName("full_name", alternate = ["fullName"]) val fullName: String?,
     @SerializedName("phone_number", alternate = ["phoneNumber"]) val phoneNumber: String?,
-    @SerializedName("street") val street: String?,
-    @SerializedName("city") val city: CityDto?,
-    @SerializedName("ward") val ward: WardDto?,
+    @SerializedName("address") val address: AddressResponseDto?,
     @SerializedName("gender") val gender: String?,
     @SerializedName("date_of_birth", alternate = ["dateOfBirth"]) val dateOfBirth: String?,
     @SerializedName("bio") val bio: String?,
@@ -35,12 +40,12 @@ data class UserProfileDto(
 )
 
 data class CityDto(
-    @SerializedName("id") val id: Int,
+    @SerializedName("id") val id: String,
     @SerializedName("name") val name: String
 )
 
 data class WardDto(
-    @SerializedName("id") val id: Int,
+    @SerializedName("id") val id: String,
     @SerializedName("name") val name: String
 )
 

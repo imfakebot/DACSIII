@@ -23,10 +23,16 @@ data class ProfileUiState(
     val profile: UserMeResponse? = null,
     val isLoading: Boolean = false,
     val isLoadingCities: Boolean = false,
+    val isLoadingWards: Boolean = false,
     val isEditing: Boolean = false,
     val toastMessage: String? = null,
     val avatarUrl: String? = null,
     val cities: List<com.tanh.datsan.data.model.CityDto> = emptyList(),
+    val wards: List<com.tanh.datsan.data.model.WardDto> = emptyList(),
+    // Read-only fields for display
+    val displayCityName: String = "",
+    val displayWardName: String = "",
+    
     // Editable fields
     val fullName: String = "",
     val phoneNumber: String = "",
@@ -34,7 +40,8 @@ data class ProfileUiState(
     val dateOfBirth: String = "",
     val bio: String = "",
     val street: String = "",
-    val selectedCityId: Int? = null
+    val selectedCityId: String? = null,
+    val selectedWardId: String? = null
 )
 
 @HiltViewModel
@@ -70,15 +77,58 @@ class ProfileViewModel @Inject constructor(
     private fun resetEditingFields() {
         val currentProfile = _uiState.value.profile?.userProfile
         if (currentProfile != null) {
+            val address = currentProfile.address
+            val street = address?.street ?: ""
+            val cityName = address?.cityName ?: ""
+            val wardName = address?.wardName ?: ""
+
+            // Giữ lại tên vừa cập nhật nếu API trả về rỗng (trường hợp BE chưa kịp đồng bộ)
+            val finalCityName = cityName.ifBlank { _uiState.value.displayCityName }
+            val finalWardName = wardName.ifBlank { _uiState.value.displayWardName }
+            
             _uiState.value = _uiState.value.copy(
                 fullName = currentProfile.fullName ?: "",
                 phoneNumber = currentProfile.phoneNumber ?: "",
                 gender = currentProfile.gender ?: "",
                 dateOfBirth = currentProfile.dateOfBirth ?: "",
                 bio = currentProfile.bio ?: "",
-                street = currentProfile.street ?: "",
-                selectedCityId = currentProfile.city?.id
+                street = street.ifBlank { _uiState.value.street },
+                displayCityName = finalCityName,
+                displayWardName = finalWardName,
+                selectedCityId = null, // Will be resolved
+                selectedWardId = null // Will be resolved
             )
+            
+            resolveLocationIds()
+        }
+    }
+
+    private fun resolveLocationIds() {
+        val state = _uiState.value
+        if (state.selectedCityId == null && state.displayCityName.isNotBlank() && state.cities.isNotEmpty()) {
+            val cityId = state.cities.find { it.name.equals(state.displayCityName, ignoreCase = true) }?.id
+            if (cityId != null) {
+                _uiState.value = _uiState.value.copy(selectedCityId = cityId)
+                fetchWardsAndSelect(cityId, state.displayWardName)
+            }
+        }
+    }
+
+    private fun fetchWardsAndSelect(cityId: String, wardNameToSelect: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingWards = true)
+            try {
+                val result = userRepository.getWards(cityId)
+                val wardId = result.find { it.name.equals(wardNameToSelect, ignoreCase = true) }?.id
+                _uiState.value = _uiState.value.copy(
+                    wards = result,
+                    selectedWardId = wardId
+                )
+            } catch (e: Exception) {
+                Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoadingWards = false)
+            }
         }
     }
 
@@ -88,6 +138,8 @@ class ProfileViewModel @Inject constructor(
             try {
                 val result = userRepository.getCities()
                 _uiState.value = _uiState.value.copy(cities = result)
+                // Cố gắng map lại ID nếu Profile đã load xong trước Cities
+                resolveLocationIds()
             } catch (e: Exception) {
                 Log.e("PROFILE_VM", "Error fetching cities: ${e.message}")
             } finally {
@@ -96,9 +148,32 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun onCitySelected(cityId: Int) {
+    fun fetchWards(cityId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingWards = true)
+            try {
+                val result = userRepository.getWards(cityId)
+                _uiState.value = _uiState.value.copy(wards = result)
+            } catch (e: Exception) {
+                Log.e("PROFILE_VM", "Error fetching wards: ${e.message}")
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoadingWards = false)
+            }
+        }
+    }
+
+    fun onCitySelected(cityId: String) {
         _uiState.value = _uiState.value.copy(
-            selectedCityId = cityId
+            selectedCityId = cityId,
+            selectedWardId = null, // Reset ward khi đổi city
+            wards = emptyList()
+        )
+        fetchWards(cityId)
+    }
+
+    fun onWardSelected(wardId: String) {
+        _uiState.value = _uiState.value.copy(
+            selectedWardId = wardId
         )
     }
 
@@ -116,7 +191,7 @@ class ProfileViewModel @Inject constructor(
                         avatarUrl = userMe?.userProfile?.avatarUrl,
                         userName = userMe?.userProfile?.fullName,
                         phone = userMe?.userProfile?.phoneNumber,
-                        address = userMe?.userProfile?.street,
+                        address = userMe?.userProfile?.address?.street,
                         gender = userMe?.userProfile?.gender,
                         dob = userMe?.userProfile?.dateOfBirth,
                         bio = userMe?.userProfile?.bio
@@ -134,26 +209,28 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             val state = _uiState.value
             
-            // Validate: Nếu đã chọn Tỉnh thì phải nhập tên đường và ngược lại
-            val isAddressIncomplete = (state.selectedCityId != null || state.street.isNotBlank()) &&
-                                     (state.selectedCityId == null || state.street.isBlank())
+            // Validate: Nếu đã chọn address thì các trường street, cityId, wardId là bắt buộc
+            val hasAddressInput = state.selectedCityId != null || state.selectedWardId != null || state.street.isNotBlank()
+            val isAddressIncomplete = hasAddressInput && (state.selectedCityId == null || state.selectedWardId == null || state.street.isBlank())
 
             if (isAddressIncomplete) {
-                _uiState.value = _uiState.value.copy(toastMessage = "Vui lòng nhập đầy đủ Tỉnh và Tên đường")
+                _uiState.value = _uiState.value.copy(toastMessage = "Vui lòng nhập đầy đủ Tỉnh, Phường và Tên đường")
                 return@launch
             }
 
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val address = if (state.selectedCityId != null) {
+                val address = if (hasAddressInput) {
                     com.tanh.datsan.data.model.AddressDto(
                         street = state.street.trim(),
-                        cityId = state.selectedCityId
+                        cityId = state.selectedCityId!!,
+                        wardId = state.selectedWardId!!
                     )
                 } else null
 
                 val request = com.tanh.datsan.data.model.UpdateProfileRequest(
                     fullName = state.fullName.ifBlank { null },
+                    phoneNumber = state.phoneNumber.ifBlank { null },
                     gender = state.gender.ifBlank { null },
                     dateOfBirth = state.dateOfBirth.ifBlank { null },
                     bio = state.bio.ifBlank { null },
@@ -162,12 +239,20 @@ class ProfileViewModel @Inject constructor(
 
                 val response = userRepository.updateProfile(request)
                 if (response.isSuccessful) {
+                    // Cập nhật ngay lập tức giao diện (Optimistic Update)
+                    val updatedCityName = state.cities.find { it.id == state.selectedCityId }?.name ?: state.displayCityName
+                    val updatedWardName = state.wards.find { it.id == state.selectedWardId }?.name ?: state.displayWardName
+
                     _uiState.value = _uiState.value.copy(
                         toastMessage = "Cập nhật thành công",
-                        isEditing = false
+                        isEditing = false,
+                        displayCityName = updatedCityName,
+                        displayWardName = updatedWardName
                     )
                     fetchProfile() 
                 } else {
+                    val errorBody = response.errorBody()?.string()
+                    Log.e("PROFILE_VM", "Update failed: Code ${response.code()}, Body: $errorBody")
                     _uiState.value = _uiState.value.copy(toastMessage = "Thất bại: ${response.code()}")
                 }
             } catch (e: Exception) {

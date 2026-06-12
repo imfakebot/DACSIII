@@ -10,7 +10,8 @@ import java.io.FileOutputStream
 fun String?.toFullImageUrl(): String {
     if (this.isNullOrEmpty()) return ""
 
-    val baseUrl = BuildConfig.API_BASE_URL.trim().removeSuffix("/")
+    // Dùng API_BACKEND (Host gốc) thay vì API_BASE_URL (có thể chứa /api/v1)
+    val baseUrl = BuildConfig.API_BACKEND.trim().removeSuffix("/")
     
     // Nếu nó đã là URL tuyệt đối (chứa http), ta chỉ lấy phần path sau domain
     var path = this

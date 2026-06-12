@@ -222,9 +222,22 @@ fun ProfileScreen(
                         label = "Tỉnh / Thành phố",
                         items = uiState.cities.map { it.id to it.name },
                         selectedId = uiState.selectedCityId,
+                        displayValue = uiState.displayCityName,
                         isEditing = uiState.isEditing,
                         onItemSelected = { viewModel.onCitySelected(it) },
                         placeholderText = if (uiState.isLoadingCities) "Đang tải dữ liệu..." else if (uiState.cities.isEmpty()) "Không có dữ liệu" else "Chọn Tỉnh / Thành phố"
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
+
+                    LocationDropdown(
+                        label = "Phường / Xã",
+                        items = uiState.wards.map { it.id to it.name },
+                        selectedId = uiState.selectedWardId,
+                        displayValue = uiState.displayWardName,
+                        isEditing = uiState.isEditing,
+                        onItemSelected = { viewModel.onWardSelected(it) },
+                        enabled = uiState.selectedCityId != null,
+                        placeholderText = if (uiState.isLoadingWards) "Đang tải dữ liệu..." else if (uiState.wards.isEmpty()) "Vui lòng chọn Tỉnh trước" else "Chọn Phường / Xã"
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = Color(0xFFF0F0F0))
 
@@ -371,10 +384,11 @@ fun BirthdayPicker(dob: String, isEditing: Boolean, onClick: () -> Unit) {
 @Composable
 fun LocationDropdown(
     label: String, 
-    items: List<Pair<Int, String>>, 
-    selectedId: Int?, 
+    items: List<Pair<String, String>>, 
+    selectedId: String?, 
+    displayValue: String = "",
     isEditing: Boolean, 
-    onItemSelected: (Int) -> Unit, 
+    onItemSelected: (String) -> Unit, 
     enabled: Boolean = true,
     placeholderText: String? = null
 ) {
@@ -425,7 +439,8 @@ fun LocationDropdown(
                     }
                 }
             } else {
-                Text(text = selectedName.ifEmpty { "Chưa cập nhật" }, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (selectedName.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
+                val displayText = displayValue.ifEmpty { selectedName }
+                Text(text = displayText.ifEmpty { "Chưa cập nhật" }, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = if (displayText.isEmpty()) Color.LightGray else MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 2.dp))
             }
         }
     }

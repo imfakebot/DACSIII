@@ -57,13 +57,13 @@ fun MainScreen(
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
-    onNavigateToProfile: () -> Unit = {},      // Giữ lại từ Local
+    onNavigateToProfile: () -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
     onNavigateToNotification: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
-    // Cấp quyền GPS và Location từ bản Git
+    // Cấp quyền GPS và Location
     val gpsSettingLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
@@ -129,7 +129,7 @@ fun MainScreen(
     Scaffold(
         containerColor = Color(0xFFF5F7FA),
         floatingActionButton = {
-            // Giới hạn hiển thị QR Scanner theo Role từ bản Git
+            // Giới hạn hiển thị QR Scanner theo Role
             if (isLoggedIn && (userRole == "admin" || userRole == "staff")) {
                 FloatingActionButton(
                     onClick = onNavigateToScanner,
@@ -230,14 +230,16 @@ fun MainScreen(
                                     )
                                     AsyncImage(
                                         // Sử dụng toFullImageUrl() để đảm bảo load đúng đường dẫn như Local
-                                        model = userAvatar?.toFullImageUrl()?.takeIf { it.isNotEmpty() }
-                                            ?: R.drawable.ic_default_avatar,
+                                        model = userAvatar?.takeIf { it.isNotBlank() }?.toFullImageUrl()
+                                            ?: R.drawable.avartar_default,
                                         contentDescription = stringResource(R.string.cd_user_avatar),
                                         modifier = Modifier
                                             .size(44.dp)
                                             .clip(CircleShape)
                                             .background(Color.White, CircleShape),
-                                        contentScale = ContentScale.Crop
+                                        contentScale = ContentScale.Crop,
+                                        error = painterResource(id = R.drawable.avartar_default),
+                                        placeholder = painterResource(id = R.drawable.avartar_default)
                                     )
                                 }
                             }

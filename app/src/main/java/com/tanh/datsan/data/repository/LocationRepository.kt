@@ -17,7 +17,7 @@ class LocationRepository @Inject constructor(
 
     suspend fun getCities() = locationApiService.getCities()
 
-    suspend fun getWards(cityId: Int) = locationApiService.getWards(cityId)
+    suspend fun getWards(cityId: String) = locationApiService.getWards(cityId)
 
     @SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): Pair<String,String>?{

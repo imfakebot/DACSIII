@@ -132,11 +132,14 @@
     <string name="label_full_name">Họ và tên</string>
     <string name="label_email">Email liên hệ</string>
     <string name="label_phone">Số điện thoại</string>
+    <string name="label_gender">Giới tính</string>
     <string name="label_gender_placeholder">--Giới tính--</string>
     <string name="label_password">Mật khẩu (Tối thiểu 8 ký tự)</string>
     <string name="label_confirm_password">Xác nhận mật khẩu</string>
     <string name="btn_register">Đăng ký</string>
     <string name="btn_already_have_account">Đã có tài khoản? Đăng nhập ngay</string>
+
+    <string name="qr_scanner">Quét mã QR</string>
 
     <string name="gender_male">Nam</string>
     <string name="gender_female">Nữ</string>

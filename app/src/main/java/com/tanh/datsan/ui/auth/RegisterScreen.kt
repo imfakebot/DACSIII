@@ -125,7 +125,7 @@ fun RegisterScreen(
                 modifier = Modifier.menuAnchor().fillMaxWidth(), shape = RoundedCornerShape(12.dp)
             )
             ExposedDropdownMenu(expanded = genderExpanded, onDismissRequest = { genderExpanded = false }) {
-                GenderType.values().forEach { gender ->
+                GenderType.entries.forEach { gender ->
                     DropdownMenuItem(
                         text = { Text(stringResource(gender.resId)) },
                         onClick = {
@@ -204,14 +204,6 @@ fun RegisterScreen(
                 Text(text = stringResource(R.string.btn_register), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }
         }
-
-        Spacer(modifier = Modifier.height(20.dp))
-        TextButton(onClick = onBackToLogin) {
-            Text(text = stringResource(R.string.btn_already_have_account), color = primaryColor)
-        }
-        Spacer(modifier = Modifier.height(20.dp))
-    }
-}
 
         Spacer(modifier = Modifier.height(20.dp))
         TextButton(onClick = onBackToLogin) {

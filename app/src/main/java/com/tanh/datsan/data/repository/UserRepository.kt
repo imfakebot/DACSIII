@@ -28,7 +28,7 @@ class UserRepository @Inject constructor(
 
     suspend fun getCities() = locationRepository.getCities()
 
-    suspend fun getWards(cityId: Int) = locationRepository.getWards(cityId)
+    suspend fun getWards(cityId: String) = locationRepository.getWards(cityId)
 
     // ================= LOCAL DATA =================
 
