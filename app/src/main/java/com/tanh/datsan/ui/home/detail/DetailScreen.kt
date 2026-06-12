@@ -6,49 +6,25 @@ import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.rounded.LocationOn
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,17 +41,10 @@ import androidx.core.util.Consumer
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
-import com.tanh.datsan.ui.component.FieldImageSlider
-import com.tanh.datsan.ui.component.FullScreenImageViewer
-import com.tanh.datsan.ui.component.RatingAndLocation
-import com.tanh.datsan.ui.component.UtilityItem
+import com.tanh.datsan.ui.component.*
 import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
-import com.tanh.datsan.viewmodel.BookingUiState
-import com.tanh.datsan.viewmodel.DetailUiState
-import com.tanh.datsan.viewmodel.DetailViewModel
-import com.tanh.datsan.viewmodel.UserViewModel
-import com.tanh.datsan.viewmodel.VoucherViewModel
+import com.tanh.datsan.viewmodel.*
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -99,21 +68,8 @@ fun DetailScreen(
 
     val sheetState = rememberModalBottomSheetState()
     var showSheet by remember { mutableStateOf(false) }
-    val uriHandler = LocalUriHandler.current
-
-    val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
-    val discountAmount by voucherViewModel.discountAmount.collectAsState()
-    val voucherList by voucherViewModel.vouchers.collectAsState()
-    val voucherError by voucherViewModel.error.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(voucherError) {
-        voucherError?.let {
-            snackbarHostState.showSnackbar(it)
-            voucherViewModel.clearError()
-        }
-    }
 
     // Gọi API lấy dữ liệu khi vào màn hình
     LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
@@ -138,12 +94,9 @@ fun DetailScreen(
     DisposableEffect(activity) {
         val intentListener = Consumer<Intent> { intent ->
             val uri = intent.data
-            Log.d("DetailScreen", "Received intent with URI: $uri")
-
             if (uri != null && uri.scheme == "dacsii" && uri.host == "payment") {
                 val path = uri.path
                 val bookingId = uri.getQueryParameter("bookingId")
-                val code = uri.getQueryParameter("code")
                 if (path?.contains("payment-success") == true) {
                     onNavigateToSuccess(bookingId ?: "UNKNOWN")
                 } else if (path?.contains("payment-failed") == true) {
@@ -151,9 +104,7 @@ fun DetailScreen(
                 }
             }
         }
-        // Đăng ký bắt link mới nếu App đang nằm ngầm
         activity?.addOnNewIntentListener(intentListener)
-        // Bắt link ngay lập tức nếu App vừa được gọi dậy
         if (activity?.intent?.data != null) {
             intentListener.accept(activity.intent)
         }
@@ -168,11 +119,15 @@ fun DetailScreen(
         }
     }
 
-
     Scaffold(
+        containerColor = Color.White,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            if (uiState is DetailUiState.Success) {
+            AnimatedVisibility(
+                visible = uiState is DetailUiState.Success,
+                enter = slideInVertically(initialOffsetY = { it }),
+                exit = slideOutVertically(targetOffsetY = { it })
+            ) {
                 BookingBottomBar(
                     onClick = { if (isLoggedIn) showSheet = true else onNavigateToLogin() }
                 )
@@ -198,13 +153,18 @@ fun DetailScreen(
         }
     }
 
-    // Modal chọn giờ đặt sân
     if (showSheet && uiState is DetailUiState.Success) {
         val field = (uiState as DetailUiState.Success).field
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = Color.White,
+            dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFE2E8F0)) }
         ) {
+            val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
+            val discountAmount by voucherViewModel.discountAmount.collectAsState()
+            val voucherList by voucherViewModel.vouchers.collectAsState()
+            
             BookingBottomSheetContent(
                 field = field,
                 viewModel = viewModel,
@@ -221,6 +181,7 @@ fun DetailScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DetailContent(
     field: FieldResponse,
@@ -230,34 +191,35 @@ fun DetailContent(
     onShowSnackbar: (String) -> Unit
 ) {
     val lazyListState = rememberLazyListState()
-    val primaryColor = Color(0xFF2E7D32)
+    val surfaceColor = Color.White
+    val secondaryTextColor = Color(0xFF64748B)
+    val accentColor = Color(0xFF3B82F6)
 
     var showImageViewer by remember { mutableStateOf(false) }
     var clickedImageIndex by remember { mutableIntStateOf(0) }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF4F7F6))
-            .padding(padding)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         val imageUrls = remember(field) {
             field.images?.map { it.imageUrl.toFullImageUrl() } ?: emptyList()
         }
 
-        LazyColumn(state = lazyListState, modifier = Modifier.fillMaxSize()) {
-
-            // 1. KHỐI ẢNH SLIDER + PARALLAX
+        LazyColumn(
+            state = lazyListState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp)
+        ) {
+            // 1. IMMERSIVE IMAGE HEADER
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)
+                        .height(360.dp)
                         .graphicsLayer {
-                            // Parallax: ảnh chạy chậm hơn nội dung cuộn
-                            translationY = if (lazyListState.firstVisibleItemIndex == 0) {
-                                lazyListState.firstVisibleItemScrollOffset * 0.5f
-                            } else 0f
+                            val scrollOffset = if (lazyListState.firstVisibleItemIndex == 0) {
+                                lazyListState.firstVisibleItemScrollOffset.toFloat()
+                            } else 500f
+                            translationY = scrollOffset * 0.5f
+                            alpha = (1f - (scrollOffset / 800f)).coerceIn(0f, 1f)
                         }
                 ) {
                     if (imageUrls.isNotEmpty()) {
@@ -268,106 +230,127 @@ fun DetailContent(
                                 showImageViewer = true
                             }
                         )
-                    } else {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .background(Color.LightGray)
-                        )
                     }
-
+                    
+                    // Dark Gradient Overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(
-                                        Color.Black.copy(0.4f),
-                                        Color.Transparent,
-                                        Color.Black.copy(0.6f)
-                                    )
+                                    listOf(Color.Black.copy(0.3f), Color.Transparent, Color.Black.copy(0.5f))
                                 )
                             )
                     )
                 }
             }
 
-            // 2. NỘI DUNG CHI TIẾT SÂN
+            // 2. MAIN CONTENT CARD
             item {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .offset(y = (-40).dp), // Kéo nhích lên 40dp để đè lên mép ảnh y như cũ
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                    color = Color.White,
-                    shadowElevation = 8.dp
+                        .offset(y = (-40).dp),
+                    shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
+                    color = surfaceColor,
+                    shadowElevation = 0.dp 
                 ) {
-                    Column(Modifier.padding(24.dp)) {
-                        FieldBadge(field.fieldType.name, primaryColor)
-
-                        field.distance?.let { dist ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Rounded.LocationOn,
-                                    contentDescription = null,
-                                    tint = primaryColor,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
+                    Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+                        
+                        // Category & Distance Row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Surface(
+                                color = accentColor.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
                                 Text(
-                                    text = "${String.format(Locale.US, "%.1f", dist)} km",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = primaryColor,
-                                    fontWeight = FontWeight.Bold
+                                    text = field.fieldType.name,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    color = accentColor,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
                                 )
+                            }
+                            
+                            field.distance?.let { dist ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Rounded.LocationOn, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "${String.format(Locale.US, "%.1f", dist)} km",
+                                        color = Color(0xFF10B981),
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 15.sp
+                                    )
+                                }
                             }
                         }
 
                         Text(
                             text = field.name,
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            color = Color(0xFF0F172A),
+                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp),
+                            lineHeight = 38.sp
                         )
 
-                        val ward = field.branch.address?.wardName ?: field.branch.address?.ward?.name ?: ""
-                        val city = field.branch.address?.cityName ?: field.branch.address?.city?.name ?: ""
-                        val street = field.branch.address?.street ?: ""
-
-                        val fullAddress = listOf(street, ward, city)
-                            .filter { it.isNotBlank() }
-                            .joinToString(", ")
-                            .ifBlank { "Địa chỉ không xác định" }
-
-                        RatingAndLocation(
-                            rating = field.averageRating ?: 0f,
-                            reviewCount = field.reviewCount ?: 0,
-                            address = fullAddress,
-                            tint = primaryColor
-                        )
-
-                        if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
-                            Spacer(Modifier.height(16.dp))
-                            DirectionButton(
-                                lat = field.branch.address.latitude,
-                                lng = field.branch.address.longitude,
-                                primaryColor = primaryColor,
-                                onShowMessage = onShowSnackbar,
-                                tenSan = field.name
+                        // Address Row
+                        Row(verticalAlignment = Alignment.Top) {
+                            Icon(Icons.Rounded.LocationOn, null, tint = secondaryTextColor, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                            Spacer(Modifier.width(8.dp))
+                            val ward = field.branch.address?.wardName ?: field.branch.address?.ward?.name ?: ""
+                            val city = field.branch.address?.cityName ?: field.branch.address?.city?.name ?: ""
+                            val street = field.branch.address?.street ?: ""
+                            val fullAddress = listOf(street, ward, city).filter { it.isNotBlank() }.joinToString(", ")
+                            Text(
+                                text = fullAddress.ifBlank { "Địa chỉ không xác định" },
+                                color = secondaryTextColor,
+                                fontSize = 15.sp,
+                                lineHeight = 22.sp
                             )
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // Quick Info Surface
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(24.dp)),
+                            color = Color(0xFFF8FAFC),
+                            shape = RoundedCornerShape(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                InfoItem(label = "Đánh giá", value = "${field.averageRating ?: 0.0}", icon = Icons.Rounded.Star, iconColor = Color(0xFFFFD700))
+                                VerticalDivider(modifier = Modifier.height(30.dp), color = Color(0xFFE2E8F0))
+                                InfoItem(label = "Nhận xét", value = "${field.reviewCount ?: 0}", icon = Icons.Default.ChatBubble, iconColor = accentColor)
+                                if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
+                                    VerticalDivider(modifier = Modifier.height(30.dp), color = Color(0xFFE2E8F0))
+                                    DirectionIconButton(
+                                        lat = field.branch.address.latitude,
+                                        lng = field.branch.address.longitude,
+                                        tenSan = field.name,
+                                        onShowMessage = onShowSnackbar
+                                    )
+                                }
+                            }
                         }
 
                         SectionDivider()
 
-                        Text(
-                            stringResource(R.string.field_amenities_title),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                        // Amenities Section
+                        Text("Tiện ích của sân", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
                         FlowRow(
-                            modifier = Modifier
-                                .padding(vertical = 16.dp)
-                                .fillMaxWidth(),
+                            modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -376,47 +359,43 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Mô tả chi tiết
+                        // Description Section
+                        Text("Giới thiệu", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
                         Text(
-                            stringResource(R.string.detail_tab_intro),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Text(
-                            text = field.description
-                                ?: stringResource(R.string.detail_no_description),
-                            color = Color(0xFF4B5563),
+                            text = field.description ?: "Chưa có mô tả cho sân này.",
+                            color = Color(0xFF475569),
                             modifier = Modifier.padding(vertical = 12.dp),
-                            lineHeight = 24.sp
+                            lineHeight = 24.sp,
+                            fontSize = 16.sp
                         )
 
                         SectionDivider()
 
-
+                        // Reviews Section
                         ReviewHeader(
                             fieldId = field.id,
-                            reviewCount = field.reviewCount?:0,
-                            rating = field.averageRating?:0f,
-                            onNavigate= onNavigateToReview,
-                            color=primaryColor
+                            reviewCount = field.reviewCount ?: 0,
+                            rating = field.averageRating ?: 0f,
+                            onNavigate = onNavigateToReview,
+                            color = accentColor
                         )
                         ReviewList(field.reviews)
-
-                        Spacer(Modifier.height(100.dp))
                     }
                 }
             }
         }
 
-        IconButton(
-            onClick = onBackClick,
+        // Floating Back Button (Glassmorphism)
+        Surface(
             modifier = Modifier
-                .padding(top = 40.dp, start = 16.dp)
+                .padding(top = 48.dp, start = 20.dp)
                 .size(48.dp)
-                .background(Color.White.copy(0.25f), CircleShape)
-                .clip(CircleShape)
+                .clickable { onBackClick() },
+            color = Color.Black.copy(alpha = 0.3f),
+            shape = CircleShape,
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(12.dp))
         }
 
         if (showImageViewer) {
@@ -426,5 +405,35 @@ fun DetailContent(
                 onDismiss = { showImageViewer = false }
             )
         }
+    }
+}
+
+@Composable
+fun InfoItem(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, iconColor: Color) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = iconColor, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(6.dp))
+            Text(text = value, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF0F172A))
+        }
+        Text(text = label, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+fun DirectionIconButton(lat: Double, lng: Double, tenSan: String, onShowMessage: (String) -> Unit) {
+    val context = LocalContext.current
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {
+        try {
+            val uri = "google.navigation:q=$lat,$lng"
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri))
+            intent.setPackage("com.google.android.apps.maps")
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            onShowMessage("Vui lòng cài đặt Google Maps")
+        }
+    }) {
+        Icon(Icons.Default.Directions, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(24.dp))
+        Text(text = "Chỉ đường", fontSize = 12.sp, color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold)
     }
 }

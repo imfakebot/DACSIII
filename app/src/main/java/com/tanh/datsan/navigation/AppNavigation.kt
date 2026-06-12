@@ -16,14 +16,16 @@ import com.tanh.datsan.ui.home.review.AllReviewScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
-//import com.tanh.datsan.ui.LoginScreen
+import com.tanh.datsan.ui.auth.LoginScreen
+import com.tanh.datsan.ui.auth.RegisterScreen
+import com.tanh.datsan.ui.auth.OtpScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.notification.NotificationScreen
 import com.tanh.datsan.ui.home.voucher.VoucherScreen
 import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
-
-//import com.tanh.datsan.ui.RegisterScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun AppNavigation() {
@@ -67,6 +69,68 @@ fun AppNavigation() {
                     },
                     onNavigateToNotification = {
                         navController.navigate("notification")
+                    }
+                )
+            }
+
+            composable("login") {
+                val authViewModel: AuthViewModel = hiltViewModel()
+                LoginScreen(
+                    viewModel = authViewModel,
+                    onNavigateToRegister = {
+                        navController.navigate("register")
+                    },
+                    onOtpSent = { email, isRegister ->
+                        navController.navigate("otp/$email/$isRegister")
+                    },
+                    onAuthenticated = {
+                        navController.navigate(BottomNavItem.Home.route) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable("register") {
+                val authViewModel: AuthViewModel = hiltViewModel()
+                RegisterScreen(
+                    viewModel = authViewModel,
+                    onNavigateToLogin = {
+                        navController.navigate("login")
+                    },
+                    onOtpSent = { email, isRegister ->
+                        navController.navigate("otp/$email/$isRegister")
+                    }
+                )
+            }
+
+            composable(
+                "otp/{email}/{isRegister}",
+                arguments = listOf(
+                    navArgument("email") { type = NavType.StringType },
+                    navArgument("isRegister") { type = NavType.BoolType }
+                )
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                val isRegister = backStackEntry.arguments?.getBoolean("isRegister") ?: false
+                val authViewModel: AuthViewModel = hiltViewModel()
+                OtpScreen(
+                    email = email,
+                    isRegister = isRegister,
+                    viewModel = authViewModel,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onSuccess = {
+                        if (isRegister) {
+                            navController.navigate("login") {
+                                popUpTo("register") { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(BottomNavItem.Home.route) {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
                     }
                 )
             }

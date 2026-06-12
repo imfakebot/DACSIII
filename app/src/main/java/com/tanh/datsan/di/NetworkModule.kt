@@ -3,6 +3,7 @@ package com.tanh.datsan.di
 import android.util.Log
 import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
+import com.tanh.datsan.data.network.AuthApiService
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.FieldApiService
 import com.tanh.datsan.data.network.NotificationApiService
@@ -92,6 +93,11 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideAuthService(retrofit: Retrofit): AuthApiService =
+        retrofit.create(AuthApiService::class.java)
 
     @Provides
     @Singleton
