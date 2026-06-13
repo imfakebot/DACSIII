@@ -1,7 +1,5 @@
 package com.tanh.datsan.data.repository
 
-import android.util.Log
-import androidx.compose.runtime.collectAsState
 import com.tanh.datsan.data.model.NotificationResponse
 import com.tanh.datsan.data.network.NotificationApiService
 import javax.inject.Inject

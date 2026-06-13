@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
 import com.tanh.datsan.viewmodel.AuthUiState
-import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun OtpScreen(

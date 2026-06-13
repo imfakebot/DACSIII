@@ -23,9 +23,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
-import com.tanh.datsan.data.model.LoginRequest
 import com.tanh.datsan.viewmodel.AuthUiState
-import com.tanh.datsan.viewmodel.AuthViewModel
+
 
 @Composable
 fun LoginScreen(

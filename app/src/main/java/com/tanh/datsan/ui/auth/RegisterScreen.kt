@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.RegisterRequest
 import com.tanh.datsan.viewmodel.AuthUiState
-import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun RegisterScreen(
@@ -46,7 +45,7 @@ fun RegisterScreen(
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.OtpSent) {
-            val state = uiState as AuthUiState.OtpSent
+            val state = uiState
             onOtpSent(state.email, state.isRegister)
             onResetState()
         }
@@ -70,7 +69,7 @@ fun RegisterScreen(
             )
 
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 text = stringResource(R.string.reg_title),
                 color = Color.White,
@@ -84,7 +83,7 @@ fun RegisterScreen(
                 fontSize = 15.sp,
                 style = MaterialTheme.typography.bodyMedium
             )
-            
+
             Spacer(modifier = Modifier.height(40.dp))
 
             Surface(
@@ -143,9 +142,9 @@ fun RegisterScreen(
                         passwordVisible = passwordVisible,
                         onPasswordToggle = { passwordVisible = !passwordVisible }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(24.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -157,7 +156,7 @@ fun RegisterScreen(
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(16.dp))
-                        
+
                         GenderChip(
                             label = "Nam",
                             selected = gender == "male",
@@ -192,7 +191,10 @@ fun RegisterScreen(
                         enabled = uiState !is AuthUiState.Loading
                     ) {
                         if (uiState is AuthUiState.Loading) {
-                            CircularProgressIndicator(color = Color(0xFF0F2027), modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(
+                                color = Color(0xFF0F2027),
+                                modifier = Modifier.size(24.dp)
+                            )
                         } else {
                             Text(
                                 stringResource(R.string.reg_btn_submit).uppercase(),
@@ -224,7 +226,7 @@ fun RegisterScreen(
                     border = BorderStroke(1.dp, Color(0xFFFF5252).copy(alpha = 0.5f))
                 ) {
                     Text(
-                        text = (uiState as AuthUiState.Error).message,
+                        text = uiState.message,
                         color = Color(0xFFFF8A80),
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,
@@ -232,7 +234,7 @@ fun RegisterScreen(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(60.dp))
         }
     }
@@ -252,7 +254,7 @@ fun GenderChip(
         if (selected) Color(0xFF0F2027) else Color.White,
         label = "chip_text"
     )
-    
+
     Surface(
         modifier = Modifier.clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
@@ -287,7 +289,8 @@ fun AuthTextField(
         leadingIcon = { Icon(icon, contentDescription = null, tint = Color.White) },
         trailingIcon = if (isPassword && onPasswordToggle != null) {
             {
-                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                val image =
+                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 IconButton(onClick = onPasswordToggle) {
                     Icon(imageVector = image, contentDescription = null, tint = Color.White)
                 }

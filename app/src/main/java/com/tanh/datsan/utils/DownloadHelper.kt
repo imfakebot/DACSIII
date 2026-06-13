@@ -1,22 +1,14 @@
 package com.tanh.datsan.utils
 
-import android.app.DownloadManager
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
-import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
-import java.io.File
-import java.io.FileOutputStream
 
 object DownloadHelper {
     suspend fun saveTicketPdf(context: Context, responseBody: ResponseBody, bookingCode: String) : Uri?{

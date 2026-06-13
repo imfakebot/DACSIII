@@ -3,16 +3,30 @@ package com.tanh.datsan.ui.home.detail
 import android.annotation.SuppressLint
 import android.content.ContextWrapper
 import android.content.Intent
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,31 +37,48 @@ import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.util.Consumer
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.tanh.datsan.R
-import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.CheckPriceResponseDto
-import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.data.model.CreateBookingDto
-import com.tanh.datsan.ui.component.*
+import com.tanh.datsan.data.model.FieldResponse
+import com.tanh.datsan.data.model.Voucher
+import com.tanh.datsan.ui.component.FieldImageSlider
+import com.tanh.datsan.ui.component.FullScreenImageViewer
+import com.tanh.datsan.ui.component.UtilityItem
 import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
-import com.tanh.datsan.viewmodel.*
+import com.tanh.datsan.viewmodel.BookingUiState
+import com.tanh.datsan.viewmodel.DetailUiState
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -114,7 +145,7 @@ fun DetailScreen(
 
     LaunchedEffect(bookingState) {
         if (bookingState is BookingUiState.Success) {
-            val url = (bookingState as BookingUiState.Success).paymentUrl
+            val url = bookingState.paymentUrl
             OpenVNPay.openVnPay(context, url)
         }
     }
@@ -160,7 +191,7 @@ fun DetailScreen(
     }
 
     if (showSheet && uiState is DetailUiState.Success) {
-        val field = (uiState as DetailUiState.Success).field
+        val field = uiState.field
         ModalBottomSheet(
             onDismissRequest = { showSheet = false },
             sheetState = sheetState,
