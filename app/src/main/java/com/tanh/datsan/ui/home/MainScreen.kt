@@ -44,7 +44,8 @@ import com.tanh.datsan.viewmodel.HomeViewModel
 fun MainScreen(
     viewModel: HomeViewModel = viewModel(),
     onLoginClick: () -> Unit = {},
-    onRegisterClick: () -> Unit = {}
+    onRegisterClick: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -161,15 +162,26 @@ fun MainScreen(
                     )
 
                     if (isLoggedIn) {
-                        AsyncImage(
-                            model = "",
-                            contentDescription ="Avatar người dùng",
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = onAnalyticsClick) {
+                                Text("Thống kê", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            AsyncImage(
+                                model = "",
+                                contentDescription = "Avatar người dùng",
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
                     } else {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            // TODO: REMOVE NEXT LINE. Only for testing when not logged in
+                            TextButton(onClick = onAnalyticsClick) {
+                                Text("Thống kê", color = Color.White)
+                            }
+                            
                             TextButton(onClick = { onLoginClick() }) {
                                 Text("Đăng nhập", color = Color.White, fontWeight = FontWeight.Bold)
                             }

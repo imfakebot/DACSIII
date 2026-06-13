@@ -26,4 +26,11 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create()).build()
             .create(ApiService::class.java)
     }
+
+    val adminAnalyticsApi: AdminAnalyticsApi by lazy {
+        Retrofit.Builder().baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create()).build()
+            .create(AdminAnalyticsApi::class.java)
+    }
 }

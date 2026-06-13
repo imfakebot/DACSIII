@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.tanh.datsan.ui.LoginScreen
 import com.tanh.datsan.ui.home.MainScreen
 import com.tanh.datsan.ui.RegisterScreen
+import com.tanh.datsan.ui.admin.AdminAnalyticsScreen
 
 @Composable
 fun AppNavigation(){
@@ -20,6 +21,9 @@ fun AppNavigation(){
                 },
                 onRegisterClick = {
                     navController.navigate("register")
+                },
+                onAnalyticsClick = {
+                    navController.navigate("admin_analytics")
                 }
             )
         }
@@ -34,6 +38,14 @@ fun AppNavigation(){
 
         composable("register"){
             RegisterScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        composable("admin_analytics"){
+            AdminAnalyticsScreen(
                 onBackClick = {
                     navController.popBackStack()
                 }
