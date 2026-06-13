@@ -59,7 +59,8 @@ fun MainScreen(
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
-    onNavigateToNotification: () -> Unit = {}
+    onNavigateToNotification: () -> Unit = {},
+    onAnalyticsClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
 

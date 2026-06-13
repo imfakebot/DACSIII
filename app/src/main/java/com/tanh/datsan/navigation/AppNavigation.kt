@@ -34,6 +34,7 @@ import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
+import com.tanh.datsan.ui.admin.AdminAnalyticsScreen
 
 @Composable
 fun AppNavigation() {
@@ -158,6 +159,10 @@ fun AppNavigation() {
 
             composable("notification") {
                 NotificationScreen(onBackClick = { navController.popBackStack() })
+            }
+
+            composable("admin_analytics") {
+                AdminAnalyticsScreen(onBackClick = { navController.popBackStack() })
             }
 
             // =======================================================

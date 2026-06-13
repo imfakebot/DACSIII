@@ -217,4 +217,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideLocationApiService(retrofit: Retrofit): LocationApiService = retrofit.create(LocationApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideAdminAnalyticsApi(retrofit: Retrofit): AdminAnalyticsApi = retrofit.create(AdminAnalyticsApi::class.java)
 }

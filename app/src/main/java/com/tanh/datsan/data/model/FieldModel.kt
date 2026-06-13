@@ -1,3 +1,4 @@
+
 package com.tanh.datsan.data.model
 
 import com.google.gson.annotations.SerializedName
