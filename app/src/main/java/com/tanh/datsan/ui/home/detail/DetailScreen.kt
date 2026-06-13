@@ -41,6 +41,9 @@ import androidx.core.util.Consumer
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldResponse
+import com.tanh.datsan.data.model.CheckPriceResponseDto
+import com.tanh.datsan.data.model.Voucher
+import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.ui.component.*
 import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
@@ -53,33 +56,31 @@ import java.util.Locale
 @Composable
 fun DetailScreen(
     fieldId: String,
-    viewModel: DetailViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
-    voucherViewModel: VoucherViewModel = hiltViewModel(),
+    uiState: DetailUiState,
+    bookingState: BookingUiState,
+    priceState: CheckPriceResponseDto?,
+    bookedSlots: List<String>,
+    vouchers: List<Voucher>,
+    selectedVoucher: Voucher?,
+    isLoggedIn: Boolean,
+    onFetchFieldDetail: (String) -> Unit,
+    onFetchBookedSlots: (String, String) -> Unit,
+    onCheckPrice: (String, String, Int) -> Unit,
+    onFetchAvailableVouchers: (Double) -> Unit,
+    onCreateBooking: (CreateBookingDto) -> Unit,
+    onSelectVoucher: (Voucher?, Double) -> Unit,
     onBackClick: () -> Unit,
     onNavigateToReview: (String) -> Unit,
     onNavigateToLogin: () -> Unit,
     onNavigateToSuccess: (String) -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
-    val bookingState by viewModel.bookingState
-
-
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSheet by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     // Gọi API lấy dữ liệu khi vào màn hình
-    LaunchedEffect(fieldId) { viewModel.fetchFieldDetail(fieldId) }
-
-    val priceState by viewModel.priceState.collectAsState()
-    LaunchedEffect(priceState) {
-        priceState?.pricing?.totalPrice?.let {
-            voucherViewModel.fetchAvailableVouchers(it)
-        }
-    }
+    LaunchedEffect(fieldId) { onFetchFieldDetail(fieldId) }
 
     val context = LocalContext.current
     val activity = remember(context) {
@@ -114,8 +115,13 @@ fun DetailScreen(
     LaunchedEffect(bookingState) {
         if (bookingState is BookingUiState.Success) {
             val url = (bookingState as BookingUiState.Success).paymentUrl
-            viewModel.resetBookingState()
             OpenVNPay.openVnPay(context, url)
+        }
+    }
+
+    LaunchedEffect(priceState) {
+        priceState?.pricing?.totalPrice?.let {
+            onFetchAvailableVouchers(it)
         }
     }
 
@@ -161,20 +167,29 @@ fun DetailScreen(
             containerColor = Color.White,
             dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFE2E8F0)) }
         ) {
-            val selectedVoucher by voucherViewModel.selectedVoucher.collectAsState()
-            val discountAmount by voucherViewModel.discountAmount.collectAsState()
-            val voucherList by voucherViewModel.vouchers.collectAsState()
+            val discountAmount = 0.0 // To do: calculate or pass down
             
             BookingBottomSheetContent(
                 field = field,
-                viewModel = viewModel,
-                voucherViewModel = voucherViewModel,
-                selectedVoucherCode = selectedVoucher?.code,
+                priceState = priceState,
+                bookedSlots = bookedSlots,
+                vouchers = vouchers,
+                selectedVoucher = selectedVoucher,
                 discountAmount = discountAmount,
-                onOpenVoucherList = voucherList,
+                onFetchBookedSlots = { date -> onFetchBookedSlots(fieldId, date) },
+                onCheckPrice = { startTime, duration -> onCheckPrice(fieldId, startTime, duration) },
+                onSelectVoucher = onSelectVoucher,
                 onConfirm = { date, duration, time ->
                     showSheet = false
-                    viewModel.createBooking(fieldId, "${date}T${time}:00+07:00", duration, selectedVoucher?.code)
+                    val startTimeIso = "${date}T${time}:00+07:00"
+                    onCreateBooking(
+                        CreateBookingDto(
+                            fieldId = fieldId,
+                            startTime = startTimeIso,
+                            durationMinutes = duration,
+                            voucherCode = selectedVoucher?.code
+                        )
+                    )
                 }
             )
         }

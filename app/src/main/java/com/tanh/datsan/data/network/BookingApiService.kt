@@ -4,12 +4,14 @@ import com.tanh.datsan.data.model.BookedSlotsResponse
 import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.CreateBookingResponse
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 data class CheckInDto(
     val identifier: String
@@ -37,4 +39,9 @@ interface BookingApiService {
         @Body checkInDto: CheckInDto
     ): BookingResponse
 
+    @Streaming
+    @GET("bookings/{bookingId}/download")
+    suspend fun downloadTicket(
+        @Path("bookingId") bookingId: String
+    ): Response<ResponseBody>
 }

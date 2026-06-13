@@ -1,6 +1,12 @@
 package com.tanh.datsan.ui.home.booking
 
+import android.annotation.SuppressLint
+import android.content.Context
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,20 +24,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,52 +46,57 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.R
-import com.tanh.datsan.ui.theme.BackgroundGray
 import com.tanh.datsan.ui.theme.PrimaryGreen
-import com.tanh.datsan.utils.DownloadHelper
 import com.tanh.datsan.utils.NotificationHelper
 import com.tanh.datsan.viewmodel.BookingReceiptUiState
-import com.tanh.datsan.viewmodel.BookingSuccessViewModel
-import kotlinx.coroutines.launch
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun BookingSuccessScreen(
     bookingId: String,
-    viewModel: BookingSuccessViewModel = hiltViewModel(),
-    onNavigateHome: () -> Unit
+    uiState: BookingReceiptUiState,
+    onFetchBookingReceipt: (String) -> Unit,
+    onDownloadTicket: (Context, String, String) -> Unit,
+    onNavigateHome: () -> Unit,
+    onNavigateHistory: () -> Unit
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-
-    val snackBarHostState = remember{ SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    val uiState by viewModel.uiState.collectAsState()
-    val token by viewModel.tokenFlow.collectAsState()
+    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(bookingId) {
-        viewModel.fetchBookingReceipt(bookingId)
+        onFetchBookingReceipt(bookingId)
     }
 
     LaunchedEffect(uiState) {
         if (uiState is BookingReceiptUiState.Success) {
-            val booking = (uiState as BookingReceiptUiState.Success).booking
+            val booking = uiState.booking
             NotificationHelper.showBookingSuccessNotification(
                 context,
                 bookingCode = booking.code ?: bookingId,
@@ -98,317 +105,462 @@ fun BookingSuccessScreen(
         }
     }
 
-
     Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackBarHostState)
-        }
+        snackbarHost = { SnackbarHost(snackBarHostState) },
+        containerColor = Color(0xFFF8FAFC)
     ) { paddingValue ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(BackgroundGray)
                 .padding(paddingValue)
         ) {
-            when (val state = uiState) {
-                is BookingReceiptUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = PrimaryGreen)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = stringResource(R.string.ticket_loading), color = Color.Gray)
-                        }
-                    }
-                }
-
-                is BookingReceiptUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Filled.ErrorOutline,
-                                contentDescription = stringResource(R.string.error)
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                stringResource(R.string.error_with_prefix, state.message),
-                                color = Color.Red,
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Button(
-                                onClick = onNavigateHome,
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-                            ) {
-                                Text(stringResource(R.string.home))
-                            }
-                        }
-                    }
-                }
-
+            when (uiState) {
+                is BookingReceiptUiState.Loading -> LoadingState()
+                is BookingReceiptUiState.Error -> ErrorState(uiState.message, onNavigateHome)
                 is BookingReceiptUiState.Success -> {
-                    val data = state.booking
+                    val data = uiState.booking
                     Column(
-                        modifier = Modifier.verticalScroll(scrollState),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(scrollState)
+                            .padding(horizontal = 24.dp, vertical = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(90.dp)
-                                .background(PrimaryGreen.copy(alpha = 0.1f), CircleShape),
-                            contentAlignment = Alignment.Center
+                        SuccessAnimatedHeader()
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        TicketContainer(
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(56.dp)
-                            )
-                        }
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                TicketHeaderSection(data.code ?: bookingId)
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(20.dp))
+                                HorizontalDivider(color = Color(0xFFE2E8F0))
+                                Spacer(modifier = Modifier.height(20.dp))
 
-                        Text(
-                            text = stringResource(R.string.booking_success),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = PrimaryGreen
-                        )
-
-                        Text(
-                            text = stringResource(R.string.booking_success_ticket),
-                            textAlign = TextAlign.Center,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(16.dp, 8.dp),
-                            fontSize = 14.sp
-                        )
-
-                        Spacer(Modifier.height(24.dp))
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(20.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.booking_in4),
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                    Surface(
-                                        color = Color(0xFFE8F5E9),
-                                        shape = RoundedCornerShape(50.dp)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Filled.CheckCircle,
-                                                null,
-                                                tint = PrimaryGreen,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(
-                                                stringResource(R.string.confirmed),
-                                                color = PrimaryGreen,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(16.dp))
-                                HorizontalDivider(color = Color(0xFFF0F0F0))
-                                Spacer(modifier = Modifier.height(16.dp))
-
-                                SuccessInfoRow(
-                                    icon = Icons.Filled.QrCode,
-                                    label = stringResource(R.string.booking_code),
-                                    value = data.code ?: stringResource(R.string.updating)
+                                TicketDetailSection(
+                                    fieldName = data.field?.name
+                                        ?: stringResource(R.string.updating),
+                                    time = "${data.startTime} - ${data.endTime}",
+                                    customer = data.customerName
+                                        ?: stringResource(R.string.customer)
                                 )
-                                SuccessInfoRow(
-                                    icon = Icons.Filled.SportsSoccer,
-                                    label = stringResource(R.string.field),
-                                    value = data.field?.name ?: stringResource(R.string.updating)
-                                )
-                                SuccessInfoRow(
-                                    icon = Icons.Filled.Schedule,
-                                    label = stringResource(R.string.time),
-                                    value = "${data.startTime} - ${data.endTime}"
-                                )
-                                SuccessInfoRow(
-                                    icon = Icons.Filled.Person,
-                                    label = stringResource(R.string.customer),
-                                    value = data.customerName ?: stringResource(R.string.customer)
-                                )
+                            }
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                            TicketDashedDivider()
 
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFFF9FAFB), RoundedCornerShape(8.dp))
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text(
-                                        stringResource(R.string.money_total),
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color.Gray
-                                    )
-                                    Text(
-                                        "${data.totalPrice} VNĐ",
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFFD32F2F),
-                                        fontSize = 18.sp
-                                    )
-                                }
+                            Column(modifier = Modifier.padding(24.dp)) {
+                                TicketPriceSection(data.totalPrice.toString())
 
                                 Spacer(modifier = Modifier.height(24.dp))
 
-                                // QR Code
-                                Column(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text("Mã QR Check-in", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                    Spacer(Modifier.height(8.dp))
-                                    Icon(
-                                        imageVector = Icons.Filled.QrCode2,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(140.dp),
-                                        tint = Color.Black
-                                    )
-                                    Text(
-                                        stringResource(R.string.check_ticket),
-                                        fontSize = 12.sp,
-                                        color = Color.Gray
-                                    )
-                                }
+                                TicketQRCodeSection()
                             }
-                        }
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        val pdfLink = viewModel.getDownloadUrl(bookingId)
-
-                        Button(
-                            onClick = {
-                                if (pdfLink.isNotBlank()) {
-                                    if(token.isBlank()){
-                                        scope.launch {
-                                            snackBarHostState.showSnackbar("Phiên đăng nhập hết hạn")
-                                        }
-                                    }else{
-                                        DownloadHelper.downLoadTicketPDF(context,url=pdfLink, bookingCode = data.code?:bookingId,token=token)
-                                    }
-                                } else {
-                                    scope.launch {
-                                        snackBarHostState.showSnackbar("Tính năng tải vé đang cập nhật!")
-                                    }
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(imageVector = Icons.Filled.CloudDownload, contentDescription = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.download_pdf_ticket), fontWeight = FontWeight.Bold)
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        OutlinedButton(
-                            onClick = onNavigateHome,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(52.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(1.dp, PrimaryGreen)
-                        ) {
-                            Text(
-                                stringResource(R.string.home),
-                                color = PrimaryGreen,
-                                fontWeight = FontWeight.Bold
-                            )
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
 
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFBEB)),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        Icons.Filled.Info,
-                                        null,
-                                        tint = Color(0xFFB45309),
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        stringResource(R.string.attention),
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFB45309)
-                                    )
-                                }
-                                Spacer(Modifier.height(8.dp))
+                        ActionButtons(
+                            onDownload = {
+                                onDownloadTicket(context, bookingId, data.code ?: bookingId)
+                            },
+                            onNavigateHome = onNavigateHome,
+                            onNavigateHistory = onNavigateHistory
+                        )
 
-                                val notes = stringResource(R.string.attention_content)
-                                Row(modifier = Modifier.padding(vertical = 2.dp)) {
-                                    Text(notes, color = Color(0xFFB45309), fontSize = 13.sp)
-                                }
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(50.dp))
+                        AttentionCard()
+
+                        Spacer(modifier = Modifier.height(48.dp))
                     }
-
                 }
             }
         }
     }
 }
 
+@Composable
+fun SuccessAnimatedHeader() {
+    val scale = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        scale.animateTo(
+            targetValue = 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow
+            )
+        )
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .graphicsLayer(scaleX = scale.value, scaleY = scale.value)
+                .background(PrimaryGreen.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(60.dp),
+                tint = PrimaryGreen
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.booking_success),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF0F172A)
+        )
+        Text(
+            text = stringResource(R.string.booking_success_ticket),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color(0xFF64748B),
+            textAlign = TextAlign.Center
+        )
+    }
+}
 
 @Composable
-fun SuccessInfoRow(icon: ImageVector, label: String, value: String) {
+fun TicketContainer(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .shadow(
+                elevation = 12.dp,
+                shape = TicketShape(24.dp, 12.dp),
+                ambientColor = Color.Black.copy(alpha = 0.1f),
+                spotColor = Color.Black.copy(alpha = 0.2f)
+            ),
+        shape = TicketShape(24.dp, 12.dp),
+        color = Color.White
+    ) {
+        Column { content() }
+    }
+}
+
+@Composable
+fun TicketHeaderSection(bookingCode: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                stringResource(R.string.booking_code).uppercase(),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF94A3B8),
+                letterSpacing = 1.sp
+            )
+            Text(
+                text = bookingCode,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF1E293B)
+            )
+        }
+
+        Surface(
+            color = Color(0xFFF1F5F9),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                stringResource(R.string.confirmed).uppercase(),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Black,
+                color = Color(0xFF475569)
+            )
+        }
+    }
+}
+
+@Composable
+fun TicketDetailSection(fieldName: String, time: String, customer: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        TicketInfoRow(Icons.Default.SportsSoccer, stringResource(R.string.field), fieldName)
+        TicketInfoRow(Icons.Default.Schedule, stringResource(R.string.time), time)
+        TicketInfoRow(Icons.Default.Person, stringResource(R.string.customer), customer)
+    }
+}
+
+@Composable
+fun TicketInfoRow(icon: ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(Color(0xFFF1F5F9), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, null, modifier = Modifier.size(16.dp), tint = Color(0xFF64748B))
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(label, fontSize = 11.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+            Text(value, fontSize = 14.sp, color = Color(0xFF1E293B), fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun TicketDashedDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxWidth()) {
+            val path = Path().apply {
+                moveTo(32f, size.height / 2)
+                lineTo(size.width - 32f, size.height / 2)
+            }
+            drawPath(
+                path = path,
+                color = Color(0xFFE2E8F0),
+                style = Stroke(
+                    width = 2.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun TicketPriceSection(price: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.Top
+            .background(Color(0xFFF8FAFC), RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = Color.LightGray,
-            modifier = Modifier.size(18.dp)
+        Text(
+            stringResource(R.string.money_total),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF64748B)
         )
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(label, fontSize = 12.sp, color = Color.Gray)
-            Text(value, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            "$price VNĐ",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Black,
+            color = PrimaryGreen
+        )
+    }
+}
+
+@Composable
+fun TicketQRCodeSection() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Surface(
+            modifier = Modifier
+                .size(160.dp)
+                .padding(8.dp),
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+        ) {
+            Icon(
+                imageVector = Icons.Filled.QrCode2,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                tint = Color(0xFF0F172A)
+            )
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.check_ticket),
+            fontSize = 12.sp,
+            color = Color(0xFF94A3B8),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun ActionButtons(
+    onDownload: () -> Unit,
+    onNavigateHome: () -> Unit,
+    onNavigateHistory: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Button(
+            onClick = onDownload,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.CloudDownload, null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.download_pdf_ticket), fontWeight = FontWeight.Bold)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onNavigateHome,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Text(
+                    stringResource(R.string.home),
+                    color = Color(0xFF475569),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            OutlinedButton(
+                onClick = onNavigateHistory,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Text("Lịch sử", color = Color(0xFF475569), fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun AttentionCard() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFFFF7ED),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, Color(0xFFFED7AA))
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Top) {
+            Icon(
+                Icons.Default.Info,
+                null,
+                tint = Color(0xFFEA580C),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    stringResource(R.string.attention),
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF9A3412),
+                    fontSize = 14.sp
+                )
+                Text(
+                    stringResource(R.string.attention_content),
+                    color = Color(0xFFC2410C),
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LoadingState() {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator(color = PrimaryGreen)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(stringResource(R.string.ticket_loading), color = Color(0xFF64748B))
+        }
+    }
+}
+
+@Composable
+fun ErrorState(message: String, onHome: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp)
+        ) {
+            Icon(
+                Icons.Default.ErrorOutline,
+                null,
+                tint = Color.Red,
+                modifier = Modifier.size(48.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Đã có lỗi xảy ra", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(message, textAlign = TextAlign.Center, color = Color.Gray)
+            Spacer(modifier = Modifier.height(24.dp))
+            Button(
+                onClick = onHome,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+            ) {
+                Text(stringResource(R.string.home))
+            }
+        }
+    }
+}
+
+class TicketShape(private val cornerRadius: Dp, private val holeRadius: Dp) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        return Outline.Generic(Path().apply {
+            val cornerRadiusPx = with(density) { cornerRadius.toPx() }
+            val holeRadiusPx = with(density) { holeRadius.toPx() }
+
+            addRoundRect(
+                RoundRect(
+                    rect = Rect(0f, 0f, size.width, size.height),
+                    cornerRadius = CornerRadius(cornerRadiusPx)
+                )
+            )
+
+            // Holes should align with the TicketDashedDivider which is roughly at a specific ratio
+            // For a better match, we can calculate based on the content or use a fixed ratio.
+            // In the implementation, TicketDashedDivider is between two Column sections.
+            // Let's assume a ratio of ~0.55-0.6 based on typical content.
+            val holeY = size.height * 0.54f
+
+            addOval(
+                Rect(
+                    left = -holeRadiusPx,
+                    top = holeY - holeRadiusPx,
+                    right = holeRadiusPx,
+                    bottom = holeY + holeRadiusPx
+                )
+            )
+
+            addOval(
+                Rect(
+                    left = size.width - holeRadiusPx,
+                    top = holeY - holeRadiusPx,
+                    right = size.width + holeRadiusPx,
+                    bottom = holeY + holeRadiusPx
+                )
+            )
+        })
     }
 }

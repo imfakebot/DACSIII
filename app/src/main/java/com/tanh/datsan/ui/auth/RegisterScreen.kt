@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,9 +30,11 @@ import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun RegisterScreen(
-    viewModel: AuthViewModel,
+    uiState: AuthUiState,
+    onRegisterClick: (RegisterRequest) -> Unit,
     onNavigateToLogin: () -> Unit,
-    onOtpSent: (String, Boolean) -> Unit
+    onOtpSent: (String, Boolean) -> Unit,
+    onResetState: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -40,14 +43,12 @@ fun RegisterScreen(
     var phoneNumber by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("male") }
     var passwordVisible by remember { mutableStateOf(false) }
-    
-    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
         if (uiState is AuthUiState.OtpSent) {
             val state = uiState as AuthUiState.OtpSent
             onOtpSent(state.email, state.isRegister)
-            viewModel.resetState()
+            onResetState()
         }
     }
 
@@ -60,6 +61,15 @@ fun RegisterScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
+
+            Icon(
+                painter = painterResource(id = R.drawable.ic_app_logo),
+                contentDescription = null,
+                modifier = Modifier.size(100.dp),
+                tint = Color.White
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
             
             Text(
                 text = stringResource(R.string.reg_title),
@@ -166,7 +176,7 @@ fun RegisterScreen(
                     Button(
                         onClick = {
                             if (password == confirmPassword && email.isNotBlank() && fullName.isNotBlank() && phoneNumber.isNotBlank()) {
-                                viewModel.initiateRegistration(
+                                onRegisterClick(
                                     RegisterRequest(email, password, fullName, phoneNumber, gender)
                                 )
                             }

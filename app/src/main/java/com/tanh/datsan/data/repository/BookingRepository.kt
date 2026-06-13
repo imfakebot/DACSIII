@@ -6,6 +6,7 @@ import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.CreateBookingResponse
 import com.tanh.datsan.data.network.BookingApiService
 import com.tanh.datsan.data.network.CheckInDto
+import okhttp3.ResponseBody
 import retrofit2.Response
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,5 +29,9 @@ class BookingRepository @Inject constructor(
 
     suspend fun checkIn(identifier: String): BookingResponse {
         return bookingApiService.checkIn(CheckInDto(identifier))
+    }
+
+    suspend fun downloadTicket(bookingId: String): Response<ResponseBody> {
+        return bookingApiService.downloadTicket(bookingId)
     }
 }

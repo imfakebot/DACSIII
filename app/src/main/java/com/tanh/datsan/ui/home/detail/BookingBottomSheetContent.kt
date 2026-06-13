@@ -38,15 +38,12 @@ import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.utils.DateUtil
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.tanh.datsan.viewmodel.DetailViewModel
-import com.tanh.datsan.viewmodel.VoucherViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import androidx.compose.ui.platform.LocalLocale
+import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.ui.component.VoucherSection
 import com.tanh.datsan.ui.component.VoucherSelectionSheet
@@ -56,12 +53,16 @@ import com.tanh.datsan.ui.component.VoucherSelectionSheet
 @Composable
 fun BookingBottomSheetContent(
     field: FieldResponse,
-    viewModel: DetailViewModel = hiltViewModel(),
-    voucherViewModel: VoucherViewModel = hiltViewModel(),
-    selectedVoucherCode: String? = null,
+    priceState: CheckPriceResponseDto?,
+    bookedSlots: List<String>,
+    vouchers: List<Voucher>,
+    selectedVoucher: Voucher?,
     discountAmount: Double = 0.0,
-    onOpenVoucherList: List<Voucher> = emptyList(),
+    isVoucherLoading: Boolean = false,
+    onFetchBookedSlots: (String) -> Unit,
+    onCheckPrice: (String, Int) -> Unit,
     onConfirm: (String, Int, String) -> Unit,
+    onSelectVoucher: (Voucher?, Double) -> Unit
 ) {
     val quickDates = remember { DateUtil.getUpcomingDates("Hôm nay") }
     val durations = listOf(60, 90, 120)
@@ -69,19 +70,16 @@ fun BookingBottomSheetContent(
     var selectedDuration by remember { mutableIntStateOf(durations[0]) }
     var selectedTime by remember { mutableStateOf<String?>(null) }
 
-    val bookedSlots by viewModel.bookedSlots
-    val priceState by viewModel.priceState.collectAsState()
-
     var showVoucherSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedDate.second) {
-        viewModel.fetchBookedSlots(field.id, selectedDate.second)
+        onFetchBookedSlots(selectedDate.second)
     }
 
     LaunchedEffect(selectedDate.second, selectedDuration, selectedTime) {
         if (selectedTime != null) {
             val startTimeIso = "${selectedDate.second}T${selectedTime}:00+07:00"
-            viewModel.checkPrice(field.id, startTimeIso, selectedDuration)
+            onCheckPrice(startTimeIso, selectedDuration)
         }
     }
 
@@ -89,155 +87,151 @@ fun BookingBottomSheetContent(
         DateUtil.generateSlots(field.branch.openTime, field.branch.closeTime, selectedDuration)
     }
 
-    val isVoucherLoading by voucherViewModel.isLoading.collectAsState()
-
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             Modifier
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-        Text(
-            stringResource(R.string.booking_customize_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
-        )
+            Text(
+                stringResource(R.string.booking_customize_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
 
-        Text("Chọn ngày", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(quickDates) { date ->
-                FilterChip(
-                    selected = selectedDate == date,
-                    onClick = {
-                        selectedDate = date
-                        selectedTime = null
-                    },
-                    label = { Text(date.first) })
+            Text("Chọn ngày", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(quickDates) { date ->
+                    FilterChip(
+                        selected = selectedDate == date,
+                        onClick = {
+                            selectedDate = date
+                            selectedTime = null
+                        },
+                        label = { Text(date.first) })
+                }
             }
-        }
 
-        Text("Thời lượng (phút)", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            durations.forEach { dur ->
-                FilterChip(
-                    selected = selectedDuration == dur,
-                    onClick = {
-                        selectedDuration = dur
-                        selectedTime = null
-                    },
-                    label = { Text("$dur") })
+            Text("Thời lượng (phút)", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                durations.forEach { dur ->
+                    FilterChip(
+                        selected = selectedDuration == dur,
+                        onClick = {
+                            selectedDuration = dur
+                            selectedTime = null
+                        },
+                        label = { Text("$dur") })
+                }
             }
-        }
 
-        Text("Chọn giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
-        val sdf = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
-        val todayString = sdf.format(Date())
-        val isToday = selectedDate.second == todayString
+            Text("Chọn giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            val sdf = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
+            val todayString = sdf.format(Date())
+            val isToday = selectedDate.second == todayString
 
-        val calendar = Calendar.getInstance()
-        val currentTotalMinute =
-            calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+            val calendar = Calendar.getInstance()
+            val currentTotalMinute =
+                calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            timeSlots.forEach { time ->
-                // Tính số phút của slot (Ví dụ 15:30 -> 15*60 + 30)
-                val timePart = time.split(":")
-                val slotTotalMinute = timePart[0].toInt() * 60 + timePart[1].toInt()
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                timeSlots.forEach { time ->
+                    val timePart = time.split(":")
+                    val slotTotalMinute = timePart[0].toInt() * 60 + timePart[1].toInt()
 
-                // Điều kiện chặn: Đã bị người khác đặt hoặc là ngày hôm nay và giờ slot <= giờ hiện tại
-                val isPastTime = isToday && slotTotalMinute <= currentTotalMinute
-                val isDisabled = bookedSlots.contains(time) || isPastTime
+                    val isPastTime = isToday && slotTotalMinute <= currentTotalMinute
+                    val isDisabled = bookedSlots.contains(time) || isPastTime
 
-                FilterChip(
-                    selected = selectedTime == time,
-                    onClick = {
-                        if (!isDisabled) {
-                            selectedTime = time
-                        }
-                    },
-                    enabled = !isDisabled,
-                    label = {
+                    FilterChip(
+                        selected = selectedTime == time,
+                        onClick = {
+                            if (!isDisabled) {
+                                selectedTime = time
+                            }
+                        },
+                        enabled = !isDisabled,
+                        label = {
+                            Text(
+                                text = time,
+                                textDecoration = if (isDisabled) TextDecoration.LineThrough else null
+                            )
+                        })
+                }
+            }
+
+            VoucherSection(
+                selectedVoucherCode = selectedVoucher?.code,
+                discountAmount = discountAmount,
+                onOpenVoucherList = { showVoucherSheet = true }
+            )
+
+            priceState?.let { price ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Tổng tiền sân:", fontWeight = FontWeight.Bold)
+                    Text(
+                        String.format("%,.0f %s", price.pricing.totalPrice, price.pricing.currency),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                if (discountAmount > 0) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Giảm giá:", color = Color.Red)
                         Text(
-                            text = time,
-                            textDecoration = if (isDisabled) TextDecoration.LineThrough else null
+                            String.format("-%,.0f %s", discountAmount, price.pricing.currency),
+                            color = Color.Red
                         )
-                    })
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Thành tiền:", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                        val finalAmount = price.pricing.totalPrice - discountAmount
+                        Text(
+                            String.format("%,.0f %s", if (finalAmount > 0) finalAmount else 0.0, price.pricing.currency),
+                            fontWeight = FontWeight.ExtraBold,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color(0xFF2E7D32)
+                        )
+                    }
+                }
             }
-        }
 
-        VoucherSection(
-            selectedVoucherCode = selectedVoucherCode,
-            discountAmount = discountAmount,
-            onOpenVoucherList = { showVoucherSheet = true }
-        )
-
-        priceState?.let { price ->
-            Row(
+            Button(
+                onClick = {
+                    selectedTime?.let {
+                        onConfirm(
+                            selectedDate.second,
+                            selectedDuration,
+                            it
+                        )
+                    }
+                },
+                enabled = selectedTime != null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(top = 24.dp)
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
             ) {
-                Text("Tổng tiền sân:", fontWeight = FontWeight.Bold)
-                Text(
-                    String.format("%,.0f %s", price.pricing.totalPrice, price.pricing.currency),
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            if (discountAmount > 0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Giảm giá:", color = Color.Red)
-                    Text(
-                        String.format("-%,.0f %s", discountAmount, price.pricing.currency),
-                        color = Color.Red
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text("Thành tiền:", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
-                    val finalAmount = price.pricing.totalPrice - discountAmount
-                    Text(
-                        String.format("%,.0f %s", if (finalAmount > 0) finalAmount else 0.0, price.pricing.currency),
-                        fontWeight = FontWeight.ExtraBold,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF2E7D32)
-                    )
-                }
+                Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
             }
         }
-
-        Button(
-            onClick = {
-                selectedTime?.let {
-                    onConfirm(
-                        selectedDate.second,
-                        selectedDuration,
-                        it
-                    )
-                }
-            },
-            enabled = selectedTime != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 24.dp)
-                .height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-        ) {
-            Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
-        }
-    }
 
         if (isVoucherLoading) {
             Box(
@@ -253,14 +247,14 @@ fun BookingBottomSheetContent(
 
     if (showVoucherSheet){
         VoucherSelectionSheet(
-            vouchers = onOpenVoucherList,
-            selectedVoucherCode = selectedVoucherCode,
-            onSelect = {voucher->
-                showVoucherSheet=false
+            vouchers = vouchers,
+            selectedVoucherCode = selectedVoucher?.code,
+            onSelect = { voucher ->
+                showVoucherSheet = false
                 val orderValue = priceState?.pricing?.totalPrice ?: 0.0
-                voucherViewModel.selectVoucher(voucher, orderValue)
+                onSelectVoucher(voucher, orderValue)
             }, onDismiss = {
-                showVoucherSheet=false
+                showVoucherSheet = false
             },
             totalPrice = priceState?.pricing?.totalPrice ?: 0.0
         )

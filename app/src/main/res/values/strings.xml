@@ -97,6 +97,7 @@
     <string name="confirmed">Đã xác nhận</string>
     <string name="check_ticket">Xuất trình mã này khi đến sân</string>
     <string name="download_pdf_ticket">Tải vé</string>
+    <string name="download_complete">Tải xuống hoàn tất</string>
     <string name="attention">Lưu ý quan trọng</string>
     <string name="attention_content">Đến sân trước 15 phút để check-in.Mang theo mã QR này để đối soát.</string>
 
@@ -131,4 +132,6 @@
     
     <string name="qr_scanner">Quét mã checkin</string>
     <string name="close">Đóng</string>
+    <string name="hello">Xin chào,</string>
+    <string name="welcome">Chào mừng </string>
 </resources>

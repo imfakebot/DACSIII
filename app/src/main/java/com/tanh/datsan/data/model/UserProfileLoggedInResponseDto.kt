@@ -8,5 +8,10 @@ data class UserProfileLoggedInResponseDto(
     @SerializedName("full_name") val fullName: String,
     @SerializedName("avatar_url") val avatarUrl: String?,
     val role: String,
-    @SerializedName("is_profile_complete") val isProfileComplete: Boolean
+    @SerializedName("is_profile_complete") val isProfileComplete: Boolean,
+    val branch: BranchDto?
+)
+
+data class BranchDto(
+    val branchId: String?
 )

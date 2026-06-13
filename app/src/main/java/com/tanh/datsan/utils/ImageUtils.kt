@@ -4,10 +4,19 @@ import com.tanh.datsan.BuildConfig
 
 
 fun String?.toFullImageUrl(): String {
-    if(this.isNullOrEmpty()){
+    if (this.isNullOrEmpty()) {
         return ""
-    }else{
-        val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
+    }
+    
+    val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
+    
+    if (this.startsWith("http://") || this.startsWith("https://")) {
         return this.replace(BuildConfig.API_BACKEND, baseUrl)
+    }
+    
+    return if (this.startsWith("/")) {
+        "$baseUrl$this"
+    } else {
+        "$baseUrl/$this"
     }
 }

@@ -24,22 +24,24 @@ import com.tanh.datsan.viewmodel.AuthViewModel
 fun OtpScreen(
     email: String,
     isRegister: Boolean,
-    viewModel: AuthViewModel,
+    uiState: AuthUiState,
+    onCompleteRegistration: (String) -> Unit,
+    onCompleteLogin: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    onResetState: () -> Unit
 ) {
     var otpCode by remember { mutableStateOf("") }
-    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
         when (uiState) {
             is AuthUiState.Authenticated -> {
                 onSuccess()
-                viewModel.resetState()
+                onResetState()
             }
             is AuthUiState.Success -> {
                 onSuccess()
-                viewModel.resetState()
+                onResetState()
             }
             else -> {}
         }
@@ -105,7 +107,7 @@ fun OtpScreen(
                             focusedTextColor = Color.White,
                             unfocusedTextColor = Color.White
                         ),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         singleLine = true,
                         textStyle = LocalTextStyle.current.copy(
                             fontSize = 28.sp,
@@ -121,9 +123,9 @@ fun OtpScreen(
                         onClick = {
                             if (otpCode.length == 6) {
                                 if (isRegister) {
-                                    viewModel.completeRegistration(otpCode)
+                                    onCompleteRegistration(otpCode)
                                 } else {
-                                    viewModel.completeLogin(otpCode)
+                                    onCompleteLogin(otpCode)
                                 }
                             }
                         },
@@ -170,7 +172,7 @@ fun OtpScreen(
                     border = BorderStroke(1.dp, Color(0xFFFF5252).copy(alpha = 0.5f))
                 ) {
                     Text(
-                        text = (uiState as AuthUiState.Error).message,
+                        text = uiState.message,
                         color = Color(0xFFFF8A80),
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,

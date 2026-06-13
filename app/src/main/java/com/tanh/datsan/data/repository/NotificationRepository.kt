@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.compose.runtime.collectAsState
 import com.tanh.datsan.data.model.NotificationResponse
 import com.tanh.datsan.data.network.NotificationApiService
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 

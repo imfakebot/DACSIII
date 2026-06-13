@@ -42,6 +42,7 @@ class TokenManager @Inject constructor(
     }
 
     suspend fun saveToken(token: String) {
+        cachedToken=token
         dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
         }

@@ -29,25 +29,26 @@ import com.tanh.datsan.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    viewModel: AuthViewModel,
+    uiState: AuthUiState,
+    onLoginClick: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
     onOtpSent: (String, Boolean) -> Unit,
-    onAuthenticated: () -> Unit
+    onAuthenticated: () -> Unit,
+    onResetState: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    val uiState by viewModel.uiState.collectAsState()
 
     LaunchedEffect(uiState) {
         when (val state = uiState) {
             is AuthUiState.OtpSent -> {
                 onOtpSent(state.email, state.isRegister)
-                viewModel.resetState()
+                onResetState()
             }
             is AuthUiState.Authenticated -> {
                 onAuthenticated()
-                viewModel.resetState()
+                onResetState()
             }
             else -> {}
         }
@@ -138,7 +139,7 @@ fun LoginScreen(
                     Button(
                         onClick = {
                             if (email.isNotBlank() && password.isNotBlank()) {
-                                viewModel.initiateLogin(LoginRequest(email, password))
+                                onLoginClick(email, password)
                             }
                         },
                         modifier = Modifier

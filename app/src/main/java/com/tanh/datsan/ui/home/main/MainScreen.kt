@@ -15,6 +15,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -38,23 +39,34 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldModel
+import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.utils.LocationUtil
-import com.tanh.datsan.viewmodel.HomeViewModel
-import com.tanh.datsan.viewmodel.UserViewModel
+import com.tanh.datsan.utils.toFullImageUrl
 import java.util.*
 import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
+    fieldList: List<FieldModel>,
+    fieldTypes: List<FieldType>,
+    selectedType: String?,
+    suggestionMessage: String?,
+    isLoading: Boolean,
+    userName: String?,
+    userAvatarUrl: String?,
+    unreadNotification: Int,
+    isLoggedIn: Boolean,
+    userRole: String,
+    onFetchFieldNearMe: () -> Unit,
+    onFetchField: (String?, String?, String?, String?) -> Unit,
+    onSelectType: (FieldType?) -> Unit,
     onLoginClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onNavigateToDetail: (String) -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
@@ -67,20 +79,26 @@ fun MainScreen(
         contract = ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.fetchFieldNearMe()
+            onFetchFieldNearMe()
         }
     }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permission ->
-            val isFineLocationGranted = permission[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-            val isCoarseLocationGranted = permission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+            val isFineLocationGranted =
+                permission[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            val isCoarseLocationGranted =
+                permission[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
             if (isFineLocationGranted || isCoarseLocationGranted) {
                 LocationUtil.checkRequestLocationSetting(
                     context = context,
-                    onEnabled = { viewModel.fetchFieldNearMe() },
-                    onDisabled = { intentSenderRequest -> gpsSettingLauncher.launch(intentSenderRequest) },
+                    onEnabled = { onFetchFieldNearMe() },
+                    onDisabled = { intentSenderRequest ->
+                        gpsSettingLauncher.launch(
+                            intentSenderRequest
+                        )
+                    },
                 )
             }
         }
@@ -96,17 +114,6 @@ fun MainScreen(
         )
     }
 
-    val fieldList by viewModel.fieldList.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val sportList by viewModel.fieldTypes.collectAsState()
-    val selectedType by viewModel.selectedType.collectAsState()
-    val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
-    val userRole by userViewModel.userRole.collectAsState()
-    val userName by userViewModel.userName.collectAsState()
-    val userAvatar by userViewModel.userAvatarUrl.collectAsState()
-    val unreadNotiCount by userViewModel.unreadNotification.collectAsState(0)
-    val suggestionMessage by viewModel.suggestionMessage.collectAsState()
-
     var locationName by rememberSaveable { mutableStateOf("") }
 
     Scaffold(
@@ -119,13 +126,17 @@ fun MainScreen(
                     contentColor = Color.White,
                     shape = RoundedCornerShape(24.dp)
                 ) {
-                    Icon(Icons.Default.QrCodeScanner, contentDescription = null, modifier = Modifier.size(32.dp))
+                    Icon(
+                        Icons.Default.QrCodeScanner,
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
             }
         }
     ) { paddingValues ->
         CustomRefreshLayout(
-            onRefresh = { viewModel.fetchFieldNearMe() },
+            onRefresh = { onFetchFieldNearMe() },
             modifier = Modifier.padding(paddingValues)
         ) {
             Column(
@@ -133,14 +144,13 @@ fun MainScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                // --- PREMIUM HERO SECTION WITH MESH GRADIENT ---
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(320.dp)
                 ) {
                     MeshGradientHero()
-                    
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -151,28 +161,54 @@ fun MainScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
-                                Text(
-                                    text = if (isLoggedIn) "Xin chào," else "Chào mừng,",
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_app_logo),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .requiredSize(60.dp),
+                                    tint = Color.White
                                 )
-                                Text(
-                                    text = if (isLoggedIn) (userName ?: "Người dùng") else "Khách hàng",
-                                    color = Color.White,
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = if (isLoggedIn) stringResource(R.string.hello) else stringResource(
+                                            R.string.welcome
+                                        ),
+                                        color = Color.White.copy(alpha = 0.7f),
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = if (isLoggedIn) (userName
+                                            ?: "Người dùng") else "Khách hàng",
+                                        color = Color.White,
+                                        fontSize = 17.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                }
                             }
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                modifier = Modifier.wrapContentWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 if (isLoggedIn) {
                                     BadgedBox(
                                         badge = {
-                                            if (unreadNotiCount > 0) {
+                                            if (unreadNotification > 0) {
                                                 Badge(containerColor = Color(0xFFF87171)) {
-                                                    Text(unreadNotiCount.toString(), color = Color.White)
+                                                    Text(
+                                                        unreadNotification.toString(),
+                                                        color = Color.White
+                                                    )
                                                 }
                                             }
                                         }
@@ -180,11 +216,19 @@ fun MainScreen(
                                         Surface(
                                             color = Color.White.copy(alpha = 0.15f),
                                             shape = CircleShape,
-                                            modifier = Modifier.size(44.dp).clickable { onNavigateToNotification() }
+                                            modifier = Modifier
+                                                .requiredSize(44.dp)
+                                                .clickable { onNavigateToNotification() }
                                         ) {
-                                            Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.White, modifier = Modifier.padding(10.dp))
+                                            Icon(
+                                                Icons.Default.Notifications,
+                                                contentDescription = null, tint = Color.White,
+                                                modifier = Modifier.padding(10.dp)
+                                            )
                                         }
                                     }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
                                 } else {
                                     Surface(
                                         onClick = onLoginClick,
@@ -194,29 +238,38 @@ fun MainScreen(
                                     ) {
                                         Text(
                                             "Đăng nhập",
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                            modifier = Modifier.padding(
+                                                horizontal = 12.dp,
+                                                vertical = 10.dp
+                                            ),
                                             color = Color.White,
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp
                                         )
                                     }
+                                    Spacer(modifier = Modifier.width(12.dp))
                                 }
-                                
-                                Spacer(modifier = Modifier.width(12.dp))
-                                
-                                AsyncImage(
-                                    model = userAvatar ?: R.drawable.ic_default_avatar,
-                                    contentDescription = null,
+
+                                val fullAvatarUrl = userAvatarUrl.toFullImageUrl()
+                                Box(
                                     modifier = Modifier
-                                        .size(48.dp)
+                                        .requiredSize(48.dp)
                                         .clip(CircleShape)
-                                        .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape),
-                                    contentScale = ContentScale.Crop
-                                )
+                                        .background(Color.White.copy(alpha = 0.2f))
+                                        .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                ) {
+                                    AsyncImage(
+                                        model = if (fullAvatarUrl.isNotEmpty()) fullAvatarUrl else R.drawable.ic_default_avatar,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(32.dp))
-                        
+
                         Text(
                             text = "Tìm kiếm sân bóng\nngay trong tích tắc!",
                             color = Color.White,
@@ -234,7 +287,12 @@ fun MainScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 24.dp)
                         .offset(y = (-40).dp)
-                        .shadow(30.dp, RoundedCornerShape(24.dp), ambientColor = Color.Black, spotColor = Color.Blue),
+                        .shadow(
+                            30.dp,
+                            RoundedCornerShape(24.dp),
+                            ambientColor = Color.Black,
+                            spotColor = Color.Blue
+                        ),
                     shape = RoundedCornerShape(24.dp),
                     color = Color.White
                 ) {
@@ -242,11 +300,21 @@ fun MainScreen(
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = null, tint = Color(0xFF64748B), modifier = Modifier.padding(start = 8.dp))
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
                         TextField(
                             value = locationName,
                             onValueChange = { locationName = it },
-                            placeholder = { Text("Bạn muốn chơi ở đâu?", color = Color(0xFF94A3B8)) },
+                            placeholder = {
+                                Text(
+                                    "Bạn muốn chơi ở đâu?",
+                                    color = Color(0xFF94A3B8)
+                                )
+                            },
                             modifier = Modifier.weight(1f),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
@@ -258,7 +326,11 @@ fun MainScreen(
                         )
                         Button(
                             onClick = {
-                                viewModel.fetchField(name = locationName.ifBlank { null }, typeId = selectedType)
+                                onFetchField(
+                                    null,
+                                    null,
+                                    selectedType,
+                                    locationName.ifBlank { null })
                                 focusManager.clearFocus()
                             },
                             shape = RoundedCornerShape(16.dp),
@@ -275,7 +347,7 @@ fun MainScreen(
                 PromotionPager()
 
                 // --- SPORT CATEGORIES ---
-                SectionHeader(title = "Môn thể thao")
+                SectionHeader(title = "Loại sân")
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 24.dp),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -284,23 +356,54 @@ fun MainScreen(
                         PremiumCategoryChip(
                             label = "Tất cả",
                             isSelected = selectedType == null,
-                            onClick = { viewModel.onFieldTypeSelected(null) },
+                            onClick = { onSelectType(null) },
                             icon = Icons.Default.AutoAwesome
                         )
                     }
-                    items(sportList) { sport ->
+                    items(fieldTypes) { sport ->
                         PremiumCategoryChip(
                             label = sport.name,
                             isSelected = selectedType == sport.id,
-                            onClick = { viewModel.onFieldTypeSelected(sport) },
+                            onClick = { onSelectType(sport) },
                             icon = getSportIcon(sport.name)
                         )
                     }
                 }
 
+                // --- SUGGESTION MESSAGE ---
+                if (!suggestionMessage.isNullOrBlank()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp),
+                        color = Color(0xFFEFF6FF), // Light blue
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Lightbulb,
+                                contentDescription = null,
+                                tint = Color(0xFF3B82F6),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = suggestionMessage,
+                                color = Color(0xFF1E40AF),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
                 // --- NEAR YOU SECTION ---
                 SectionHeader(title = "Sân bóng gần bạn", subtitle = "Dựa trên vị trí hiện tại")
-                
+
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(24.dp)
@@ -324,7 +427,11 @@ fun MainScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator(color = Color(0xFF0F172A), strokeWidth = 4.dp)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Đang tải dữ liệu...", color = Color(0xFF1E293B), fontWeight = FontWeight.Medium)
+                    Text(
+                        "Đang tải dữ liệu...",
+                        color = Color(0xFF1E293B),
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -349,25 +456,37 @@ fun MeshGradientHero() {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            
+
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(Color(0xFF3B82F6).copy(alpha = 0.4f), Color.Transparent),
-                    center = Offset(w * (0.1f + 0.2f * kotlin.math.sin(animProgress * 2 * Math.PI.toFloat())), h * 0.2f),
+                    center = Offset(
+                        w * (0.1f + 0.2f * kotlin.math.sin(animProgress * 2 * Math.PI.toFloat())),
+                        h * 0.2f
+                    ),
                     radius = w
                 ),
                 radius = w,
-                center = Offset(w * (0.1f + 0.2f * kotlin.math.sin(animProgress * 2 * Math.PI.toFloat())), h * 0.2f)
+                center = Offset(
+                    w * (0.1f + 0.2f * kotlin.math.sin(animProgress * 2 * Math.PI.toFloat())),
+                    h * 0.2f
+                )
             )
-            
+
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(Color(0xFF8B5CF6).copy(alpha = 0.3f), Color.Transparent),
-                    center = Offset(w * 0.9f, h * (0.1f + 0.3f * kotlin.math.cos(animProgress * 2 * Math.PI.toFloat()))),
+                    center = Offset(
+                        w * 0.9f,
+                        h * (0.1f + 0.3f * kotlin.math.cos(animProgress * 2 * Math.PI.toFloat()))
+                    ),
                     radius = w * 0.8f
                 ),
                 radius = w * 0.8f,
-                center = Offset(w * 0.9f, h * (0.1f + 0.3f * kotlin.math.cos(animProgress * 2 * Math.PI.toFloat())))
+                center = Offset(
+                    w * 0.9f,
+                    h * (0.1f + 0.3f * kotlin.math.cos(animProgress * 2 * Math.PI.toFloat()))
+                )
             )
         }
     }
@@ -376,7 +495,7 @@ fun MeshGradientHero() {
 @Composable
 fun PromotionPager() {
     val pagerState = rememberPagerState(pageCount = { 3 })
-    
+
     HorizontalPager(
         state = pagerState,
         modifier = Modifier
@@ -405,23 +524,47 @@ fun PromotionPager() {
                 },
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
-                containerColor = when(page) {
+                containerColor = when (page) {
                     0 -> Color(0xFF3B82F6)
                     1 -> Color(0xFFF59E0B)
                     else -> Color(0xFF10B981)
                 }
             )
         ) {
-            Row(modifier = Modifier.fillMaxSize().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp), verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Giảm giá 30%", color = Color.White.copy(alpha = 0.8f), fontWeight = FontWeight.Bold)
-                    Text("Đặt sân hôm nay!", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+                    Text(
+                        "Giảm giá 30%",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Đặt sân hôm nay!",
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(color = Color.White, shape = RoundedCornerShape(8.dp)) {
-                        Text("Mã: DATSAN30", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), color = Color.Black, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "Mã: DATSAN30",
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            color = Color.Black,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
-                Icon(Icons.Default.LocalActivity, contentDescription = null, tint = Color.White.copy(alpha = 0.3f), modifier = Modifier.size(80.dp))
+                Icon(
+                    Icons.Default.LocalActivity,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.3f),
+                    modifier = Modifier.size(80.dp)
+                )
             }
         }
     }
@@ -430,35 +573,55 @@ fun PromotionPager() {
 @Composable
 fun SectionHeader(title: String, subtitle: String? = null, action: String? = null) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
         Column {
-            Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0F172A))
+            Text(
+                text = title,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF0F172A)
+            )
             if (subtitle != null) {
                 Text(text = subtitle, fontSize = 13.sp, color = Color(0xFF64748B))
             }
         }
         if (action != null) {
-            Text(text = action, color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                text = action,
+                color = Color(0xFF3B82F6),
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
         }
     }
 }
 
 @Composable
-fun PremiumCategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit, icon: ImageVector) {
+fun PremiumCategoryChip(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector
+) {
     val bg by animateColorAsState(if (isSelected) Color(0xFF1E293B) else Color.White)
     val content by animateColorAsState(if (isSelected) Color.White else Color(0xFF475569))
-    
+
     Surface(
         onClick = onClick,
         color = bg,
         shape = RoundedCornerShape(16.dp),
-        border = if(!isSelected) BorderStroke(1.dp, Color(0xFFE2E8F0)) else null,
-        modifier = Modifier.shadow(if(isSelected) 8.dp else 0.dp, RoundedCornerShape(16.dp))
+        border = if (!isSelected) BorderStroke(1.dp, Color(0xFFE2E8F0)) else null,
+        modifier = Modifier.shadow(if (isSelected) 8.dp else 0.dp, RoundedCornerShape(16.dp))
     ) {
-        Row(modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(icon, null, modifier = Modifier.size(20.dp), tint = content)
             Spacer(modifier = Modifier.width(10.dp))
             Text(text = label, color = content, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -470,42 +633,70 @@ fun PremiumCategoryChip(label: String, isSelected: Boolean, onClick: () -> Unit,
 fun HighEndFieldCard(field: FieldModel, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.width(280.dp).height(360.dp),
+        modifier = Modifier
+            .width(280.dp)
+            .height(360.dp),
         shape = RoundedCornerShape(32.dp),
         color = Color.White,
         shadowElevation = 4.dp
     ) {
         Column {
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            ) {
                 AsyncImage(
-                    model = field.imageUrl,
+                    model = field.imageUrl.toFullImageUrl(),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
                 // Rating Over Glass
                 Surface(
-                    modifier = Modifier.padding(16.dp).align(Alignment.TopEnd),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .align(Alignment.TopEnd),
                     color = Color.Black.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(16.dp))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Rounded.Star,
+                            null,
+                            tint = Color(0xFFFFD700),
+                            modifier = Modifier.size(16.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = field.rating.toString(), color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = field.rating.toString(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
-            
+
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(text = field.name, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A), maxLines = 1)
+                Text(
+                    text = field.name,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    maxLines = 1
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.Top) {
                     Icon(
                         Icons.Rounded.LocationOn,
                         null,
                         tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                        modifier = Modifier
+                            .size(16.dp)
+                            .padding(top = 2.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
@@ -517,16 +708,28 @@ fun HighEndFieldCard(field: FieldModel, onClick: () -> Unit) {
                         lineHeight = 18.sp
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.weight(1f))
-                
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column {
                         Text("Khoảng cách", color = Color(0xFF94A3B8), fontSize = 11.sp)
-                        Text("${String.format(Locale.US, "%.1f", field.distance ?: 0.0)} km", color = Color(0xFF10B981), fontWeight = FontWeight.Bold)
+                        Text(
+                            "${String.format(Locale.US, "%.1f", field.distance ?: 0.0)} km",
+                            color = Color(0xFF10B981),
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     Surface(color = Color(0xFFF1F5F9), shape = CircleShape) {
-                        Icon(Icons.Default.ArrowForward, null, modifier = Modifier.padding(8.dp).size(20.dp), tint = Color(0xFF0F172A))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowForward, null, modifier = Modifier
+                                .padding(8.dp)
+                                .size(20.dp), tint = Color(0xFF0F172A)
+                        )
                     }
                 }
             }

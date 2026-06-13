@@ -33,3 +33,7 @@ data class LoginResponse(
 data class AuthMessageResponse(
     val message: String
 )
+
+data class TokenResponse(
+    val accessToken: String
+)

@@ -24,6 +24,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.tanh.datsan.R
+import com.tanh.datsan.utils.toFullImageUrl
 
 @Composable
 fun FullScreenImageViewer(
@@ -54,7 +55,7 @@ fun FullScreenImageViewer(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 AsyncImage(
-                    model = imageUrls[page],
+                    model = imageUrls[page].toFullImageUrl(),
                     contentDescription = "Full Screen Image",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize()

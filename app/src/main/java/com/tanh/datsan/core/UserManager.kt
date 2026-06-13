@@ -1,7 +1,8 @@
 package com.tanh.datsan.core
 
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import android.util.Log
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,11 +17,13 @@ class UserManager @Inject constructor() {
     val userAvatar: StateFlow<String?> = _userAvatar.asStateFlow()
 
     fun setUserInfo(name: String?, avatarUrl: String?) {
+        Log.d("UserManager", "Setting user info in memory: name=$name, avatarUrl=$avatarUrl")
         _userName.value = name
         _userAvatar.value = avatarUrl
     }
 
     fun clearUserInfo() {
+        Log.d("UserManager", "Clearing user info from memory")
         _userName.value = null
         _userAvatar.value = null
     }

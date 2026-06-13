@@ -1,5 +1,6 @@
 package com.tanh.datsan.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.core.TokenManager
@@ -35,6 +36,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
+                Log.d("AuthViewModel", "Initiating registration for email=${request.email}")
                 val response = authRepository.initiateRegistration(request)
                 if (response.isSuccessful) {
                     _email.value = request.email
@@ -49,12 +51,16 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun completeRegistration(verificationCode: String) {
+    fun completeRegistration(email: String, verificationCode: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
+                Log.d(
+                    "AuthViewModel",
+                    "Completing registration for email=$email with code=$verificationCode"
+                )
                 val response = authRepository.completeRegistration(
-                    VerifyEmailRequest(_email.value, verificationCode)
+                    VerifyEmailRequest(email, verificationCode)
                 )
                 if (response.isSuccessful) {
                     _uiState.value = AuthUiState.Success("Registration complete. Please login.")
@@ -72,6 +78,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
+                Log.d("AuthViewModel", "Initiating login for email=${request.email}")
                 val response = authRepository.initiateLogin(request)
                 if (response.isSuccessful) {
                     _email.value = request.email
@@ -86,16 +93,24 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun completeLogin(verificationCode: String) {
+    fun completeLogin(email: String, verificationCode: String) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
+                Log.d(
+                    "AuthViewModel",
+                    "Completing login for email=$email with code=$verificationCode"
+                )
                 val response = authRepository.completeLogin(
-                    LoginCompleteRequest(_email.value, verificationCode)
+                    LoginCompleteRequest(email, verificationCode)
                 )
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
                     if (loginResponse != null) {
+                        Log.d(
+                            "AuthViewModel",
+                            "Login successful for user: ${loginResponse.user.fullName}"
+                        )
                         tokenManager.saveToken(loginResponse.accessToken)
                         userManager.setUserInfo(
                             loginResponse.user.fullName,
@@ -112,6 +127,15 @@ class AuthViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = AuthUiState.Error(e.message ?: "Unknown error")
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            tokenManager.clearToken()
+            userManager.clearUserInfo()
+            authRepository.logout()
+            _uiState.value = AuthUiState.Idle
         }
     }
 

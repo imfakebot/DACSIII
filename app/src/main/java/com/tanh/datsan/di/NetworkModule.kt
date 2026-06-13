@@ -1,5 +1,6 @@
 package com.tanh.datsan.di
 
+import android.content.Context
 import android.util.Log
 import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
@@ -11,17 +12,24 @@ import com.tanh.datsan.data.network.PricingApiService
 import com.tanh.datsan.data.network.ReviewApiService
 import com.tanh.datsan.data.network.UserApiService
 import com.tanh.datsan.data.network.VoucherApiService
+import com.tanh.datsan.utils.ResponseHelper.responseCount
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import jakarta.inject.Singleton
+import javax.inject.Singleton
+import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
+import okhttp3.CookieJar
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import com.franmontiel.persistentcookiejar.PersistentCookieJar
+import com.franmontiel.persistentcookiejar.cache.SetCookieCache
+import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import java.util.concurrent.TimeUnit
 
 
@@ -45,27 +53,69 @@ object NetworkModule {
     fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
             val orignalRequest = chain.request()
-
             val token = tokenManager.cachedToken
-
             val requestBuilder = orignalRequest.newBuilder()
-            if (!token.isNullOrEmpty())
-                requestBuilder.addHeader("Authorization", "Bearer $token")
 
+            val path = orignalRequest.url.encodedPath
+            if (!path.contains("refresh") && !path.contains("login")) {
+                if (!token.isNullOrEmpty()) {
+                    requestBuilder.addHeader("Authorization", "Bearer $token")
+                }
+            }
             chain.proceed(requestBuilder.build())
         }
     }
 
     @Provides
     @Singleton
-    fun provideAuthenticator(): Authenticator {
+    fun provideAuthenticator(
+        tokenManager: TokenManager,
+        authApiService: dagger.Lazy<AuthApiService>
+    ): Authenticator {
         return Authenticator { _, response ->
-            Log.e(
-                "NETWORK_AUTH",
-                "Phát hiện lỗi 401 - Token hết hạn! Cần xử lý Refresh Token hoặc Logout."
-            )
-            //TODO: gọi Refresh Token API ở đây, nếu thành công trả về request mới với token mới, nếu thất bại trả về
-            null
+            if (responseCount(response) > 2) {
+                return@Authenticator null
+            }
+
+            synchronized(this) {
+                val currentToken = tokenManager.cachedToken
+                val failedToken = response.request.header("Authorization")?.removePrefix("Bearer ")
+
+                // Nếu token đã bị xóa bởi 1 thread khác trước đó, hoặc request gốc không có token -> Bỏ qua
+                if (currentToken.isNullOrEmpty() || failedToken.isNullOrEmpty()) {
+                    return@Authenticator null
+                }
+
+                val tokenToUse = if (currentToken != failedToken) {
+                    // Một thread khác ĐÃ refresh thành công, dùng luôn token mới
+                    currentToken
+                } else {
+                    // Thực hiện gọi API Refresh thực sự
+                    try {
+                        val refreshResponse = authApiService.get().refreshToken().execute()
+                        if (refreshResponse.isSuccessful && refreshResponse.body() != null) {
+                            val newToken = refreshResponse.body()!!.accessToken
+                            Log.d("NetworkModule", "Refresh token thành công: $newToken")
+                            runBlocking { tokenManager.saveToken(newToken) }
+                            newToken
+                        } else {
+                            // Refresh thất bại (401/403) -> Token chết hẳn
+                            Log.e("NetworkModule", "Refresh Token đã hết hạn. Đang đăng xuất...")
+                            runBlocking { tokenManager.clearToken() }
+                            null
+                        }
+                    } catch (e: Exception) {
+                        Log.e("NetworkModule", "Lỗi kết nối khi refresh token: ${e.message}")
+                        null
+                    }
+                }
+
+                return@Authenticator tokenToUse?.let {
+                    response.request.newBuilder()
+                        .header("Authorization", "Bearer $it")
+                        .build()
+                }
+            }
         }
     }
 
@@ -74,12 +124,14 @@ object NetworkModule {
     fun provideOkHttpClient(
         loggingInterceptor: HttpLoggingInterceptor,
         authenticator: Authenticator,
-        authInterceptor: Interceptor
+        authInterceptor: Interceptor,
+        cookieJar: CookieJar
     ): OkHttpClient {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .authenticator(authenticator)
+            .cookieJar(cookieJar)
             .connectTimeout(30, TimeUnit.SECONDS)
             .build()
     }
@@ -92,6 +144,12 @@ object NetworkModule {
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCookieJar(@ApplicationContext context: Context): CookieJar {
+        return PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context))
     }
 
     @Provides

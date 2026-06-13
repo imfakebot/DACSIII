@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.tanh.datsan.BuildConfig
+import com.tanh.datsan.utils.toFullImageUrl
 
 @Composable
 fun FieldImageSlider(
@@ -30,13 +30,7 @@ fun FieldImageSlider(
     onImageClick: ((Int) -> Unit)? = null
 ) {
     val formattedUrl = remember(images) {
-        images.map { url ->
-            if (url.contains("localhost")) {
-                url.replace("localhost", BuildConfig.API_BASE_URL)
-            } else {
-                url
-            }
-        }
+        images.map { url -> url.toFullImageUrl() }
     }
 
     // State điều khiển việc trượt (PagerState)
