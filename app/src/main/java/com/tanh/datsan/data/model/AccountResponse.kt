@@ -13,12 +13,12 @@ data class AccountProfile(
     @SerializedName("date_of_birth") val dateOfBirth: String?,
     val gender: String?,
     @SerializedName("phone_number") val phoneNumber: String?,
-    @SerializedName("avatar_url") val avatarUrl: String?,
+    @SerializedName("avatar_url", alternate = ["avatarUrl"]) val avatarUrl: String?,
     val bio: String?,
     @SerializedName("is_profile_complete") val isProfileComplete: Boolean,
     @SerializedName("created_at") val createdAt: String,
     @SerializedName("updated_at") val updatedAt: String,
-    val address: String?
+    val address: AddressResponseDto?
 )
 
 data class AccountResponse(

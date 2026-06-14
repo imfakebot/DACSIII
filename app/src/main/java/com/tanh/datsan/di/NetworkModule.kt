@@ -191,4 +191,14 @@ object NetworkModule {
     @Singleton
     fun provideNotificationApiService(retrofit: Retrofit): NotificationApiService =
         retrofit.create(NotificationApiService::class.java)
-}
+
+    @Provides
+    @Singleton
+    fun provideLocationApiService(retrofit: Retrofit): com.tanh.datsan.data.network.LocationApiService =
+        retrofit.create(com.tanh.datsan.data.network.LocationApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideFeedbackApiService(retrofit: Retrofit): com.tanh.datsan.data.network.FeedbackApiService =
+        retrofit.create(com.tanh.datsan.data.network.FeedbackApiService::class.java)
+    }

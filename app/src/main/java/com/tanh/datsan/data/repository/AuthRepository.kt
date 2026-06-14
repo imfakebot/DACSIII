@@ -29,4 +29,12 @@ class AuthRepository @Inject constructor(
     suspend fun logout(): Response<AuthMessageResponse> {
         return authApiService.logout()
     }
+
+    suspend fun forgotPassword(email: String): Response<AuthMessageResponse> {
+        return authApiService.forgotPassword(email)
+    }
+
+    suspend fun resetPassword(request: ResetPasswordRequest): Response<AuthMessageResponse> {
+        return authApiService.resetPassword(request)
+    }
 }

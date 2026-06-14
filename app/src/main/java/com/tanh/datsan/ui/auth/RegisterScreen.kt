@@ -2,6 +2,7 @@ package com.tanh.datsan.ui.auth
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -61,11 +62,10 @@ fun RegisterScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            Icon(
+            Image(
                 painter = painterResource(id = R.drawable.ic_app_logo),
                 contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = Color.White
+                modifier = Modifier.size(100.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))

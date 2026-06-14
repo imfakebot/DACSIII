@@ -14,7 +14,7 @@ class UserManager @Inject constructor() {
     val userName : StateFlow<String?> = _userName.asStateFlow()
 
     private val _userAvatar = MutableStateFlow<String?>(null)
-    val userAvatar: StateFlow<String?> = _userAvatar.asStateFlow()
+    val userAvatarUrl: StateFlow<String?> = _userAvatar.asStateFlow()
 
     fun setUserInfo(name: String?, avatarUrl: String?) {
         Log.d("UserManager", "Setting user info in memory: name=$name, avatarUrl=$avatarUrl")

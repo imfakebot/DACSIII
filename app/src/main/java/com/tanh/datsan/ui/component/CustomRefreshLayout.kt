@@ -31,7 +31,7 @@ fun CustomRefreshLayout(
                 isRefreshing = false
             }
        },
-        modifier = Modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize()
     ) {
         content()
     }

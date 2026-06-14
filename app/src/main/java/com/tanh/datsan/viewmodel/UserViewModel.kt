@@ -28,7 +28,7 @@ class UserViewModel @Inject constructor(
 ) : ViewModel() {
 
     val userName: StateFlow<String?> = userManager.userName
-    val userAvatarUrl: StateFlow<String?> = userManager.userAvatar
+    val userAvatarUrl: StateFlow<String?> = userManager.userAvatarUrl
         .map { it?.toFullImageUrl() }
         .stateIn(
             viewModelScope,

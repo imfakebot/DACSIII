@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.ui.component.CustomRefreshLayout
@@ -45,16 +47,20 @@ fun AllReviewScreen(
     }
 
     Scaffold(
+        containerColor = Color(0xFFF9FAFB),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.review_all_count, reviews.size), fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.review_all_count, reviews.size), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.btn_back))
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White, titleContentColor = Color(0xFF111827))
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFFF9FAFB),
+                    titleContentColor = Color(0xFF111827)
+                )
             )
         }
     ) { padding ->
@@ -62,29 +68,32 @@ fun AllReviewScreen(
             onRefresh = { onFetchReview(fieldId) },
             modifier = Modifier.padding(padding)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                if (reviews.isEmpty() && !isLoading) {
-                    EmptyReviewsPlaceholder()
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize().background(Color(0xFFF9FAFB)),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(reviews) { review ->
-                            ReviewItem(
-                                userName = review.user?.fullName ?: "Khách hàng ẩn danh",
-                                rating = review.rating,
-                                date = formatReviewTime(review.createdAt),
-                                comment = review.comment ?: "",
-                                avatarUrl = review.user?.avatarUrl
-                            )
-                        }
+            if (reviews.isEmpty() && !isLoading) {
+                EmptyReviewsPlaceholder()
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(reviews) { review ->
+                        ReviewItem(
+                            userName = review.user?.fullName ?: "Khách hàng ẩn danh",
+                            rating = review.rating,
+                            date = formatReviewTime(review.createdAt),
+                            comment = review.comment ?: "",
+                            avatarUrl = review.user?.avatarUrl
+                        )
                     }
+                    
+                    // Thêm khoảng trống ở cuối list
+                    item { Spacer(Modifier.height(16.dp)) }
                 }
+            }
 
-                if (isLoading && reviews.isEmpty()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            if (isLoading && reviews.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF3B82F6))
                 }
             }
         }
@@ -95,7 +104,19 @@ fun AllReviewScreen(
 fun EmptyReviewsPlaceholder() {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = "Chưa có đánh giá nào", color = Color(0xFF6B7280), fontWeight = FontWeight.Medium)
+            Icon(
+                Icons.Default.ChatBubble, 
+                contentDescription = null, 
+                modifier = Modifier.size(64.dp), 
+                tint = Color(0xFFE2E8F0)
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Chưa có đánh giá nào", 
+                color = Color(0xFF64748B), 
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

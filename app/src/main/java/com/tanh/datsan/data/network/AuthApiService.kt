@@ -22,6 +22,12 @@ interface AuthApiService {
     @POST("auth/logout")
     suspend fun logout(): Response<AuthMessageResponse>
 
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body email: String): Response<AuthMessageResponse>
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<AuthMessageResponse>
+
     @POST("auth/refresh")
     fun refreshToken(): Call<TokenResponse>
 }

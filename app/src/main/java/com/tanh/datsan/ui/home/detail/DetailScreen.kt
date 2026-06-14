@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -68,6 +69,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.util.Consumer
+import androidx.compose.ui.res.stringResource
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.FieldResponse
@@ -132,7 +135,7 @@ fun DetailScreen(
                 if (path?.contains("payment-success") == true) {
                     onNavigateToSuccess(bookingId ?: "UNKNOWN")
                 } else if (path?.contains("payment-failed") == true) {
-                    Toast.makeText(context, "Thanh toán thất bại!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, context.getString(R.string.detail_payment_failed), Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -252,7 +255,7 @@ fun DetailContent(
         LazyColumn(
             state = lazyListState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp)
         ) {
             // 1. IMMERSIVE IMAGE HEADER
             item {
@@ -354,7 +357,7 @@ fun DetailContent(
                             val street = field.branch.address?.street ?: ""
                             val fullAddress = listOf(street, ward, city).filter { it.isNotBlank() }.joinToString(", ")
                             Text(
-                                text = fullAddress.ifBlank { "Địa chỉ không xác định" },
+                                text = fullAddress.ifBlank { stringResource(R.string.error_unknown_address) },
                                 color = secondaryTextColor,
                                 fontSize = 15.sp,
                                 lineHeight = 22.sp
@@ -376,25 +379,27 @@ fun DetailContent(
                                 horizontalArrangement = Arrangement.SpaceAround,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                InfoItem(label = "Đánh giá", value = "${field.averageRating ?: 0.0}", icon = Icons.Rounded.Star, iconColor = Color(0xFFFFD700))
+                                InfoItem(label = stringResource(R.string.detail_label_rating), value = "${field.averageRating ?: 0.0}", icon = Icons.Rounded.Star, iconColor = Color(0xFFFFD700))
                                 VerticalDivider(modifier = Modifier.height(30.dp), color = Color(0xFFE2E8F0))
-                                InfoItem(label = "Nhận xét", value = "${field.reviewCount ?: 0}", icon = Icons.Default.ChatBubble, iconColor = accentColor)
-                                if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
-                                    VerticalDivider(modifier = Modifier.height(30.dp), color = Color(0xFFE2E8F0))
-                                    DirectionIconButton(
-                                        lat = field.branch.address.latitude,
-                                        lng = field.branch.address.longitude,
-                                        tenSan = field.name,
-                                        onShowMessage = onShowSnackbar
-                                    )
-                                }
+                                InfoItem(label = stringResource(R.string.detail_label_reviews), value = "${field.reviewCount ?: 0}", icon = Icons.Default.ChatBubble, iconColor = accentColor)
                             }
+                        }
+
+                        if (field.branch.address?.latitude != null && field.branch.address.longitude != null) {
+                            Spacer(Modifier.height(16.dp))
+                            DirectionButton(
+                                lat = field.branch.address.latitude,
+                                lng = field.branch.address.longitude,
+                                tenSan = field.name,
+                                primaryColor = accentColor,
+                                onShowMessage = onShowSnackbar
+                            )
                         }
 
                         SectionDivider()
 
                         // Amenities Section
-                        Text("Tiện ích của sân", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
+                        Text(stringResource(R.string.detail_section_amenities), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
                         FlowRow(
                             modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -406,9 +411,9 @@ fun DetailContent(
                         SectionDivider()
 
                         // Description Section
-                        Text("Giới thiệu", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
+                        Text(stringResource(R.string.detail_section_description), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
                         Text(
-                            text = field.description ?: "Chưa có mô tả cho sân này.",
+                            text = field.description ?: stringResource(R.string.detail_default_description),
                             color = Color(0xFF475569),
                             modifier = Modifier.padding(vertical = 12.dp),
                             lineHeight = 24.sp,
@@ -434,7 +439,7 @@ fun DetailContent(
         // Floating Back Button (Glassmorphism)
         Surface(
             modifier = Modifier
-                .padding(top = 48.dp, start = 20.dp)
+                .padding(top = 12.dp, start = 20.dp)
                 .size(48.dp)
                 .clickable { onBackClick() },
             color = Color.Black.copy(alpha = 0.3f),
@@ -466,20 +471,3 @@ fun InfoItem(label: String, value: String, icon: androidx.compose.ui.graphics.ve
     }
 }
 
-@Composable
-fun DirectionIconButton(lat: Double, lng: Double, tenSan: String, onShowMessage: (String) -> Unit) {
-    val context = LocalContext.current
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable {
-        try {
-            val uri = "google.navigation:q=$lat,$lng"
-            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(uri))
-            intent.setPackage("com.google.android.apps.maps")
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            onShowMessage("Vui lòng cài đặt Google Maps")
-        }
-    }) {
-        Icon(Icons.Default.Directions, null, tint = Color(0xFF3B82F6), modifier = Modifier.size(24.dp))
-        Text(text = "Chỉ đường", fontSize = 12.sp, color = Color(0xFF3B82F6), fontWeight = FontWeight.Bold)
-    }
-}

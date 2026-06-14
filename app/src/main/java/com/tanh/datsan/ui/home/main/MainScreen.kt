@@ -135,303 +135,306 @@ fun MainScreen(
             }
         }
     ) { paddingValues ->
-        CustomRefreshLayout(
-            onRefresh = { onFetchFieldNearMe() },
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+        Box(modifier = Modifier.fillMaxSize()) {
+            CustomRefreshLayout(
+                onRefresh = { onFetchFieldNearMe() },
+                modifier = Modifier.fillMaxSize()
             ) {
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(320.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = paddingValues.calculateBottomPadding())
                 ) {
-                    MeshGradientHero()
-
-                    Column(
+                    Box(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 24.dp, vertical = 32.dp)
+                            .fillMaxWidth()
+                            .height(300.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        MeshGradientHero()
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 24.dp)
+                                .offset(y = 2.dp)
                         ) {
                             Row(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_app_logo),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .requiredSize(60.dp),
-                                    tint = Color.White
-                                )
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = if (isLoggedIn) stringResource(R.string.hello) else stringResource(
-                                            R.string.welcome
-                                        ),
-                                        color = Color.White.copy(alpha = 0.7f),
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_app_logo),
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .requiredSize(60.dp)
                                     )
-                                    Text(
-                                        text = if (isLoggedIn) (userName
-                                            ?: "Người dùng") else "Khách hàng",
-                                        color = Color.White,
-                                        fontSize = 17.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1,
-                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
 
-                            Row(
-                                modifier = Modifier.wrapContentWidth(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                if (isLoggedIn) {
-                                    BadgedBox(
-                                        badge = {
-                                            if (unreadNotification > 0) {
-                                                Badge(containerColor = Color(0xFFF87171)) {
-                                                    Text(
-                                                        unreadNotification.toString(),
-                                                        color = Color.White
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    ) {
-                                        Surface(
-                                            color = Color.White.copy(alpha = 0.15f),
-                                            shape = CircleShape,
-                                            modifier = Modifier
-                                                .requiredSize(44.dp)
-                                                .clickable { onNavigateToNotification() }
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Notifications,
-                                                contentDescription = null, tint = Color.White,
-                                                modifier = Modifier.padding(10.dp)
-                                            )
-                                        }
-                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
 
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                } else {
-                                    Surface(
-                                        onClick = onLoginClick,
-                                        color = Color.White.copy(alpha = 0.15f),
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.height(44.dp)
-                                    ) {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            "Đăng nhập",
-                                            modifier = Modifier.padding(
-                                                horizontal = 12.dp,
-                                                vertical = 10.dp
+                                            text = if (isLoggedIn) stringResource(R.string.hello) else stringResource(
+                                                R.string.welcome
                                             ),
+                                            color = Color.White.copy(alpha = 0.7f),
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = if (isLoggedIn) (userName
+                                                ?: "Người dùng") else "Khách hàng",
                                             color = Color.White,
+                                            fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                         )
                                     }
-                                    Spacer(modifier = Modifier.width(12.dp))
                                 }
 
-                                val fullAvatarUrl = userAvatarUrl.toFullImageUrl()
-                                Box(
-                                    modifier = Modifier
-                                        .requiredSize(48.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.White.copy(alpha = 0.2f))
-                                        .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                Row(
+                                    modifier = Modifier.wrapContentWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    AsyncImage(
-                                        model = if (fullAvatarUrl.isNotEmpty()) fullAvatarUrl else R.drawable.ic_default_avatar,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                    if (isLoggedIn) {
+                                        BadgedBox(
+                                            badge = {
+                                                if (unreadNotification > 0) {
+                                                    Badge(containerColor = Color(0xFFF87171)) {
+                                                        Text(
+                                                            unreadNotification.toString(),
+                                                            color = Color.White
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            Surface(
+                                                color = Color.White.copy(alpha = 0.15f),
+                                                shape = CircleShape,
+                                                modifier = Modifier
+                                                    .requiredSize(44.dp)
+                                                    .clickable { onNavigateToNotification() }
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Notifications,
+                                                    contentDescription = null, tint = Color.White,
+                                                    modifier = Modifier.padding(10.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                    } else {
+                                        Surface(
+                                            onClick = onLoginClick,
+                                            color = Color.White.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            modifier = Modifier.height(44.dp)
+                                        ) {
+                                            Text(
+                                                "Đăng nhập",
+                                                modifier = Modifier.padding(
+                                                    horizontal = 12.dp,
+                                                    vertical = 10.dp
+                                                ),
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 14.sp
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                    }
+
+                                    val fullAvatarUrl = userAvatarUrl.toFullImageUrl()
+                                    Box(
+                                        modifier = Modifier
+                                            .requiredSize(48.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.White.copy(alpha = 0.2f))
+                                            .border(2.dp, Color.White.copy(alpha = 0.3f), CircleShape)
+                                    ) {
+                                        AsyncImage(
+                                            model = if (fullAvatarUrl.isNotEmpty()) fullAvatarUrl else R.drawable.ic_default_avatar,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    }
                                 }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(32.dp))
+                            Spacer(modifier = Modifier.height(32.dp))
 
-                        Text(
-                            text = "Tìm kiếm sân bóng\nngay trong tích tắc!",
-                            color = Color.White,
-                            fontSize = 34.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            lineHeight = 42.sp,
-                            letterSpacing = (-0.5).sp
-                        )
-                    }
-                }
-
-                // --- FLOATING SEARCH BOX ---
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp)
-                        .offset(y = (-40).dp)
-                        .shadow(
-                            30.dp,
-                            RoundedCornerShape(24.dp),
-                            ambientColor = Color.Black,
-                            spotColor = Color.Blue
-                        ),
-                    shape = RoundedCornerShape(24.dp),
-                    color = Color.White
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color(0xFF64748B),
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                        TextField(
-                            value = locationName,
-                            onValueChange = { locationName = it },
-                            placeholder = {
-                                Text(
-                                    "Bạn muốn chơi ở đâu?",
-                                    color = Color(0xFF94A3B8)
-                                )
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent
-                            ),
-                            singleLine = true
-                        )
-                        Button(
-                            onClick = {
-                                onFetchField(
-                                    null,
-                                    null,
-                                    selectedType,
-                                    locationName.ifBlank { null })
-                                focusManager.clearFocus()
-                            },
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
-                            modifier = Modifier.height(48.dp)
-                        ) {
-                            Text("Tìm", fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "Tìm kiếm sân bóng\nngay trong tích tắc!",
+                                color = Color.White,
+                                fontSize = 34.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                lineHeight = 42.sp,
+                                letterSpacing = (-0.5).sp
+                            )
                         }
                     }
-                }
 
-                // --- SPECIAL OFFERS PAGER ---
-                SectionHeader(title = "Ưu đãi đặc biệt", action = "Xem tất cả")
-                PromotionPager()
-
-                // --- SPORT CATEGORIES ---
-                SectionHeader(title = "Loại sân")
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    item {
-                        PremiumCategoryChip(
-                            label = "Tất cả",
-                            isSelected = selectedType == null,
-                            onClick = { onSelectType(null) },
-                            icon = Icons.Default.AutoAwesome
-                        )
-                    }
-                    items(fieldTypes) { sport ->
-                        PremiumCategoryChip(
-                            label = sport.name,
-                            isSelected = selectedType == sport.id,
-                            onClick = { onSelectType(sport) },
-                            icon = getSportIcon(sport.name)
-                        )
-                    }
-                }
-
-                // --- SUGGESTION MESSAGE ---
-                if (!suggestionMessage.isNullOrBlank()) {
+                    // --- FLOATING SEARCH BOX ---
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 24.dp, vertical = 8.dp),
-                        color = Color(0xFFEFF6FF), // Light blue
-                        shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                            .padding(horizontal = 24.dp)
+                            .offset(y = (-40).dp)
+                            .shadow(
+                                30.dp,
+                                RoundedCornerShape(24.dp),
+                                ambientColor = Color.Black,
+                                spotColor = Color.Blue
+                            ),
+                        shape = RoundedCornerShape(24.dp),
+                        color = Color.White
                     ) {
                         Row(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                Icons.Default.Lightbulb,
+                                Icons.Default.Search,
                                 contentDescription = null,
-                                tint = Color(0xFF3B82F6),
-                                modifier = Modifier.size(24.dp)
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.padding(start = 8.dp)
                             )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = suggestionMessage,
-                                color = Color(0xFF1E40AF),
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
+                            TextField(
+                                value = locationName,
+                                onValueChange = { locationName = it },
+                                placeholder = {
+                                    Text(
+                                        "Bạn muốn chơi ở đâu?",
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                },
+                                modifier = Modifier.weight(1f),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                singleLine = true
+                            )
+                            Button(
+                                onClick = {
+                                    onFetchField(
+                                        null,
+                                        null,
+                                        selectedType,
+                                        locationName.ifBlank { null })
+                                    focusManager.clearFocus()
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
+                                modifier = Modifier.height(48.dp)
+                            ) {
+                                Text("Tìm", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
+                    // --- SPECIAL OFFERS PAGER ---
+                    SectionHeader(title = "Ưu đãi đặc biệt", action = "Xem tất cả")
+                    PromotionPager()
+
+                    // --- SPORT CATEGORIES ---
+                    SectionHeader(title = "Loại sân")
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 24.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        item {
+                            PremiumCategoryChip(
+                                label = "Tất cả",
+                                isSelected = selectedType == null,
+                                onClick = { onSelectType(null) },
+                                icon = Icons.Default.AutoAwesome
+                            )
+                        }
+                        items(fieldTypes) { sport ->
+                            PremiumCategoryChip(
+                                label = sport.name,
+                                isSelected = selectedType == sport.id,
+                                onClick = { onSelectType(sport) },
+                                icon = getSportIcon(sport.name)
                             )
                         }
                     }
-                }
 
-                // --- NEAR YOU SECTION ---
-                SectionHeader(title = "Sân bóng gần bạn", subtitle = "Dựa trên vị trí hiện tại")
-
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    items(fieldList) { field ->
-                        HighEndFieldCard(field = field, onClick = { onNavigateToDetail(field.id) })
+                    // --- SUGGESTION MESSAGE ---
+                    if (!suggestionMessage.isNullOrBlank()) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                            color = Color(0xFFEFF6FF),
+                            shape = RoundedCornerShape(16.dp),
+                            border = BorderStroke(1.dp, Color(0xFFBFDBFE))
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Lightbulb,
+                                    contentDescription = null,
+                                    tint = Color(0xFF3B82F6),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = suggestionMessage,
+                                    color = Color(0xFF1E40AF),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
+
+                    // --- NEAR YOU SECTION ---
+                    SectionHeader(title = "Sân bóng gần bạn", subtitle = "Dựa trên vị trí hiện tại")
+
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        items(fieldList) { field ->
+                            HighEndFieldCard(field = field, onClick = { onNavigateToDetail(field.id) })
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(48.dp))
                 }
-
-                Spacer(modifier = Modifier.height(48.dp))
             }
-        }
 
-        if (isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.White.copy(alpha = 0.7f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(color = Color(0xFF0F172A), strokeWidth = 4.dp)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Đang tải dữ liệu...",
-                        color = Color(0xFF1E293B),
-                        fontWeight = FontWeight.Medium
-                    )
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.7f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color(0xFF0F172A), strokeWidth = 4.dp)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Đang tải dữ liệu...",
+                            color = Color(0xFF1E293B),
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }
@@ -652,7 +655,6 @@ fun HighEndFieldCard(field: FieldModel, onClick: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
-                // Rating Over Glass
                 Surface(
                     modifier = Modifier
                         .padding(16.dp)

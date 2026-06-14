@@ -1,6 +1,7 @@
 package com.tanh.datsan.ui.auth
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -61,11 +62,10 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(
+            Image(
                 painter = painterResource(id = R.drawable.ic_app_logo),
                 contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = Color.White
+                modifier = Modifier.size(100.dp)
             )
             
             Text(

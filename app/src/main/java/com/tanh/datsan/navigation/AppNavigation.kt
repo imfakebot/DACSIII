@@ -22,6 +22,7 @@ import com.tanh.datsan.ui.auth.OtpScreen
 import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.notification.NotificationScreen
 import com.tanh.datsan.ui.home.voucher.VoucherScreen
+import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -360,6 +361,19 @@ fun AppNavigation() {
                 )
             }
 
+            composable(BottomNavItem.Profile.route) {
+                ProfileScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onLogoutClick = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onNavigateToResetPassword = { email ->
+                        // Điều hướng đến màn hình đặt lại mật khẩu nếu cần
+                    }
+                )
+            }
         }
     }
 }
