@@ -1,19 +1,32 @@
 package com.tanh.datsan.ui.home.detail
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,7 +47,7 @@ fun SectionDivider() = HorizontalDivider(
 fun LoadingState() = Box(
     Modifier
         .fillMaxSize()
-        .background(Color.White), 
+        .background(Color.White),
     Alignment.Center
 ) {
     CircularProgressIndicator(
@@ -45,8 +58,8 @@ fun LoadingState() = Box(
 
 @Composable
 fun ErrorState(msg: String?) =
-    Box(Modifier.fillMaxSize(), Alignment.Center) { 
-        Text("Lỗi: $msg", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) 
+    Box(Modifier.fillMaxSize(), Alignment.Center) {
+        Text("Lỗi: $msg", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
     }
 
 @Composable
@@ -108,7 +121,10 @@ fun ReviewHeader(
             )
 
             if (reviewCount > 0) {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Rounded.Star,
                         contentDescription = null,
@@ -134,8 +150,8 @@ fun ReviewHeader(
 
         TextButton(onClick = { onNavigate(fieldId) }) {
             Text(
-                stringResource(R.string.btn_view_all), 
-                color = Color(0xFF3B82F6), 
+                stringResource(R.string.btn_view_all),
+                color = Color(0xFF3B82F6),
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
@@ -147,16 +163,25 @@ fun ReviewHeader(
 fun ReviewList(reviews: List<Review>?) {
     if (reviews.isNullOrEmpty()) {
         Surface(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
             color = Color(0xFFF8FAFC),
             shape = RoundedCornerShape(16.dp)
         ) {
             Box(Modifier.padding(24.dp), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.review_empty_msg), color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+                Text(
+                    stringResource(R.string.review_empty_msg),
+                    color = Color(0xFF94A3B8),
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     } else {
-        Column(verticalArrangement = Arrangement.spacedBy(20.dp), modifier = Modifier.padding(vertical = 16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+            modifier = Modifier.padding(vertical = 16.dp)
+        ) {
             reviews.take(3).forEach { review ->
                 ReviewItem(
                     userName = review.user?.fullName ?: "Khách hàng",

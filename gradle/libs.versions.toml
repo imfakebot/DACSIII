@@ -5,21 +5,21 @@ junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 kotlinxCoroutinesAndroid = "1.11.0"
-lifecycleRuntimeKtx = "2.10.0"
+lifecycleRuntimeKtx = "2.11.0"
 #noinspection NewerVersionAvailable
 kotlin = "2.3.21"
-composeBom = "2026.05.01"
+composeBom = "2026.06.00"
 retrofit = "3.0.0"
 playServicesLocation = "21.3.0"
 loggingInterceptor = "5.4.0"
 coilCompose = "2.7.0"
 navigationCompose = "2.10.0-alpha05"
 datastorePreferences = "1.3.0-alpha09"
-lifecycleLivedataKtx = "2.11.0-rc01"
+lifecycleLivedataKtx = "2.11.0"
 browser = "1.10.0"
 coilSvg = "2.7.0"
-foundation = "1.11.2"
-lifecycleViewmodelKtx = "2.10.0"
+foundation = "1.11.3"
+lifecycleViewmodelKtx = "2.11.0"
 material3 = "1.4.0"
 places = "5.2.0"
 hilt = "2.59.2"
@@ -30,15 +30,18 @@ barcode-scanning = "17.3.0"
 roomKtx = "2.8.4"
 persistentcookiejar = "v1.0.1"
 kotlinxMetadataJvm = "0.9.0"
-socket-io = "2.1.1"
-credentials = "1.5.0-rc01"
-googleid = "1.1.1"
-foundationLayout = "1.11.2"
+socket-io = "2.1.2"
+credentials = "1.6.0"
+googleid = "1.2.0"
+foundationLayout = "1.11.3"
 
 [libraries]
 socket-io-client = { group = "io.socket", name = "socket.io-client", version.ref = "socket-io" }
+#noinspection LoginCredentials,LoginCredentials
 androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+#noinspection LoginCredentials,LoginCredentials
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentials" }
+#noinspection LoginCredentials
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-viewmodel-compose-android = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose-android", version.ref = "lifecycleRuntimeKtx" }

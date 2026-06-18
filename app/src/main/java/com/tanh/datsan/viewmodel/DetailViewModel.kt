@@ -1,7 +1,6 @@
 package com.tanh.datsan.viewmodel
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.CheckPriceResponseDto
@@ -11,6 +10,7 @@ import com.tanh.datsan.data.repository.FieldRepository
 import com.tanh.datsan.data.repository.PricingRepository
 import com.tanh.datsan.data.repository.ReviewRepository
 import com.tanh.datsan.utils.LocationHelper
+import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -19,9 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
 import retrofit2.HttpException
 import java.time.Instant
 import java.time.ZoneId
@@ -40,12 +39,11 @@ class DetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<DetailUiState>(DetailUiState.Loading)
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
 
+    private val _bookingState = MutableStateFlow<BookingUiState>(BookingUiState.Idle)
+    val bookingState: StateFlow<BookingUiState> = _bookingState.asStateFlow()
 
-    private val _bookingState = mutableStateOf<BookingUiState>(BookingUiState.Idle)
-    val bookingState: State<BookingUiState> = _bookingState
-
-    private val _bookedSlots = mutableStateOf<List<String>>(emptyList())
-    val bookedSlots: State<List<String>> = _bookedSlots
+    private val _bookedSlots = MutableStateFlow<List<String>>(emptyList())
+    val bookedSlots: StateFlow<List<String>> = _bookedSlots
 
     private val _priceState = MutableStateFlow<CheckPriceResponseDto?>(null)
     val priceState: StateFlow<CheckPriceResponseDto?> = _priceState.asStateFlow()
@@ -55,7 +53,7 @@ class DetailViewModel @Inject constructor(
 
     fun fetchFieldDetail(fieldId: String) {
         viewModelScope.launch {
-            _uiState.value = DetailUiState.Loading
+            _uiState.update { DetailUiState.Loading }
             locationHelper.getCurrentLocation { lat, lon ->
                 viewModelScope.launch {
                     try {
@@ -82,12 +80,19 @@ class DetailViewModel @Inject constructor(
 
                         val updatedField = field.copy(
                             reviews = reviewList,
-                            reviewCount = reviewMeta?.total?:field.reviewCount,
-                            averageRating = reviewMeta?.averageRating?:field.averageRating
+                            reviewCount = reviewMeta?.total ?: field.reviewCount,
+                            averageRating = reviewMeta?.averageRating ?: field.averageRating
                         )
 
-                        _uiState.value = DetailUiState.Success( updatedField)
+                        _uiState.update { DetailUiState.Success(updatedField) }
                     } catch (e: Exception) {
+                        Log.e("DETAIL_VM", "Error fetching field detail: ${e.message}")
+                        val message = if (e is HttpException) {
+                            parseError(e.response()?.errorBody()?.string())
+                        } else {
+                            "Lỗi kết nối hoặc không tìm thấy sân"
+                        }
+                        _uiState.update { DetailUiState.Error(message) }
                     }
                 }
             }
@@ -97,7 +102,7 @@ class DetailViewModel @Inject constructor(
     fun fetchBookedSlots(fieldId: String, date: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                _bookedSlots.value = emptyList()
+                _bookedSlots.update { emptyList() }
                 val response = bookingRepository.getBookingSlotsOfAFieldInADay(fieldId, date)
                 if (response.isSuccessful) {
                     val bookingList = response.body()?.bookings ?: emptyList()
@@ -110,12 +115,11 @@ class DetailViewModel @Inject constructor(
                             null
                         }
                     }
-                    withContext(Dispatchers.Main) {
-                        _bookedSlots.value = blockedTimes
-                    }
+                    _bookedSlots.update { blockedTimes }
                 }
             } catch (e: Exception) {
-                _bookedSlots.value = emptyList()
+                Log.e("DETAIL_VM", "Error fetching booked slots: ${e.message}")
+                _bookedSlots.update { emptyList() }
             }
         }
     }
@@ -124,16 +128,16 @@ class DetailViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val response = pricingRepository.checkPrice(fieldId, startTime, durationMinutes)
-                _priceState.value = response
+                _priceState.update { response }
             } catch (e: Exception) {
-                _priceState.value = null
+                _priceState.update { null }
             }
         }
     }
 
     fun createBooking(fieldId: String, startTime: String, durationMinutes: Int, voucherCode: String? = null) {
         viewModelScope.launch {
-            _bookingState.value = BookingUiState.Loading
+            _bookingState.update { BookingUiState.Loading }
             try {
                 val response = bookingRepository.createBooking(
                     request = CreateBookingDto(
@@ -144,30 +148,25 @@ class DetailViewModel @Inject constructor(
                         platform = "mobile"
                     )
                 )
-                _bookingState.value = BookingUiState.Success(response.paymentUrl ?: "")
+                _bookingState.update { BookingUiState.Success(response.paymentUrl ?: "") }
             } catch (e: HttpException) {
                 handleHttpError(e)
             } catch (e: Exception) {
-                _bookingState.value = BookingUiState.Error("Lỗi kết nối: ${e.localizedMessage}")
+                _bookingState.update { BookingUiState.Error("Lỗi kết nối: ${e.localizedMessage}") }
             }
         }
     }
 
     fun resetBookingState() {
-        _bookingState.value = BookingUiState.Idle
+        _bookingState.update { BookingUiState.Idle }
     }
 
     private suspend fun handleHttpError(e: HttpException) {
         if (e.code() == 401) {
             _eventFlow.emit(UiEvent.NavigateToLogin)
         } else {
-            val errorBody = e.response()?.errorBody()?.string()
-            val message = try {
-                JSONObject(errorBody ?: "").getString("message")
-            } catch (ex: Exception) {
-                "Lỗi server: ${e.code()}"
-            }
-            _bookingState.value = BookingUiState.Error(message)
+            val message = parseError(e.response()?.errorBody()?.string())
+            _bookingState.update { BookingUiState.Error(message) }
         }
     }
 }

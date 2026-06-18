@@ -42,7 +42,6 @@ fun QrScannerScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner =LocalLifecycleOwner.current
     val uiState by viewModel.uiState.collectAsState()
 
     var hasCameraPermission by remember {
@@ -53,9 +52,11 @@ fun QrScannerScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    
+
     var showManualInputDialog by rememberSaveable { mutableStateOf(false) }
     var manualBookingCode by rememberSaveable { mutableStateOf("") }
+
+    val isProcessing by remember { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -99,7 +100,7 @@ fun QrScannerScreen(
             if (hasCameraPermission) {
                 QrCameraPreview(
                     onQrCodeDetected = { code ->
-                        if (uiState is CheckInUiState.Idle && !showManualInputDialog) {
+                        if (uiState is CheckInUiState.Idle && !showManualInputDialog && isProcessing) {
                             viewModel.checkIn(code)
                         }
                     }
@@ -152,6 +153,7 @@ fun QrScannerScreen(
                         color = Color.White
                     )
                 }
+
                 is CheckInUiState.Success -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.resetState() },
@@ -170,6 +172,7 @@ fun QrScannerScreen(
                         }
                     )
                 }
+
                 is CheckInUiState.Error -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.resetState() },
@@ -182,6 +185,7 @@ fun QrScannerScreen(
                         }
                     )
                 }
+
                 else -> {}
             }
         }

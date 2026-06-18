@@ -1,6 +1,5 @@
 package com.tanh.datsan.data.repository
 
-import com.tanh.datsan.core.UserManager
 import com.tanh.datsan.data.model.AccountResponse
 import com.tanh.datsan.data.network.LocationApiService
 import com.tanh.datsan.data.network.UserApiService

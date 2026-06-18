@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,7 +34,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChatBubble
-import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.BottomSheetDefaults
@@ -65,11 +63,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.util.Consumer
-import androidx.compose.ui.res.stringResource
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
@@ -85,7 +83,7 @@ import com.tanh.datsan.viewmodel.DetailUiState
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-@SuppressLint("RememberReturnType")
+@SuppressLint("RememberReturnType", "LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
@@ -96,6 +94,8 @@ fun DetailScreen(
     bookedSlots: List<String>,
     vouchers: List<Voucher>,
     selectedVoucher: Voucher?,
+    discountAmount: Double,
+    isVoucherLoading: Boolean,
     isLoggedIn: Boolean,
     onFetchFieldDetail: (String) -> Unit,
     onFetchBookedSlots: (String, String) -> Unit,
@@ -135,13 +135,19 @@ fun DetailScreen(
                 if (path?.contains("payment-success") == true) {
                     onNavigateToSuccess(bookingId ?: "UNKNOWN")
                 } else if (path?.contains("payment-failed") == true) {
-                    Toast.makeText(context, context.getString(R.string.detail_payment_failed), Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.detail_payment_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
         }
         activity?.addOnNewIntentListener(intentListener)
-        if (activity?.intent?.data != null) {
-            intentListener.accept(activity.intent)
+        activity?.intent?.let { intent ->
+            if (intent.data != null) {
+                intentListener.accept(intent)
+            }
         }
         onDispose { activity?.removeOnNewIntentListener(intentListener) }
     }
@@ -150,6 +156,10 @@ fun DetailScreen(
         if (bookingState is BookingUiState.Success) {
             val url = bookingState.paymentUrl
             OpenVNPay.openVnPay(context, url)
+        } else if (bookingState is BookingUiState.Error) {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(bookingState.message ?: "Lỗi không xác định")
+            }
         }
     }
 
@@ -173,14 +183,14 @@ fun DetailScreen(
                 )
             }
         }
-    ) { padding ->
+    ) { paddingValues ->
         when (val state = uiState) {
             is DetailUiState.Loading -> LoadingState()
             is DetailUiState.Error -> ErrorState(state.message)
             is DetailUiState.Success -> {
                 DetailContent(
                     field = state.field,
-                    padding = padding,
+                    padding = paddingValues,
                     onBackClick = onBackClick,
                     onNavigateToReview = onNavigateToReview,
                     onShowSnackbar = { message ->
@@ -201,8 +211,6 @@ fun DetailScreen(
             containerColor = Color.White,
             dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFE2E8F0)) }
         ) {
-            val discountAmount = 0.0 // To do: calculate or pass down
-            
             BookingBottomSheetContent(
                 field = field,
                 priceState = priceState,
@@ -210,8 +218,15 @@ fun DetailScreen(
                 vouchers = vouchers,
                 selectedVoucher = selectedVoucher,
                 discountAmount = discountAmount,
+                isVoucherLoading = isVoucherLoading,
                 onFetchBookedSlots = { date -> onFetchBookedSlots(fieldId, date) },
-                onCheckPrice = { startTime, duration -> onCheckPrice(fieldId, startTime, duration) },
+                onCheckPrice = { startTime, duration ->
+                    onCheckPrice(
+                        fieldId,
+                        startTime,
+                        duration
+                    )
+                },
                 onSelectVoucher = onSelectVoucher,
                 onConfirm = { date, duration, time ->
                     showSheet = false
@@ -280,14 +295,18 @@ fun DetailContent(
                             }
                         )
                     }
-                    
+
                     // Dark Gradient Overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(Color.Black.copy(0.3f), Color.Transparent, Color.Black.copy(0.5f))
+                                    listOf(
+                                        Color.Black.copy(0.3f),
+                                        Color.Transparent,
+                                        Color.Black.copy(0.5f)
+                                    )
                                 )
                             )
                     )
@@ -302,10 +321,10 @@ fun DetailContent(
                         .offset(y = (-40).dp),
                     shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
                     color = surfaceColor,
-                    shadowElevation = 0.dp 
+                    shadowElevation = 0.dp
                 ) {
                     Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-                        
+
                         // Category & Distance Row
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -318,16 +337,24 @@ fun DetailContent(
                             ) {
                                 Text(
                                     text = field.fieldType.name,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 6.dp
+                                    ),
                                     color = accentColor,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
                             }
-                            
+
                             field.distance?.let { dist ->
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Rounded.LocationOn, null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                    Icon(
+                                        Icons.Rounded.LocationOn,
+                                        null,
+                                        tint = Color(0xFF10B981),
+                                        modifier = Modifier.size(16.dp)
+                                    )
                                     Spacer(Modifier.width(4.dp))
                                     Text(
                                         text = "${String.format(Locale.US, "%.1f", dist)} km",
@@ -350,12 +377,23 @@ fun DetailContent(
 
                         // Address Row
                         Row(verticalAlignment = Alignment.Top) {
-                            Icon(Icons.Rounded.LocationOn, null, tint = secondaryTextColor, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+                            Icon(
+                                Icons.Rounded.LocationOn,
+                                null,
+                                tint = secondaryTextColor,
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .padding(top = 2.dp)
+                                )
                             Spacer(Modifier.width(8.dp))
-                            val ward = field.branch.address?.wardName ?: field.branch.address?.ward?.name ?: ""
-                            val city = field.branch.address?.cityName ?: field.branch.address?.city?.name ?: ""
+                            val ward = field.branch.address?.wardName
+                                ?: field.branch.address?.ward?.name ?: ""
+                            val city = field.branch.address?.cityName
+                                ?: field.branch.address?.city?.name ?: ""
                             val street = field.branch.address?.street ?: ""
-                            val fullAddress = listOf(street, ward, city).filter { it.isNotBlank() }.joinToString(", ")
+                            val fullAddress =
+                                listOf(street, ward, city).filter { it.isNotBlank() }
+                                    .joinToString(", ")
                             Text(
                                 text = fullAddress.ifBlank { stringResource(R.string.error_unknown_address) },
                                 color = secondaryTextColor,
@@ -379,9 +417,22 @@ fun DetailContent(
                                 horizontalArrangement = Arrangement.SpaceAround,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                InfoItem(label = stringResource(R.string.detail_label_rating), value = "${field.averageRating ?: 0.0}", icon = Icons.Rounded.Star, iconColor = Color(0xFFFFD700))
-                                VerticalDivider(modifier = Modifier.height(30.dp), color = Color(0xFFE2E8F0))
-                                InfoItem(label = stringResource(R.string.detail_label_reviews), value = "${field.reviewCount ?: 0}", icon = Icons.Default.ChatBubble, iconColor = accentColor)
+                                InfoItem(
+                                    label = stringResource(R.string.detail_label_rating),
+                                    value = "${field.averageRating ?: 0.0}",
+                                    icon = Icons.Rounded.Star,
+                                    iconColor = Color(0xFFFFD700)
+                                )
+                                VerticalDivider(
+                                    modifier = Modifier.height(30.dp),
+                                    color = Color(0xFFE2E8F0)
+                                )
+                                InfoItem(
+                                    label = stringResource(R.string.detail_label_reviews),
+                                    value = "${field.reviewCount ?: 0}",
+                                    icon = Icons.Default.ChatBubble,
+                                    iconColor = accentColor
+                                )
                             }
                         }
 
@@ -399,9 +450,16 @@ fun DetailContent(
                         SectionDivider()
 
                         // Amenities Section
-                        Text(stringResource(R.string.detail_section_amenities), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
+                        Text(
+                            stringResource(R.string.detail_section_amenities),
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 20.sp,
+                            color = Color(0xFF0F172A)
+                        )
                         FlowRow(
-                            modifier = Modifier.padding(vertical = 20.dp).fillMaxWidth(),
+                            modifier = Modifier
+                                .padding(vertical = 20.dp)
+                                .fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
@@ -411,9 +469,15 @@ fun DetailContent(
                         SectionDivider()
 
                         // Description Section
-                        Text(stringResource(R.string.detail_section_description), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color(0xFF0F172A))
                         Text(
-                            text = field.description ?: stringResource(R.string.detail_default_description),
+                            stringResource(R.string.detail_section_description),
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 20.sp,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = field.description
+                                ?: stringResource(R.string.detail_default_description),
                             color = Color(0xFF475569),
                             modifier = Modifier.padding(vertical = 12.dp),
                             lineHeight = 24.sp,
@@ -446,7 +510,12 @@ fun DetailContent(
             shape = CircleShape,
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
         ) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White, modifier = Modifier.padding(12.dp))
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowBack,
+                null,
+                tint = Color.White,
+                modifier = Modifier.padding(12.dp)
+            )
         }
 
         if (showImageViewer) {
@@ -460,14 +529,28 @@ fun DetailContent(
 }
 
 @Composable
-fun InfoItem(label: String, value: String, icon: androidx.compose.ui.graphics.vector.ImageVector, iconColor: Color) {
+fun InfoItem(
+    label: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconColor: Color
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = iconColor, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(text = value, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFF0F172A))
+            Text(
+                text = value,
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp,
+                color = Color(0xFF0F172A)
+            )
         }
-        Text(text = label, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = Color(0xFF64748B),
+            fontWeight = FontWeight.Medium
+        )
     }
 }
-

@@ -118,22 +118,6 @@ fun MainScreen(
 
     Scaffold(
         containerColor = Color(0xFFF1F5F9),
-        floatingActionButton = {
-            if (isLoggedIn && (userRole == "admin" || userRole == "staff")) {
-                LargeFloatingActionButton(
-                    onClick = onNavigateToScanner,
-                    containerColor = Color(0xFF1E293B),
-                    contentColor = Color.White,
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Icon(
-                        Icons.Default.QrCodeScanner,
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-        }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
             CustomRefreshLayout(

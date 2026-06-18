@@ -184,7 +184,7 @@ fun LoginScreen(
                     border = BorderStroke(1.dp, Color(0xFFFF5252).copy(alpha = 0.5f))
                 ) {
                     Text(
-                        text = (uiState as AuthUiState.Error).message,
+                        text = (uiState).message,
                         color = Color(0xFFFF8A80),
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                         style = MaterialTheme.typography.bodyMedium,

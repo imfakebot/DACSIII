@@ -1,5 +1,7 @@
 package com.tanh.datsan.ui.navigation
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -12,28 +14,52 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
-fun MainBottomBar(navController: NavController) {
-    val items = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.History,
-        BottomNavItem.Voucher,
-        BottomNavItem.Profile
-    )
+fun MainBottomBar(navController: NavController, userRole: String) {
+    val items = if (userRole == "admin" || userRole == "staff") {
+        listOf(
+            AdminBottomNavItem.Dashboard,
+            AdminBottomNavItem.QrScanner,
+            AdminBottomNavItem.Profile
+        )
+    } else {
+        listOf(
+            BottomNavItem.Home,
+            BottomNavItem.History,
+            BottomNavItem.Voucher,
+            BottomNavItem.Profile
+        )
+    }
 
     NavigationBar(containerColor = Color.White) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route
 
         items.forEach { item ->
+            val route = when (item) {
+                is BottomNavItem -> item.route
+                is AdminBottomNavItem -> item.route
+                else -> ""
+            }
+            val icon = when (item) {
+                is BottomNavItem -> item.icon
+                is AdminBottomNavItem -> item.icon
+                else -> Icons.Rounded.Home
+            }
+            val title = when (item) {
+                is BottomNavItem -> item.title
+                is AdminBottomNavItem -> item.title
+                else -> ""
+            }
+
             NavigationBarItem(
-                icon = { Icon(item.icon, contentDescription = item.title) },
-                label = { Text(item.title) },
-                selected = currentRoute == item.route,
+                icon = { Icon(icon, contentDescription = title) },
+                label = { Text(title) },
+                selected = currentRoute == route,
                 alwaysShowLabel = true,
                 onClick = {
-                    navController.navigate(item.route) {
-                        navController.graph.startDestinationRoute?.let { route ->
-                            popUpTo(route) { saveState = true }
+                    navController.navigate(route) {
+                        navController.graph.startDestinationRoute?.let { startRoute ->
+                            popUpTo(startRoute) { saveState = true }
                         }
                         launchSingleTop = true
                         restoreState = true

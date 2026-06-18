@@ -2,21 +2,16 @@ package com.tanh.datsan.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.repository.BookingRepository
+import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
 
-sealed interface CheckInUiState {
-    object Idle : CheckInUiState
-    object Loading : CheckInUiState
-    data class Success(val booking: BookingResponse) : CheckInUiState
-    data class Error(val message: String) : CheckInUiState
-}
 
 @HiltViewModel
 class QrScannerViewModel @Inject constructor(
@@ -32,6 +27,10 @@ class QrScannerViewModel @Inject constructor(
             try {
                 val response = bookingRepository.checkIn(identifier)
                 _uiState.value = CheckInUiState.Success(response)
+            } catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorMessage = parseError(errorBody)
+                _uiState.value = CheckInUiState.Error(errorMessage)
             } catch (e: Exception) {
                 _uiState.value = CheckInUiState.Error(e.message ?: "Unknown error occurred")
             }

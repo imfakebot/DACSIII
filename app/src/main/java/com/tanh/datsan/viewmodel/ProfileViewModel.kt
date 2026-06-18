@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.core.UserManager
+import com.tanh.datsan.data.model.UpdateProfileRequest
 import com.tanh.datsan.data.repository.UserRepository
 import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -224,7 +225,7 @@ class ProfileViewModel @Inject constructor(
                     )
                 } else null
 
-                val request = com.tanh.datsan.data.model.UpdateProfileRequest(
+                val request = UpdateProfileRequest(
                     fullName = state.fullName.ifBlank { null },
                     phoneNumber = state.phoneNumber.ifBlank { null },
                     gender = state.gender.ifBlank { null },
