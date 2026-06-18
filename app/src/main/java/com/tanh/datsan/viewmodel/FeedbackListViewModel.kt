@@ -50,17 +50,18 @@ class FeedbackListViewModel @Inject constructor(
         }
     }
 
-    fun createFeedback(title: String, description: String, onSuccess: (String) -> Unit) {
+    fun createFeedback(title: String, category: String, content: String, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val response = feedbackRepository.createFeedback(title, description)
+                val response = feedbackRepository.createFeedback(title, category, content)
                 if (response.isSuccessful && response.body() != null) {
                     _uiState.value = _uiState.value.copy(isLoading = false)
                     onSuccess(response.body()!!.id)
                 } else {
+                    val errorBodyString = response.errorBody()?.string() ?: ""
                     _uiState.value = _uiState.value.copy(
-                        error = "Không thể tạo yêu cầu hỗ trợ (Code: ${response.code()})",
+                        error = "Không thể tạo yêu cầu hỗ trợ (Code: ${response.code()}) - $errorBodyString",
                         isLoading = false
                     )
                 }

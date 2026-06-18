@@ -209,14 +209,14 @@ fun FeedbackDescriptionItem(feedback: com.tanh.datsan.data.model.FeedbackRespons
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = "Yêu cầu hỗ trợ: ${feedback.title}",
+                text = "Yêu cầu hỗ trợ: ${feedback.title ?: "Không có tiêu đề"}",
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = Color(0xFF1976D2)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = feedback.description,
+                text = feedback.content ?: feedback.description ?: "",
                 fontSize = 14.sp,
                 color = Color.DarkGray
             )
@@ -238,9 +238,7 @@ fun ChatInputBar(
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-                .navigationBarsPadding()
-                .imePadding(),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             TextField(

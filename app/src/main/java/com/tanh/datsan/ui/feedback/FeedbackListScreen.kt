@@ -99,9 +99,9 @@ fun FeedbackListScreen(
         if (showCreateDialog) {
             CreateFeedbackDialog(
                 onDismiss = { showCreateDialog = false },
-                onCreate = { title, description ->
+                onCreate = { title, category, content ->
                     showCreateDialog = false
-                    viewModel.createFeedback(title, description) { newId ->
+                    viewModel.createFeedback(title, category, content) { newId ->
                         onNavigateToChat(newId)
                     }
                 }
@@ -140,7 +140,7 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = feedback.title,
+                    text = feedback.title ?: "Không có tiêu đề",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
                     color = Color(0xFF1976D2),
@@ -155,7 +155,7 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = feedback.description,
+                text = feedback.content ?: feedback.description ?: "",
                 fontSize = 14.sp,
                 color = Color.DarkGray,
                 maxLines = 2,
@@ -183,13 +183,23 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateFeedbackDialog(
     onDismiss: () -> Unit,
-    onCreate: (String, String) -> Unit
+    onCreate: (String, String, String) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("support") }
+    var content by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+
+    val categories = listOf(
+        "support" to "Hỗ trợ kỹ thuật",
+        "suggestion" to "Góp ý",
+        "complaint" to "Khiếu nại",
+        "other" to "Khác"
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -204,9 +214,40 @@ fun CreateFeedbackDialog(
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    OutlinedTextField(
+                        value = categories.find { it.first == category }?.second ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Danh mục") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor()
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        categories.forEach { (key, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    category = key
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = content,
+                    onValueChange = { content = it },
                     label = { Text("Nội dung") },
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     maxLines = 3
@@ -215,8 +256,8 @@ fun CreateFeedbackDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onCreate(title, description) },
-                enabled = title.isNotBlank() && description.isNotBlank(),
+                onClick = { onCreate(title, category, content) },
+                enabled = title.isNotBlank() && content.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
             ) {
                 Text("Bắt đầu chat")

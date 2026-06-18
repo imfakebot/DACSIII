@@ -4,8 +4,9 @@ import com.google.gson.annotations.SerializedName
 
 data class FeedbackResponse(
     val id: String,
-    val title: String,
-    val description: String,
+    val title: String?,
+    val content: String?,
+    val description: String?,
     val status: String,
     @SerializedName("created_at")
     val createdAt: String,
@@ -46,7 +47,8 @@ data class ChatResponder(
 
 data class CreateFeedbackRequest(
     val title: String,
-    val description: String
+    val category: String,
+    val content: String
 )
 
 data class ReplyFeedbackRequest(
