@@ -27,19 +27,19 @@ fun OtpScreen(
     onCompleteRegistration: (String) -> Unit,
     onCompleteLogin: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    onSuccess: () -> Unit,
+    onSuccess: (String) -> Unit,
     onResetState: () -> Unit
 ) {
     var otpCode by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState) {
-        when (uiState) {
+        when (val state = uiState) {
             is AuthUiState.Authenticated -> {
-                onSuccess()
+                onSuccess(state.role)
                 onResetState()
             }
             is AuthUiState.Success -> {
-                onSuccess()
+                onSuccess("user") // Handle registration success case by default
                 onResetState()
             }
             else -> {}

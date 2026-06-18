@@ -192,7 +192,8 @@ class AuthViewModel @Inject constructor(
                             loginResponse.user?.fullName,
                             loginResponse.user?.avatarUrl
                         )
-                        _uiState.value = AuthUiState.Authenticated
+                        val role = com.tanh.datsan.utils.JwtUtil.getRoleFromToken(loginResponse.accessToken)
+                        _uiState.value = AuthUiState.Authenticated(role)
                     } else {
                         _uiState.value = AuthUiState.Error("Login response body is null")
                     }
@@ -219,7 +220,8 @@ class AuthViewModel @Inject constructor(
                             loginResponse.user?.fullName,
                             loginResponse.user?.avatarUrl
                         )
-                        _uiState.value = AuthUiState.Authenticated
+                        val role = com.tanh.datsan.utils.JwtUtil.getRoleFromToken(loginResponse.accessToken)
+                        _uiState.value = AuthUiState.Authenticated(role)
                     } else {
                         Log.d("AuthViewModel","Login response body is null")
                         _uiState.value = AuthUiState.Error("Login response body is null")

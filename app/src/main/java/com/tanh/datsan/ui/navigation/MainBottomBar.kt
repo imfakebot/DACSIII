@@ -15,7 +15,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun MainBottomBar(navController: NavController, userRole: String) {
-    val items = if (userRole == "admin" || userRole == "staff") {
+    val items = if (userRole == "admin" || userRole == "super_admin" || userRole == "staff") {
         listOf(
             AdminBottomNavItem.Dashboard,
             AdminBottomNavItem.QrScanner,

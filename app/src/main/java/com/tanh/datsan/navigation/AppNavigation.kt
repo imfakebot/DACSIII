@@ -32,6 +32,7 @@ import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
+import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.viewmodel.*
 import com.tanh.datsan.ui.feedback.ChatScreen
 import com.tanh.datsan.ui.feedback.*
@@ -55,7 +56,7 @@ fun AppNavigation() {
     val authRoutes = listOf("login", "register", "forgot_password", "reset_password/{email}")
     val isOtpRoute = currentRoute?.startsWith("otp/") == true
 
-    val bottomBarRoutes = if (userRole == "admin" || userRole == "staff") {
+    val bottomBarRoutes = if (userRole == "super_admin" || userRole == "admin" || userRole == "staff") {
         listOf(
             AdminBottomNavItem.Dashboard.route,
             AdminBottomNavItem.QrScanner.route,
@@ -156,8 +157,9 @@ fun AppNavigation() {
                     onOtpSent = { email, isRegister ->
                         navController.navigate("otp/$email/$isRegister")
                     },
-                    onAuthenticated = {
-                        navController.navigate(BottomNavItem.Home.route) {
+                    onAuthenticated = { role ->
+                        val destination = if (role == "super_admin" || role == "admin" || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        navController.navigate(destination) {
                             popUpTo("login") { inclusive = true }
                         }
                     },
@@ -232,8 +234,9 @@ fun AppNavigation() {
                     },
                     onCompleteLogin = { code -> authViewModel.completeLogin(email, code) },
                     onNavigateBack = { navController.popBackStack() },
-                    onSuccess = {
-                        navController.navigate(BottomNavItem.Home.route) {
+                    onSuccess = { role ->
+                        val destination = if (role == "super_admin" || role == "admin" || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        navController.navigate(destination) {
                             popUpTo(BottomNavItem.Home.route) { inclusive = true }
                         }
                     },
@@ -353,7 +356,9 @@ fun AppNavigation() {
             }
 
             composable(AdminBottomNavItem.Dashboard.route) {
-                // TODO: Implement Admin Dashboard
+                AdminStatisticsScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
             }
 
             composable("notification") {

@@ -37,7 +37,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit,
     onForgotPassword: () -> Unit,
     onOtpSent: (String, Boolean) -> Unit,
-    onAuthenticated: () -> Unit,
+    onAuthenticated: (String) -> Unit,
     onResetState: () -> Unit,
     onGoogleLoginClick: (String) -> Unit
 ) {
@@ -56,7 +56,7 @@ fun LoginScreen(
             }
 
             is AuthUiState.Authenticated -> {
-                onAuthenticated()
+                onAuthenticated(state.role)
                 onResetState()
             }
 
