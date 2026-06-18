@@ -2,6 +2,7 @@ package com.tanh.datsan.ui.profile
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.*
@@ -34,6 +35,7 @@ import androidx.compose.ui.unit.*
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.R
+import com.tanh.datsan.utils.compressImage
 import com.tanh.datsan.utils.toFile
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.ProfileViewModel
@@ -41,6 +43,7 @@ import com.tanh.datsan.viewmodel.MainViewModel
 import com.tanh.datsan.viewmodel.AuthViewModel
 import com.tanh.datsan.viewmodel.AuthUiEvent
 import kotlinx.coroutines.flow.collectLatest
+import java.io.File
 import java.util.*
 import java.text.SimpleDateFormat
 
@@ -63,7 +66,7 @@ fun ProfileScreen(
 
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showAvatarConfirmDialog by remember { mutableStateOf(false) }
-    var pendingAvatarFile by remember { mutableStateOf<java.io.File?>(null) }
+    var pendingAvatarFile by remember { mutableStateOf<File?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showCitySheet by remember { mutableStateOf(false) }
     var showWardSheet by remember { mutableStateOf(false) }
@@ -91,13 +94,16 @@ fun ProfileScreen(
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         uri?.let {
             val file = it.toFile(context)
             if (file != null) {
                 pendingAvatarFile = file
                 showAvatarConfirmDialog = true
+            } else {
+                Toast.makeText(context, "Không thể lấy được đường dẫn ảnh!", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }
@@ -167,7 +173,6 @@ fun ProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // --- PREMIUM BACKGROUND DECORATION ---
             PremiumHeaderBackground()
 
             Column(
@@ -183,7 +188,6 @@ fun ProfileScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(contentAlignment = Alignment.BottomEnd) {
-                        // Avatar Outer Glow
                         Box(
                             modifier = Modifier
                                 .size(130.dp)
@@ -223,12 +227,16 @@ fun ProfileScreen(
                                 }
                             }
                         }
-
-                        // Edit Avatar Button
                         Surface(
                             modifier = Modifier
                                 .size(36.dp)
-                                .clickable { imagePickerLauncher.launch("image/*") },
+                                .clickable {
+                                    imagePickerLauncher.launch(
+                                        PickVisualMediaRequest(
+                                            ActivityResultContracts.PickVisualMedia.ImageOnly
+                                        )
+                                    )
+                                },
                             shape = CircleShape,
                             color = Color(0xFF3B82F6),
                             border = BorderStroke(2.dp, Color.White),
@@ -267,7 +275,6 @@ fun ProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- MAIN CONTENT CARDS ---
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFF8FAFC),
@@ -393,7 +400,6 @@ fun ProfileScreen(
                             )
                         }
 
-                        // --- ACTION BUTTONS ---
                         Spacer(modifier = Modifier.height(40.dp))
 
                         AnimatedVisibility(
@@ -460,6 +466,52 @@ fun ProfileScreen(
             }
         }
 
+        if (showAvatarConfirmDialog && pendingAvatarFile != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showAvatarConfirmDialog = false
+                    pendingAvatarFile = null
+                },
+                title = {
+                    Text(stringResource(R.string.update_avatar), fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(stringResource(R.string.avatar_confirm))
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showAvatarConfirmDialog = false
+                            pendingAvatarFile?.let {
+                                try {
+                                    val compressedFile = it.compressImage(context)
+                                    viewModel.uploadAvatar(imageFile=compressedFile)
+                                }catch (e:Exception){
+                                    Toast.makeText(context, "Lỗi khi tải ảnh lên: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            pendingAvatarFile = null
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                    ) {
+                        Text(
+                            stringResource(R.string.update),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showAvatarConfirmDialog = false
+                        pendingAvatarFile = null
+                    }) {
+                        Text(stringResource(R.string.profile_btn_cancel), color = Color.Gray)
+                    }
+                },
+                shape = RoundedCornerShape(24.dp)
+            )
+        }
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
@@ -632,7 +684,6 @@ fun PremiumHeaderBackground() {
                 )
             )
     ) {
-        // Decorative circles
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(

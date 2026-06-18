@@ -186,5 +186,8 @@
     <string name="detail_install_maps_msg">Vui lòng cài đặt Google Maps</string>
     <string name="detail_btn_directions">Chỉ đường</string>
     <string name="detail_payment_failed">Thanh toán thất bại!</string>
+    <string name="avatar_confirm">Bạn có chắc chắn muốn dùng ảnh này làm Avatar không?</string>
+    <string name="update_avatar">Cập nhật ảnh đại diện</string>
+    <string name="update">Cập nhật</string>
 
 </resources>

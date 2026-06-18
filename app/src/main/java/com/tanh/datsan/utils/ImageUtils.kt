@@ -1,6 +1,8 @@
 package com.tanh.datsan.utils
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import java.io.File
 import java.io.FileOutputStream
@@ -26,16 +28,36 @@ fun String?.toFullImageUrl(): String {
     if (this.isNullOrEmpty()) {
         return ""
     }
-    
+
     val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
-    
+
     if (this.startsWith("http://") || this.startsWith("https://")) {
         return this.replace(BuildConfig.API_BACKEND, baseUrl)
     }
-    
+
     return if (this.startsWith("/")) {
         "$baseUrl$this"
     } else {
         "$baseUrl/$this"
     }
+}
+
+fun File.compressImage(context: Context): File {
+    // 1. Đọc ảnh gốc
+    val bitmap = BitmapFactory.decodeFile(this.absolutePath)
+
+    // 2. Tạo một file tạm trong bộ nhớ đệm (Cache) để chứa ảnh đã nén
+    val compressedFile = File(
+        context.cacheDir,
+        "avatar_compressed_${System.currentTimeMillis()}.jpg"
+    )
+    val outputStream = FileOutputStream(compressedFile)
+
+    // 3. Nén ảnh thành chuẩn JPEG, chất lượng 70% (mắt thường không phân biệt được)
+    bitmap.compress(Bitmap.CompressFormat.JPEG,70,outputStream)
+
+    outputStream.flush()
+    outputStream.close()
+
+    return compressedFile
 }
