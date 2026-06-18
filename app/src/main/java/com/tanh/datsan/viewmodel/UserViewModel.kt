@@ -49,7 +49,7 @@ class UserViewModel @Inject constructor(
     val userRole: StateFlow<String> = tokenManager.token
         .map { JwtUtil.getRoleFromToken(it) }
         .stateIn(
-            scope = viewModelScope,
+        scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = "user"
         )
