@@ -22,17 +22,15 @@ import coil.ImageLoader
 import coil.compose.AsyncImage
 import coil.decode.SvgDecoder
 import coil.request.ImageRequest
-import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.data.model.Utility
+import com.tanh.datsan.utils.toFullImageUrl
 
 @Composable
 fun UtilityItem(utility: Utility) {
     val context = LocalContext.current
     val imageLoader =
         remember { ImageLoader.Builder(context).components { add(SvgDecoder.Factory()) }.build() }
-    val fullIconUrl = utility.iconUrl?.let { path ->
-        if (path.startsWith("http")) path else "${BuildConfig.API_HOST}$path"
-    }
+    val fullIconUrl = utility.iconUrl.toFullImageUrl()
 
     Surface(
         color = Color(0xFFF9FAFB),

@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Datsan</string>
-    <string name="default_web_client_id">317056862654-fforaeivr0mckkru88p9qrhuudf924cn.apps.googleusercontent.com</string>
+    <string name="default_web_client_id">317056862654-hnnrnbfd03tft9ednokpvjm0gmd8oosj.apps.googleusercontent.com</string>
     <string name="btn_confirm">Xác nhận</string>
     <string name="btn_back">Quay lại</string>
     <string name="loading">Đang xử lý…</string>
@@ -32,10 +32,17 @@
     <string name="otp_error_empty">Vui lòng nhập đủ 6 số</string>
 
     <string name="reset_title">Đặt lại mật khẩu</string>
+    <string name="login_forgot_password">Quên mật khẩu</string>
     <string name="reset_token_hint">Mã xác nhận (Token)</string>
     <string name="reset_new_password">Mật khẩu mới (tối thiểu 8 ký tự)</string>
     <string name="reset_confirm_password">Xác nhận mật khẩu mới</string>
     <string name="reset_success">Đổi mật khẩu thành công!</string>
+    <string name="forgot_password_title">Quên mật khẩu</string>
+    <string name="forgot_password_subtitle">Nhập email của bạn để nhận mã xác nhận đặt lại mật khẩu</string>
+    <string name="forgot_password_email_hint">Nhập email của bạn</string>
+    <string name="forgot_password_btn_submit">GỬI YÊU CẦU</string>
+    <string name="forgot_password_val_email">Vui lòng nhập email</string>
+    <string name="forgot_password_back_to_login">Quay lại đăng nhập</string>
 
     <string name="val_empty_fields">Vui lòng nhập đủ các trường bắt buộc</string>
     <string name="val_password_mismatch">Mật khẩu xác nhận không khớp</string>
@@ -179,4 +186,5 @@
     <string name="detail_install_maps_msg">Vui lòng cài đặt Google Maps</string>
     <string name="detail_btn_directions">Chỉ đường</string>
     <string name="detail_payment_failed">Thanh toán thất bại!</string>
+
 </resources>

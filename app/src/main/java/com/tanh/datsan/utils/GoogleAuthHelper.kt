@@ -31,24 +31,20 @@ class GoogleAuthHelper @Inject constructor() {
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            // Gọi API, có thể quăng ra Exception nếu user hủy hoặc lỗi mạng
             val result = credentialManager.getCredential(context, request)
             val credential = result.credential
 
             if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                 val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                // Trả về thành công
                 Result.success(googleIdTokenCredential.idToken)
             } else {
                 Result.failure(RuntimeException(errorUnsupportedMsg))
             }
 
         } catch (e: GetCredentialException) {
-            // Bắt lỗi liên quan đến Credential (VD: Người dùng tắt bottom sheet đăng nhập)
             Log.e("GoogleAuthHelper", "Đăng nhập thất bại hoặc bị hủy", e)
             Result.failure(e)
         } catch (e: Exception) {
-            // Bắt các lỗi không lường trước được để tránh crash app
             Log.e("GoogleAuthHelper", "Lỗi không xác định", e)
             Result.failure(e)
         }

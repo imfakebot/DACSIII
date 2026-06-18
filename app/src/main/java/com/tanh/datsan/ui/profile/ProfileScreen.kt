@@ -4,7 +4,6 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.*
@@ -107,10 +106,21 @@ fun ProfileScreen(
         containerColor = Color(0xFFF1F5F9),
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.profile_title), fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.White) },
+                title = {
+                    Text(
+                        stringResource(R.string.profile_title),
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 20.sp,
+                        color = Color.White
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
                     }
                 },
                 actions = {
@@ -132,7 +142,9 @@ fun ProfileScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                if (uiState.isEditing) stringResource(R.string.profile_btn_cancel) else stringResource(R.string.profile_btn_edit),
+                                if (uiState.isEditing) stringResource(R.string.profile_btn_cancel) else stringResource(
+                                    R.string.profile_btn_edit
+                                ),
                                 color = if (uiState.isEditing) Color.Red else Color.White,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 14.sp
@@ -140,10 +152,11 @@ fun ProfileScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF0F172A),
-                    titleContentColor = Color.White,
+                    scrolledContainerColor = Color.Unspecified,
                     navigationIconContentColor = Color.White,
+                    titleContentColor = Color.White,
                     actionIconContentColor = Color.White
                 )
             )
@@ -447,7 +460,6 @@ fun ProfileScreen(
             }
         }
 
-        // --- DIALOGS ---
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
@@ -460,7 +472,7 @@ fun ProfileScreen(
                 text = { Text(stringResource(R.string.profile_logout_confirm_msg)) },
                 confirmButton = {
                     Button(onClick = {
-                        showLogoutDialog = false; viewModel.logout(); onLogoutClick()
+                        showLogoutDialog = false; authViewModel.logout(); onLogoutClick()
                     }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))) {
                         Text(
                             stringResource(R.string.profile_btn_agree),
@@ -512,7 +524,11 @@ fun ProfileScreen(
                 sheetState = rememberModalBottomSheetState(),
                 containerColor = Color.White
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
+                ) {
                     Text(
                         stringResource(R.string.profile_label_city),
                         modifier = Modifier.padding(16.dp),
@@ -520,13 +536,22 @@ fun ProfileScreen(
                         fontWeight = FontWeight.Bold
                     )
                     if (uiState.isLoadingCities) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(16.dp)
+                        )
                     }
                     LazyColumn {
                         items(uiState.cities.size) { index ->
                             val city = uiState.cities[index]
                             ListItem(
-                                headlineContent = { Text(city.name, fontWeight = FontWeight.Medium) },
+                                headlineContent = {
+                                    Text(
+                                        city.name,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
                                 modifier = Modifier.clickable {
                                     viewModel.onCitySelected(city.id)
                                     showCitySheet = false
@@ -549,7 +574,11 @@ fun ProfileScreen(
                 sheetState = rememberModalBottomSheetState(),
                 containerColor = Color.White
             ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 32.dp)
+                ) {
                     Text(
                         stringResource(R.string.profile_label_ward),
                         modifier = Modifier.padding(16.dp),
@@ -557,13 +586,22 @@ fun ProfileScreen(
                         fontWeight = FontWeight.Bold
                     )
                     if (uiState.isLoadingWards) {
-                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp))
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(16.dp)
+                        )
                     }
                     LazyColumn {
                         items(uiState.wards.size) { index ->
                             val ward = uiState.wards[index]
                             ListItem(
-                                headlineContent = { Text(ward.name, fontWeight = FontWeight.Medium) },
+                                headlineContent = {
+                                    Text(
+                                        ward.name,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
                                 modifier = Modifier.clickable {
                                     viewModel.onWardSelected(ward.id)
                                     showWardSheet = false
@@ -697,10 +735,12 @@ fun EditablePremiumItem(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                 )
-                Box(Modifier
-                    .fillMaxWidth()
-                    .height(1.5.dp)
-                    .background(Color(0xFF3B82F6)))
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(1.5.dp)
+                        .background(Color(0xFF3B82F6))
+                )
             } else {
                 Text(
                     text = value.ifBlank { stringResource(R.string.profile_not_updated) },

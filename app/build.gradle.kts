@@ -27,13 +27,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         val baseUrl = localProperties.getProperty("API_BASE_URL")
-        val apiHost = localProperties.getProperty("API_HOST")
         val apiBackend = localProperties.getProperty("API_BACKEND")
+        val deeplinkForgotPassword = localProperties.getProperty("API_DEEPlINK_FORGOT_PASSWORD")
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
 
-        buildConfigField("String", "API_HOST", "\"$apiHost\"")
-
         buildConfigField("String", "API_BACKEND", "\"$apiBackend\"")
+
+        buildConfigField("String", "API_DEEPlINK_FORGOT_PASSWORD", "\"$deeplinkForgotPassword\"")
     }
 
     buildTypes {

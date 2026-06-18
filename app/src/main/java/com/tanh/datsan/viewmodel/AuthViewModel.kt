@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 import javax.inject.Inject
 
 @HiltViewModel
@@ -96,7 +95,7 @@ class AuthViewModel @Inject constructor(
                 } else {
                     authRepository.initiateLogin(LoginRequest(email))
                 }
-                
+
                 if (response.isSuccessful) {
                     _uiEvent.emit(AuthUiEvent.OtpResent)
                 } else {
@@ -202,6 +201,35 @@ class AuthViewModel @Inject constructor(
                     _uiState.value = AuthUiState.Error(errorMsg)
                 }
             } catch (e: Exception) {
+                _uiState.value = AuthUiState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
+    fun loginWithGoogle(idToken: String) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            try {
+                val response = authRepository.LoginWithGoogle(idToken)
+                if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    if (loginResponse != null) {
+                        tokenManager.saveToken(loginResponse.accessToken)
+                        userManager.setUserInfo(
+                            loginResponse.user?.fullName,
+                            loginResponse.user?.avatarUrl
+                        )
+                        _uiState.value = AuthUiState.Authenticated
+                    } else {
+                        Log.d("AuthViewModel","Login response body is null")
+                        _uiState.value = AuthUiState.Error("Login response body is null")
+                    }
+                } else {
+                    val errorMsg = parseError(response.errorBody()?.string())
+                    _uiState.value = AuthUiState.Error(errorMsg)
+                }
+            } catch (e: Exception) {
+                Log.d("AuthViewModel", "Google login error: ${e.message}")
                 _uiState.value = AuthUiState.Error(e.message ?: "Unknown error")
             }
         }

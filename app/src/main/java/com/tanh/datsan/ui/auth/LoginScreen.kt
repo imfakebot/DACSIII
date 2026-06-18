@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,7 +25,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
+import com.tanh.datsan.utils.GoogleAuthHelper
 import com.tanh.datsan.viewmodel.AuthUiState
+import kotlinx.coroutines.launch
 
 
 @Composable
@@ -32,13 +35,18 @@ fun LoginScreen(
     uiState: AuthUiState,
     onLoginClick: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
+    onForgotPassword: () -> Unit,
     onOtpSent: (String, Boolean) -> Unit,
     onAuthenticated: () -> Unit,
-    onResetState: () -> Unit
+    onResetState: () -> Unit,
+    onGoogleLoginClick: (String) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val googleAuthHelper = remember { GoogleAuthHelper() }
 
     LaunchedEffect(uiState) {
         when (val state = uiState) {
@@ -46,10 +54,12 @@ fun LoginScreen(
                 onOtpSent(state.email, state.isRegister)
                 onResetState()
             }
+
             is AuthUiState.Authenticated -> {
                 onAuthenticated()
                 onResetState()
             }
+
             else -> {}
         }
     }
@@ -67,7 +77,7 @@ fun LoginScreen(
                 contentDescription = null,
                 modifier = Modifier.size(100.dp)
             )
-            
+
             Text(
                 text = stringResource(R.string.login_title),
                 color = Color.White,
@@ -75,7 +85,7 @@ fun LoginScreen(
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.sp
             )
-            
+
             Spacer(modifier = Modifier.height(40.dp))
 
             Surface(
@@ -91,9 +101,20 @@ fun LoginScreen(
                     TextField(
                         value = email,
                         onValueChange = { email = it },
-                        placeholder = { Text(stringResource(R.string.login_email_hint), color = Color.White.copy(alpha = 0.6f)) },
+                        placeholder = {
+                            Text(
+                                stringResource(R.string.login_email_hint),
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color.White) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        },
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent,
@@ -105,19 +126,35 @@ fun LoginScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         singleLine = true
                     )
-                    
+
                     Spacer(modifier = Modifier.height(20.dp))
 
                     TextField(
                         value = password,
                         onValueChange = { password = it },
-                        placeholder = { Text(stringResource(R.string.login_password_hint), color = Color.White.copy(alpha = 0.6f)) },
+                        placeholder = {
+                            Text(
+                                stringResource(R.string.login_password_hint),
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = Color.White) },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        },
                         trailingIcon = {
-                            val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            val image =
+                                if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(imageVector = image, contentDescription = null, tint = Color.White)
+                                Icon(
+                                    imageVector = image,
+                                    contentDescription = null,
+                                    tint = Color.White
+                                )
                             }
                         },
                         colors = TextFieldDefaults.colors(
@@ -132,7 +169,7 @@ fun LoginScreen(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         singleLine = true
                     )
-                    
+
                     Spacer(modifier = Modifier.height(40.dp))
 
                     Button(
@@ -152,7 +189,10 @@ fun LoginScreen(
                         enabled = uiState !is AuthUiState.Loading
                     ) {
                         if (uiState is AuthUiState.Loading) {
-                            CircularProgressIndicator(color = Color(0xFF0F2027), modifier = Modifier.size(24.dp))
+                            CircularProgressIndicator(
+                                color = Color(0xFF0F2027),
+                                modifier = Modifier.size(24.dp)
+                            )
                         } else {
                             Text(
                                 stringResource(R.string.login_btn_submit).uppercase(),
@@ -162,10 +202,54 @@ fun LoginScreen(
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            scope.launch {
+                                val result = googleAuthHelper.signInWithGoogle(
+                                    context,
+                                    "Google Sign-In không được hỗ trợ"
+                                )
+                                result.onSuccess { idToken ->
+                                    onGoogleLoginClick(idToken)
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.5f))
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_google),
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                stringResource(R.string.login_google),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            TextButton(
+                onClick = onForgotPassword,
+            ) {
+                Text(
+                    stringResource(R.string.login_forgot_password),
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
 
             TextButton(onClick = onNavigateToRegister) {
                 Text(

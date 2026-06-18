@@ -1,8 +1,8 @@
 package com.tanh.datsan.data.model
 
 import com.google.gson.annotations.SerializedName
+import com.tanh.datsan.BuildConfig
 
-// --- AUTH DATA MODELS ---
 data class AuthMessageResponse(
     val message: String = ""
 )
@@ -66,7 +66,7 @@ data class OtpRequest(
 )
 data class ForgotPasswordRequest(
     val email: String,
-    val returnUrl: String? = null
+    val returnUrl: String? = BuildConfig.API_DEEPlINK_FORGOT_PASSWORD
 )
 data class ResetPasswordRequest(
     val token: String,

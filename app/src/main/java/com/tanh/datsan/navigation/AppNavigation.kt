@@ -16,9 +16,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
+import com.tanh.datsan.ui.auth.ForgotPasswordScreen
 import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.OtpScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
+import com.tanh.datsan.ui.auth.ResetPasswordScreen
 import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.main.MainScreen
@@ -42,7 +44,7 @@ fun AppNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val authRoutes = listOf("login", "register")
+    val authRoutes = listOf("login", "register", "forgot_password", "reset_password/{email}")
     val isOtpRoute = currentRoute?.startsWith("otp/") == true
 
     val bottomBarRoutes = if (userRole == "admin" || userRole == "staff") {
@@ -131,6 +133,7 @@ fun AppNavigation() {
                         authViewModel.initiateLogin(LoginRequest(email, password))
                     },
                     onNavigateToRegister = { navController.navigate("register") },
+                    onForgotPassword = { navController.navigate("forgot_password") },
                     onOtpSent = { email, isRegister ->
                         navController.navigate("otp/$email/$isRegister")
                     },
@@ -139,7 +142,10 @@ fun AppNavigation() {
                             popUpTo("login") { inclusive = true }
                         }
                     },
-                    onResetState = { authViewModel.resetState() }
+                    onResetState = { authViewModel.resetState() },
+                    onGoogleLoginClick = { idToken ->
+                        authViewModel.loginWithGoogle(idToken)
+                    }
                 )
             }
 
@@ -155,6 +161,34 @@ fun AppNavigation() {
                         navController.navigate("otp/$email/$isRegister")
                     },
                     onResetState = { authViewModel.resetState() }
+                )
+            }
+
+            composable("forgot_password") {
+                val authViewModel: AuthViewModel = hiltViewModel()
+                ForgotPasswordScreen(
+                    viewModel = authViewModel,
+                    onNavigateToResetPassword = { email ->
+                        navController.navigate("reset_password/$email")
+                    },
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                "reset_password/{email}",
+                arguments = listOf(navArgument("email") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val email = backStackEntry.arguments?.getString("email") ?: ""
+                val authViewModel: AuthViewModel = hiltViewModel()
+                ResetPasswordScreen(
+                    viewModel = authViewModel,
+                    emailSent = email,
+                    onNavigateBackToLogin = {
+                        navController.navigate("login") {
+                            popUpTo("forgot_password") { inclusive = true }
+                        }
+                    }
                 )
             }
 
@@ -349,7 +383,8 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // TODO: Implement Reset Password navigation
+                        // Điều hướng đến màn hình đổi mật khẩu từ Profile
+                        navController.navigate("reset_password/$email")
                     }
                 )
             }
@@ -363,7 +398,8 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // TODO: Implement Reset Password navigation
+                        // Điều hướng đến màn hình đổi mật khẩu từ Profile cho Admin
+                        navController.navigate("reset_password/$email")
                     }
                 )
             }
