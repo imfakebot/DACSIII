@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import com.google.android.libraries.intelligence.acceleration.Analytics
 import com.tanh.datsan.R
 import com.tanh.datsan.data.model.FieldModel
 import com.tanh.datsan.ui.component.CustomRefreshLayout
@@ -208,6 +210,19 @@ fun MainScreen(
                                         Icon(
                                             imageVector = Icons.Default.Notifications,
                                             contentDescription = stringResource(R.string.notification),
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+
+                                if (isLoggedIn && userRole == "admin") {
+                                    IconButton(
+                                        onClick = onAnalyticsClick,
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = androidx.compose.material.icons.Icons.Default.Analytics,
+                                            contentDescription = "Thống kê",
                                             tint = Color.White
                                         )
                                     }

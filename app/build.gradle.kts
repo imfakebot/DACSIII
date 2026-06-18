@@ -90,6 +90,7 @@ dependencies {
     implementation(libs.listenablefuture)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.socket.io.client)
+    implementation(libs.vision.internal.vkp)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.camera.core)

@@ -77,7 +77,8 @@ fun AppNavigation() {
                     onRegisterClick = { navController.navigate("register") },
                     onNavigateToDetail = { fieldId -> navController.navigate("detail/$fieldId") },
                     onNavigateToScanner = { navController.navigate("scanner") },
-                    onNavigateToNotification = { navController.navigate("notification") }
+                    onNavigateToNotification = { navController.navigate("notification") },
+                    onAnalyticsClick = { navController.navigate("admin_analytics") }
                 )
             }
 
