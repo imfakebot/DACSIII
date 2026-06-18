@@ -33,6 +33,14 @@ import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
 import com.tanh.datsan.viewmodel.*
+import com.tanh.datsan.ui.feedback.ChatScreen
+import com.tanh.datsan.ui.feedback.*
+
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun AppNavigation() {
@@ -74,6 +82,17 @@ fun AppNavigation() {
         bottomBar = {
             if (currentRoute in bottomBarRoutes) {
                 MainBottomBar(navController = navController, userRole = userRole)
+            }
+        },
+        floatingActionButton = {
+            if (currentRoute in bottomBarRoutes && userRole == "user" && isLoggedIn) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("feedback_list") },
+                    containerColor = Color(0xFF007BFF),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.Chat, contentDescription = "Chat Hỗ trợ")
+                }
             }
         }
     ) { innerPadding ->
@@ -386,6 +405,24 @@ fun AppNavigation() {
                         // Điều hướng đến màn hình đổi mật khẩu từ Profile
                         navController.navigate("reset_password/$email")
                     }
+                )
+            }
+
+            composable("feedback_list") {
+                FeedbackListScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToChat = { id -> navController.navigate("chat/$id") }
+                )
+            }
+
+            composable(
+                "chat/{feedbackId}",
+                arguments = listOf(navArgument("feedbackId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val feedbackId = backStackEntry.arguments?.getString("feedbackId") ?: ""
+                ChatScreen(
+                    feedbackId = feedbackId,
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 

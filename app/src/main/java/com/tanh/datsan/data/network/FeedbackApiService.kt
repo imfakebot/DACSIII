@@ -22,6 +22,6 @@ interface FeedbackApiService {
         @Body request: ReplyFeedbackRequest
     ): Response<Any>
 
-    @GET("feedbacks/user/me")
+    @GET("feedbacks/me")
     suspend fun getMyFeedbacks(): Response<List<FeedbackResponse>>
 }
