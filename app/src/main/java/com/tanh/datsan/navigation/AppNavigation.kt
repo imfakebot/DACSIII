@@ -44,7 +44,15 @@ fun AppNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val authRoutes = listOf("login", "register", "forgot_password", "reset_password/{email}")
+    val publicRoutes = listOf(
+        BottomNavItem.Home.route,
+        "login",
+        "register",
+        "forgot_password",
+        "reset_password/{email}",
+        "detail/{fieldId}",
+        "all_review/{fieldId}"
+    )
     val isOtpRoute = currentRoute?.startsWith("otp/") == true
 
     val bottomBarRoutes = if (userRole == "admin" || userRole == "staff") {
@@ -63,7 +71,7 @@ fun AppNavigation() {
     }
 
     LaunchedEffect(isLoggedIn) {
-        if (!isLoggedIn && currentRoute != null && currentRoute !in authRoutes && !isOtpRoute) {
+        if (!isLoggedIn && currentRoute != null && currentRoute !in publicRoutes && !isOtpRoute) {
             navController.navigate("login") {
                 popUpTo(0) { inclusive = true }
             }

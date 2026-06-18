@@ -11,7 +11,7 @@ interface AuthApiService {
     suspend fun initiateRegistration(@Body request: RegisterRequest): Response<AuthMessageResponse>
 
     @POST("auth/register/complete")
-    suspend fun completeRegistration(@Body request: VerifyEmailRequest): Response<AuthMessageResponse>
+    suspend fun completeRegistration(@Body request: VerifyEmailRequest): Response<LoginResponse>
 
     @POST("auth/login/initiate")
     suspend fun initiateLogin(@Body request: LoginRequest): Response<AuthMessageResponse>

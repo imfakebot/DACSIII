@@ -9,6 +9,7 @@ import com.tanh.datsan.data.model.*
 import com.tanh.datsan.data.repository.AuthRepository
 import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,7 +30,7 @@ class AuthViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    private val _uiEvent = kotlinx.coroutines.flow.MutableSharedFlow<AuthUiEvent>()
+    private val _uiEvent = MutableSharedFlow<AuthUiEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
     private val _email = MutableStateFlow("")
@@ -91,7 +92,7 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = if (isRegister) {
                     // Logic gửi lại OTP cho đăng ký
-                    authRepository.initiateRegistration(RegisterRequest("", email, "", "", ""))
+                    authRepository.initiateRegistration(RegisterRequest(full_name = "", email, phone_number = "", gender = "", password = ""))
                 } else {
                     authRepository.initiateLogin(LoginRequest(email))
                 }
@@ -109,6 +110,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun initiateRegistration(request: RegisterRequest) {
+        Log.d("AuthViewModel","Request: $request")
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
@@ -139,6 +141,14 @@ class AuthViewModel @Inject constructor(
                     VerifyEmailRequest(email, verificationCode)
                 )
                 if (response.isSuccessful) {
+                    val loginResponse = response.body()
+                    if(loginResponse!=null){
+                        tokenManager.saveToken(loginResponse.accessToken)
+                        userManager.setUserInfo(
+                            loginResponse.user?.fullName,
+                            loginResponse.user?.avatarUrl
+                        )
+                    }
                     _uiState.value = AuthUiState.Success("Registration complete. Please login.")
                 } else {
                     val errorMsg = parseError(response.errorBody()?.string())
@@ -210,7 +220,7 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                val response = authRepository.LoginWithGoogle(idToken)
+                val response = authRepository.loginWithGoogle(idToken)
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
                     if (loginResponse != null) {

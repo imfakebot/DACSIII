@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -176,7 +177,13 @@ fun RegisterScreen(
                         onClick = {
                             if (password == confirmPassword && email.isNotBlank() && fullName.isNotBlank() && phoneNumber.isNotBlank()) {
                                 onRegisterClick(
-                                    RegisterRequest(email, password, fullName, phoneNumber, gender)
+                                    RegisterRequest(
+                                        full_name = fullName,
+                                        email = email,
+                                        phone_number = phoneNumber,
+                                        gender = gender,
+                                        password = password
+                                    )
                                 )
                             }
                         },
@@ -275,7 +282,7 @@ fun AuthTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     keyboardType: KeyboardType = KeyboardType.Text,
     isPassword: Boolean = false,
     passwordVisible: Boolean = false,
