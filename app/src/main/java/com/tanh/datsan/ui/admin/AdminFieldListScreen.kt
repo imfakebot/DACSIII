@@ -1,7 +1,11 @@
 package com.tanh.datsan.ui.admin
 
+
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,15 +21,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.tanh.datsan.data.model.CreateFieldRequest
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.UpdateFieldRequest
 import com.tanh.datsan.viewmodel.AdminFieldUiState
+import android.net.Uri
 
 private val FLAccentBlue  = Color(0xFF3D7EF5)
 private val FLTextPri     = Color(0xFF111827)
@@ -48,8 +55,8 @@ fun AdminFieldListScreen(
     // BottomSheet form state
     showForm: Boolean,
     editingField: FieldResponse?,
-    onSubmitCreate: (CreateFieldRequest) -> Unit,
-    onSubmitUpdate: (String, UpdateFieldRequest) -> Unit,
+    onSubmitCreate: (CreateFieldRequest, Uri?) -> Unit,
+    onSubmitUpdate: (String, UpdateFieldRequest, Uri?) -> Unit,
     onDismissForm: () -> Unit
 ) {
     val context = LocalContext.current
@@ -205,6 +212,15 @@ fun FieldCard(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val isActive = field.status
+    val firstImageUrl = field.images?.firstOrNull()?.imageUrl
+
+    // ---- ĐOẠN NÀY ĐỂ IN RA LOGCAT KIỂM TRA ----
+    LaunchedEffect(field) {
+        android.util.Log.e(
+            "IMAGE_DEBUG",
+            "Tên sân: ${field.name} | Link ảnh nhận được: $firstImageUrl"
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth().shadow(elevation = 1.dp, shape = RoundedCornerShape(14.dp)),
@@ -214,12 +230,23 @@ fun FieldCard(
         Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(66.dp) // Bạn có thể tăng size lên 50.dp hoặc 60.dp nếu muốn ảnh to hơn
                     .clip(RoundedCornerShape(10.dp))
                     .background(Brush.linearGradient(listOf(Color(0xFF3D7EF5), Color(0xFF7C5CDB)))),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.SportsFootball, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                // Kiểm tra xem sân có ảnh nào trong mảng images không
+                if (!field.images.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = field.images.firstOrNull()?.imageUrl, // Lấy link của tấm ảnh đầu tiên
+                        contentDescription = "Ảnh sân",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop // Crop để ảnh lấp đầy cái Box bo góc
+                    )
+                } else {
+                    // Nếu sân chưa có ảnh thì hiển thị icon mặc định
+                    Icon(Icons.Default.SportsFootball, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                }
             }
             Spacer(modifier = Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -231,8 +258,7 @@ fun FieldCard(
                             .background(Color(0xFF7C5CDB).copy(alpha = 0.1f), RoundedCornerShape(6.dp))
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
-                        Text(field.fieldType.name, fontSize = 10.sp, color = Color(0xFF7C5CDB), fontWeight = FontWeight.SemiBold)
-                    }
+                        Text(field.fieldType?.name ?: "Đang cập nhật", fontSize = 10.sp, color = Color(0xFF7C5CDB), fontWeight = FontWeight.SemiBold)                    }
                     Box(
                         modifier = Modifier
                             .background((if (isActive) FLGreen else FLRed).copy(alpha = 0.1f), RoundedCornerShape(6.dp))
@@ -279,8 +305,8 @@ fun FieldCard(
 fun AdminFieldFormBottomSheet(
     uiState: AdminFieldUiState,
     editingField: FieldResponse?,
-    onSubmitCreate: (CreateFieldRequest) -> Unit,
-    onSubmitUpdate: (String, UpdateFieldRequest) -> Unit,
+    onSubmitCreate: (CreateFieldRequest,Uri?) -> Unit,
+    onSubmitUpdate: (String, UpdateFieldRequest,Uri?) -> Unit,
     onDismiss: () -> Unit
 ) {
     val isEdit = editingField != null
@@ -289,6 +315,12 @@ fun AdminFieldFormBottomSheet(
     var description by remember { mutableStateOf(editingField?.description ?: "") }
     var selectedTypeId by remember { mutableStateOf(editingField?.fieldType?.id ?: "") }
     var selectedTypeName by remember { mutableStateOf(editingField?.fieldType?.name ?: "") }
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+    }
     var typeDropdownExpanded by remember { mutableStateOf(false) }
     var nameError by remember { mutableStateOf(false) }
     var typeError by remember { mutableStateOf(false) }
@@ -309,6 +341,41 @@ fun AdminFieldFormBottomSheet(
         )
         Divider(color = FLDivider)
 
+        // ---------------- THÊM PHẦN CHỌN ẢNH Ở ĐÂY ----------------
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF3F4F6))
+                    .clickable { galleryLauncher.launch("image/*") },
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageUri != null) {
+                    // Nếu đã chọn ảnh thì hiển thị ảnh đó
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Ảnh sân",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else if (isEdit && !editingField?.images.isNullOrEmpty()) {
+                    // Nếu đang sửa và có ảnh cũ từ server
+                    AsyncImage(
+                        model = editingField?.images?.firstOrNull()?.imageUrl, // Giả sử model của bạn có trường imageUrl
+                        contentDescription = "Ảnh sân cũ",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // Placeholder khi chưa có ảnh
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = FLTextSec, modifier = Modifier.size(32.dp))
+                        Text("Thêm ảnh", fontSize = 12.sp, color = FLTextSec)
+                    }
+                }
+            }
+        }
         // Name
         Column {
             Text("Tên sân *", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = if (nameError) FLRed else FLTextSec, modifier = Modifier.padding(bottom = 6.dp))
@@ -405,9 +472,9 @@ fun AdminFieldFormBottomSheet(
                 typeError = selectedTypeId.isBlank()
                 if (!nameError && !typeError) {
                     if (isEdit) {
-                        onSubmitUpdate(editingField!!.id, UpdateFieldRequest(name.trim(), description.trim().ifBlank { null }, selectedTypeId))
+                        onSubmitUpdate(editingField!!.id, UpdateFieldRequest(name.trim(), description.trim().ifBlank { null }, selectedTypeId), imageUri)
                     } else {
-                        onSubmitCreate(CreateFieldRequest(name.trim(), description.trim().ifBlank { null }, selectedTypeId, uiState.branchId))
+                        onSubmitCreate(CreateFieldRequest(name.trim(), description.trim().ifBlank { null }, selectedTypeId, uiState.branchId), imageUri)
                     }
                 }
             },

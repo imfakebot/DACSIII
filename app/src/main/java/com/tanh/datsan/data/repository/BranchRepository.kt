@@ -27,4 +27,7 @@ class BranchRepository @Inject constructor(
     suspend fun createField(request: CreateFieldRequest) = fieldApiService.createField(request)
     suspend fun updateField(id: String, request: UpdateFieldRequest) = fieldApiService.updateField(id, request)
     suspend fun deleteField(id: String) = fieldApiService.deleteField(id)
+
+    suspend fun uploadFieldImage(fieldId: String, file: okhttp3.MultipartBody.Part) =
+        fieldApiService.uploadFieldImage(fieldId, file)
 }

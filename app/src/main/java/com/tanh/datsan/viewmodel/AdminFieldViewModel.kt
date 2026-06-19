@@ -1,5 +1,7 @@
 package com.tanh.datsan.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.CreateFieldRequest
@@ -13,6 +15,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 data class AdminFieldUiState(
@@ -58,28 +65,40 @@ class AdminFieldViewModel @Inject constructor(
                 val types = branchRepository.getAllFieldTypes()
                 _uiState.update { it.copy(fieldTypes = types) }
             } catch (e: Exception) {
-                // Silently ignore field type loading error
+                // Silently ignore
             }
         }
     }
 
-    fun createField(request: CreateFieldRequest, onSuccess: () -> Unit) {
+    fun createField(context: Context, request: CreateFieldRequest, imageUri: Uri?, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             try {
+                // 1. Gọi API tạo thông tin sân
                 val response = branchRepository.createField(request)
                 if (response.isSuccessful && response.body() != null) {
-                    val newField = response.body()!!
-                    _uiState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            fields = it.fields + newField,
-                            successMessage = "Tạo sân thành công!"
-                        )
+                    val newFieldId = response.body()!!.id
+
+                    // 2. Nếu người dùng có chọn ảnh, tiến hành up ảnh
+                    if (imageUri != null) {
+                        val multipartBody = uriToMultipart(context, imageUri, "file")
+                        if (multipartBody != null) {
+                            branchRepository.uploadFieldImage(newFieldId, multipartBody)
+                        }
                     }
+
+                    _uiState.update { it.copy(isSubmitting = false, successMessage = "Tạo sân thành công!") }
+                    // Load lại danh sách sân để hiển thị kèm ảnh mới
+                    fetchFields(request.branchId)
                     onSuccess()
                 } else {
-                    _uiState.update { it.copy(isSubmitting = false, errorMessage = "Không thể tạo sân: ${response.message()}") }
+                    // Lấy thông báo lỗi thực tế từ server trả về
+                    val errorBody = response.errorBody()?.string() ?: "Lỗi không xác định"
+
+                    // In ra Logcat màu đỏ với tag "API_ERROR"
+                    android.util.Log.e("API_ERROR", "Lỗi tạo sân 400: $errorBody")
+
+                    _uiState.update { it.copy(isSubmitting = false, errorMessage = "Lỗi dữ liệu, check Logcat!") }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSubmitting = false, errorMessage = "Lỗi kết nối: ${e.message}") }
@@ -87,23 +106,27 @@ class AdminFieldViewModel @Inject constructor(
         }
     }
 
-    fun updateField(id: String, request: UpdateFieldRequest, onSuccess: () -> Unit) {
+    fun updateField(context: Context, id: String, request: UpdateFieldRequest, imageUri: Uri?, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
             try {
+                // Cập nhật thông tin sân
                 val response = branchRepository.updateField(id, request)
-                if (response.isSuccessful && response.body() != null) {
-                    val updated = response.body()!!
-                    _uiState.update {
-                        it.copy(
-                            isSubmitting = false,
-                            fields = it.fields.map { f -> if (f.id == id) updated else f },
-                            successMessage = "Cập nhật sân thành công!"
-                        )
+                if (response.isSuccessful) {
+
+                    // Nếu người dùng đổi ảnh mới, tiến hành up ảnh
+                    if (imageUri != null) {
+                        val multipartBody = uriToMultipart(context, imageUri, "file")
+                        if (multipartBody != null) {
+                            branchRepository.uploadFieldImage(id, multipartBody)
+                        }
                     }
+
+                    _uiState.update { it.copy(isSubmitting = false, successMessage = "Cập nhật sân thành công!") }
+                    fetchFields(_uiState.value.branchId)
                     onSuccess()
                 } else {
-                    _uiState.update { it.copy(isSubmitting = false, errorMessage = "Không thể cập nhật: ${response.message()}") }
+                    _uiState.update { it.copy(isSubmitting = false, errorMessage = "Không thể cập nhật sân") }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isSubmitting = false, errorMessage = "Lỗi kết nối: ${e.message}") }
@@ -124,7 +147,7 @@ class AdminFieldViewModel @Inject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { it.copy(errorMessage = "Không thể xóa sân: ${response.message()}") }
+                    _uiState.update { it.copy(errorMessage = "Không thể xóa sân") }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = "Lỗi kết nối: ${e.message}") }
@@ -133,4 +156,27 @@ class AdminFieldViewModel @Inject constructor(
     }
 
     fun clearMessages() = _uiState.update { it.copy(errorMessage = null, successMessage = null) }
+
+    // --- HÀM CHUYỂN ĐỔI URI THÀNH MULTIPART ---
+    private fun uriToMultipart(context: Context, uri: Uri, partName: String): MultipartBody.Part? {
+        return try {
+            val contentResolver = context.contentResolver
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+
+            // Tạo file tạm thời để chứa ảnh
+            val tempFile = File(context.cacheDir, "upload_image_${System.currentTimeMillis()}.jpg")
+            val outputStream = FileOutputStream(tempFile)
+
+            inputStream.copyTo(outputStream)
+            inputStream.close()
+            outputStream.close()
+
+            // Ép kiểu ảnh và đưa vào MultipartBody
+            val requestFile = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+            MultipartBody.Part.createFormData(partName, tempFile.name, requestFile)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 }

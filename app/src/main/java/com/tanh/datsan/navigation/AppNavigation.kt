@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -43,12 +44,13 @@ import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
-import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.admin.AdminUserManagementScreen
 import com.tanh.datsan.ui.admin.AdminBranchListScreen
 import com.tanh.datsan.ui.admin.AdminBranchFormScreen
 import com.tanh.datsan.ui.admin.AdminFieldListScreen
+import com.tanh.datsan.ui.home.booking.HistoryScreen
 import com.tanh.datsan.viewmodel.*
+import android.net.Uri
 
 @Composable
 fun AppNavigation() {
@@ -473,6 +475,9 @@ fun AppNavigation() {
                 var showFieldForm by remember { mutableStateOf(false) }
                 var editingField by remember { mutableStateOf<com.tanh.datsan.data.model.FieldResponse?>(null) }
 
+                // Lấy context từ Compose
+                val context = LocalContext.current
+
                 LaunchedEffect(branchId) { fieldVm.init(branchId, branchName) }
 
                 AdminFieldListScreen(
@@ -484,8 +489,9 @@ fun AppNavigation() {
                     onBackClick = { navController.popBackStack() },
                     showForm = showFieldForm,
                     editingField = editingField,
-                    onSubmitCreate = { req -> fieldVm.createField(req) { showFieldForm = false } },
-                    onSubmitUpdate = { id, req -> fieldVm.updateField(id, req) { showFieldForm = false } },
+                    // Truyền thêm context và uri vào đây
+                    onSubmitCreate = { req, uri -> fieldVm.createField(context, req, uri) { showFieldForm = false } },
+                    onSubmitUpdate = { id, req, uri -> fieldVm.updateField(context, id, req, uri) { showFieldForm = false } },
                     onDismissForm = { showFieldForm = false }
                 )
             }
@@ -508,7 +514,24 @@ fun AppNavigation() {
             }
 
             composable(BottomNavItem.History.route) {
-                // TODO: Implement History Screen
+                val historyViewModel: HistoryViewModel = hiltViewModel()
+                val historyUiState by historyViewModel.uiState.collectAsState()
+
+                HistoryScreen(
+                    uiState = historyUiState,
+                    onRefresh = { historyViewModel.fetchMyBookings(isRefresh = true) },
+                    onNavigateToHome = {
+                        navController.navigate(BottomNavItem.Home.route) {
+                            popUpTo(BottomNavItem.Home.route) { inclusive = false }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onResetTokenExpired = { historyViewModel.resetTokenExpired() }
+                )
             }
 
             composable(BottomNavItem.Voucher.route) {

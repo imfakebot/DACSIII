@@ -5,6 +5,7 @@ import com.tanh.datsan.data.model.CreateFieldRequest
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.model.UpdateFieldRequest
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -42,4 +43,11 @@ interface FieldApiService {
 
     @DELETE("fields/{id}")
     suspend fun deleteField(@Path("id") id: String): Response<Unit>
+
+    @Multipart
+    @POST("fields/{id}/images")
+    suspend fun uploadFieldImage(
+        @Path("id") fieldId: String,
+        @Part file: MultipartBody.Part
+    ): Response<Unit>
 }

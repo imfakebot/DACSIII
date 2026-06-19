@@ -1,11 +1,13 @@
 import java.util.Properties
+import java.io.File
 
+// Khởi tạo và đọc file local.properties một lần duy nhất ở đây
 val localProperties = Properties()
 val localPropertiesFile: File = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
-
 }
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -26,15 +28,17 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // Sử dụng lại biến localProperties đã được load ở đầu file
         val baseUrl = localProperties.getProperty("API_BASE_URL")
         val apiBackend = localProperties.getProperty("API_BACKEND")
         val deeplinkForgotPassword = localProperties.getProperty("API_DEEPlINK_FORGOT_PASSWORD")
         val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
-        
+
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
         buildConfigField("String", "API_BACKEND", "\"$apiBackend\"")
         buildConfigField("String", "API_DEEPlINK_FORGOT_PASSWORD", "\"$deeplinkForgotPassword\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
+        buildConfigField("String", "BASE_IMAGE_URL", localProperties.getProperty("BASE_IMAGE_URL")?.let { "\"$it\"" } ?: "\"\"")
     }
 
     buildTypes {
@@ -52,7 +56,7 @@ android {
     }
     buildFeatures {
         compose = true
-        buildConfig=true
+        buildConfig = true
     }
 }
 

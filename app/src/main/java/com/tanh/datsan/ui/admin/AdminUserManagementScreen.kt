@@ -642,30 +642,67 @@ fun UserAdminCard(
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Role badge — pill shaped with glow border
-                        Box(
-                            modifier = Modifier
-                                .border(
-                                    BorderStroke(1.dp, AccentTeal.copy(alpha = 0.5f)),
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .background(
-                                    AccentTeal.copy(alpha = 0.12f),
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .padding(horizontal = 10.dp, vertical = 3.dp)
-                        ) {
-                            Text(
-                                text = user.role?.name ?: "N/A",
-                                fontSize = 10.sp,
-                                color = AccentTeal,
-                                fontWeight = FontWeight.Bold
-                            )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = user.userProfile?.fullName ?: "Chưa cập nhật tên",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = user.email,
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        user.userProfile?.phoneNumber?.let { phone ->
+                            if (phone.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(text = phone, fontSize = 12.sp, color = TextSecondary)
+                            }
                         }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // ✅ ĐỔI Row → Column
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            // Role badge
+                            Box(
+                                modifier = Modifier
+                                    .border(BorderStroke(1.dp, AccentTeal.copy(alpha = 0.5f)), RoundedCornerShape(20.dp))
+                                    .background(AccentTeal.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                                    .padding(horizontal = 10.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = user.role?.name ?: "N/A",
+                                    fontSize = 10.sp,
+                                    color = AccentTeal,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            // Status badge
+                            val isSuspended = user.status == "suspended"
+                            val isDeleted = user.status == "deleted"
+                            val statusColor = if (isSuspended) RedBan else if (isDeleted) TextSecondary else GreenUnban
+                            val statusText = if (isSuspended) "Đã khóa" else if (isDeleted) "Đã xóa" else "Hoạt động"
+                            Box(
+                                modifier = Modifier
+                                    .border(BorderStroke(1.dp, statusColor.copy(alpha = 0.5f)), RoundedCornerShape(20.dp))
+                                    .background(statusColor.copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+                                    .padding(horizontal = 10.dp, vertical = 3.dp)
+                            ) {
+                                Text(
+                                    text = statusText,
+                                    fontSize = 10.sp,
+                                    color = statusColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                         // Status badge — pill shaped with glow effect
                         val isSuspended = user.status == "suspended"
                         val isDeleted = user.status == "deleted"
@@ -782,4 +819,4 @@ fun UserAdminCard(
             }
         }
     }
-}
+
