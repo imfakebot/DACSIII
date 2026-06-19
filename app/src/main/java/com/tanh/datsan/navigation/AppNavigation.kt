@@ -61,10 +61,12 @@ fun AppNavigation() {
             AdminBottomNavItem.QrScanner.route,
             AdminBottomNavItem.Profile.route
         )
+
         "staff" -> listOf(
             AdminBottomNavItem.QrScanner.route,
             AdminBottomNavItem.Profile.route
         )
+
         else -> listOf(
             BottomNavItem.Home.route,
             BottomNavItem.History.route,
@@ -396,18 +398,28 @@ fun AppNavigation() {
             }
 
             composable(BottomNavItem.Profile.route) {
-                ProfileScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onLogoutClick = {
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
+                val profileUserViewModel: UserViewModel = hiltViewModel()
+                val checkLoggedIn by profileUserViewModel.isLoggedIn.collectAsState()
+                if (checkLoggedIn) {
+                    ProfileScreen(
+                        onBackClick = { navController.popBackStack() },
+                        onLogoutClick = {
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        onNavigateToResetPassword = { email ->
+                            // Điều hướng đến màn hình đổi mật khẩu từ Profile
+                            navController.navigate("reset_password/$email")
                         }
-                    },
-                    onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile
-                        navController.navigate("reset_password/$email")
+                    )
+                } else {
+                    LaunchedEffect(Unit) {
+                        navController.navigate("login") {
+                            popUpTo(BottomNavItem.Home.route) { inclusive = false }
+                        }
                     }
-                )
+                }
             }
 
             composable(AdminBottomNavItem.Profile.route) {
