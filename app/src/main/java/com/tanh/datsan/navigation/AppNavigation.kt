@@ -179,7 +179,7 @@ fun AppNavigation() {
                         navController.navigate("otp/$email/$isRegister")
                     },
                     onAuthenticated = { role ->
-                        val destination = if (role == "super_admin" || role == "admin" || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        val destination = if (role == "super_admin"  || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
                         navController.navigate(destination) {
                             popUpTo("login") { inclusive = true }
                         }
@@ -256,7 +256,7 @@ fun AppNavigation() {
                     onCompleteLogin = { code -> authViewModel.completeLogin(email, code) },
                     onNavigateBack = { navController.popBackStack() },
                     onSuccess = { role ->
-                        val destination = if (role == "super_admin" || role == "admin" || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        val destination = if (role == "super_admin"  || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
                         navController.navigate(destination) {
                             popUpTo(BottomNavItem.Home.route) { inclusive = true }
                         }
