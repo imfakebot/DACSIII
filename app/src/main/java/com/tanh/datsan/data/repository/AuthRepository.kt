@@ -15,7 +15,7 @@ class AuthRepository @Inject constructor(
         return authApiService.initiateRegistration(request)
     }
 
-    suspend fun completeRegistration(request: VerifyEmailRequest): Response<AuthMessageResponse> {
+    suspend fun completeRegistration(request: VerifyEmailRequest): Response<LoginResponse> {
         return authApiService.completeRegistration(request)
     }
 
@@ -27,7 +27,7 @@ class AuthRepository @Inject constructor(
         return authApiService.completeLogin(request)
     }
 
-    suspend fun LoginWithGoogle(idToken: String): Response<LoginResponse> {
+    suspend fun loginWithGoogle(idToken: String): Response<LoginResponse> {
         return authApiService.googleLogin(GoogleLoginRequest(idToken))
     }
 

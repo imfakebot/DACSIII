@@ -34,6 +34,12 @@ import java.util.concurrent.Executors
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.geometry.Offset
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,8 +62,6 @@ fun QrScannerScreen(
     var showManualInputDialog by rememberSaveable { mutableStateOf(false) }
     var manualBookingCode by rememberSaveable { mutableStateOf("") }
 
-    val isProcessing by remember { mutableStateOf(false) }
-
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
@@ -79,16 +83,25 @@ fun QrScannerScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
             )
         },
+        containerColor = Color.Black,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showManualInputDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Edit, contentDescription = "Nhập mã thủ công")
+            Column(horizontalAlignment = Alignment.End) {
+                FloatingActionButton(
+                    onClick = { showManualInputDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Nhập mã thủ công")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     ) { padding ->
@@ -100,16 +113,28 @@ fun QrScannerScreen(
             if (hasCameraPermission) {
                 QrCameraPreview(
                     onQrCodeDetected = { code ->
-                        if (uiState is CheckInUiState.Idle && !showManualInputDialog && isProcessing) {
+                        if (uiState is CheckInUiState.Idle && !showManualInputDialog) {
                             viewModel.checkIn(code)
                         }
                     }
                 )
+                
+                // Scanning Overlay
+                QrScannerOverlay(modifier = Modifier.fillMaxSize())
             } else {
-                Text(
-                    "Cần quyền truy cập Camera để quét mã",
-                    modifier = Modifier.align(Alignment.Center)
-                )
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        "Cần quyền truy cập Camera để quét mã",
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) {
+                        Text("Cấp quyền")
+                    }
+                }
             }
 
             if (showManualInputDialog) {
@@ -117,12 +142,17 @@ fun QrScannerScreen(
                     onDismissRequest = { showManualInputDialog = false },
                     title = { Text("Nhập mã thủ công") },
                     text = {
-                        OutlinedTextField(
-                            value = manualBookingCode,
-                            onValueChange = { manualBookingCode = it },
-                            label = { Text("Mã đặt sân") },
-                            singleLine = true
-                        )
+                        Column {
+                            Text("Nếu không thể quét mã QR, vui lòng nhập mã đặt sân tại đây.", style = MaterialTheme.typography.bodySmall)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = manualBookingCode,
+                                onValueChange = { manualBookingCode = it.uppercase() },
+                                label = { Text("Mã đặt sân (Ví dụ: DS123456)") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
                     },
                     confirmButton = {
                         Button(
@@ -148,10 +178,14 @@ fun QrScannerScreen(
             // UI Overlays for Loading/Success/Error
             when (val state = uiState) {
                 is CheckInUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center),
-                        color = Color.White
-                    )
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = Color.Black.copy(alpha = 0.5f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = Color.White)
+                        }
+                    }
                 }
 
                 is CheckInUiState.Success -> {
@@ -160,9 +194,11 @@ fun QrScannerScreen(
                         title = { Text("Check-in Thành công") },
                         text = {
                             Column {
-                                Text("Khách hàng: ${state.booking.customerName}")
-                                Text("Sân: ${state.booking.field?.name}")
+                                Text("Khách hàng: ${state.booking.customerName ?: "N/A"}", fontWeight = FontWeight.Bold)
+                                Text("Sân: ${state.booking.field?.name ?: "N/A"}")
                                 Text("Mã đơn: ${state.booking.code}")
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Thời gian: ${state.booking.startTime} - ${state.booking.endTime}")
                             }
                         },
                         confirmButton = {
@@ -189,6 +225,59 @@ fun QrScannerScreen(
                 else -> {}
             }
         }
+    }
+}
+
+@Composable
+fun QrScannerOverlay(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .drawWithContent {
+                drawContent()
+                val scanAreaSize = 250.dp.toPx()
+                val left = (size.width - scanAreaSize) / 2
+                val top = (size.height - scanAreaSize) / 2
+                
+                // Draw semi-transparent background around the scan area
+                withTransform({
+                    clipRect(left, top, left + scanAreaSize, top + scanAreaSize, ClipOp.Difference)
+                }) {
+                    drawRect(Color.Black.copy(alpha = 0.6f))
+                }
+                
+                // Draw corners
+                val cornerLength = 40.dp.toPx()
+                val strokeWidth = 4.dp.toPx()
+                val color = Color.White
+                
+                // Top-left
+                drawLine(color, Offset(left, top), Offset(left + cornerLength, top), strokeWidth)
+                drawLine(color, Offset(left, top), Offset(left, top + cornerLength), strokeWidth)
+                
+                // Top-right
+                drawLine(color, Offset(left + scanAreaSize, top), Offset(left + scanAreaSize - cornerLength, top), strokeWidth)
+                drawLine(color, Offset(left + scanAreaSize, top), Offset(left + scanAreaSize, top + cornerLength), strokeWidth)
+                
+                // Bottom-left
+                drawLine(color, Offset(left, top + scanAreaSize), Offset(left + cornerLength, top + scanAreaSize), strokeWidth)
+                drawLine(color, Offset(left, top + scanAreaSize), Offset(left, top + scanAreaSize - cornerLength), strokeWidth)
+                
+                // Bottom-right
+                drawLine(color, Offset(left + scanAreaSize, top + scanAreaSize), Offset(left + scanAreaSize - cornerLength, top + scanAreaSize), strokeWidth)
+                drawLine(color, Offset(left + scanAreaSize, top + scanAreaSize), Offset(left + scanAreaSize, top + scanAreaSize - cornerLength), strokeWidth)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "Đưa mã QR vào khung để quét",
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 120.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
     }
 }
 

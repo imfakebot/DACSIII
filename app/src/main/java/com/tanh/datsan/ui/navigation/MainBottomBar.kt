@@ -15,14 +15,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 
 @Composable
 fun MainBottomBar(navController: NavController, userRole: String) {
-    val items = if (userRole == "admin" || userRole == "super_admin" || userRole == "staff") {
-        listOf(
+    val items = when (userRole) {
+        "super_admin", "branch_manager" -> listOf(
             AdminBottomNavItem.Dashboard,
             AdminBottomNavItem.QrScanner,
             AdminBottomNavItem.Profile
         )
-    } else {
-        listOf(
+        "staff" -> listOf(
+            AdminBottomNavItem.QrScanner,
+            AdminBottomNavItem.Profile
+        )
+        else -> listOf(
             BottomNavItem.Home,
             BottomNavItem.History,
             BottomNavItem.Voucher,

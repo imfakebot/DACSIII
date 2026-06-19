@@ -53,17 +53,28 @@ fun AppNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val authRoutes = listOf("login", "register", "forgot_password", "reset_password/{email}")
+    val publicRoutes = listOf(
+        BottomNavItem.Home.route,
+        "login",
+        "register",
+        "forgot_password",
+        "reset_password/{email}",
+        "detail/{fieldId}",
+        "all_review/{fieldId}"
+    )
     val isOtpRoute = currentRoute?.startsWith("otp/") == true
 
-    val bottomBarRoutes = if (userRole == "super_admin" || userRole == "admin" || userRole == "staff") {
-        listOf(
+    val bottomBarRoutes = when (userRole) {
+        "super_admin", "branch_manager" -> listOf(
             AdminBottomNavItem.Dashboard.route,
             AdminBottomNavItem.QrScanner.route,
             AdminBottomNavItem.Profile.route
         )
-    } else {
-        listOf(
+        "staff" -> listOf(
+            AdminBottomNavItem.QrScanner.route,
+            AdminBottomNavItem.Profile.route
+        )
+        else -> listOf(
             BottomNavItem.Home.route,
             BottomNavItem.History.route,
             BottomNavItem.Voucher.route,
@@ -71,10 +82,20 @@ fun AppNavigation() {
         )
     }
 
-    LaunchedEffect(isLoggedIn) {
-        if (!isLoggedIn && currentRoute != null && currentRoute !in authRoutes && !isOtpRoute) {
+    LaunchedEffect(isLoggedIn, userRole, currentRoute) {
+        if (!isLoggedIn && currentRoute != null && currentRoute !in publicRoutes && !isOtpRoute) {
             navController.navigate("login") {
                 popUpTo(0) { inclusive = true }
+            }
+        } else if (isLoggedIn && currentRoute == BottomNavItem.Home.route) {
+            if (userRole == "super_admin" || userRole == "branch_manager") {
+                navController.navigate(AdminBottomNavItem.Dashboard.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            } else if (userRole == "staff") {
+                navController.navigate(AdminBottomNavItem.QrScanner.route) {
+                    popUpTo(0) { inclusive = true }
+                }
             }
         }
     }
