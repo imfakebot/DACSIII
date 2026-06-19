@@ -39,7 +39,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,24 +48,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.data.model.ChatMessage
 import com.tanh.datsan.utils.toFullImageUrl
 import com.tanh.datsan.viewmodel.ChatViewModel
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel as lifecycleHiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     feedbackId: String,
     onBackClick: () -> Unit,
-    viewModel: ChatViewModel = lifecycleHiltViewModel()
+    viewModel: ChatViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     var textState by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(feedbackId) {
         viewModel.loadChatHistory(feedbackId)
@@ -280,7 +278,6 @@ fun ChatInputBar(
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent
                 ),
-                maxLines = 4
             )
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(
