@@ -8,7 +8,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.tanh.datsan.R
+import com.tanh.datsan.BuildConfig
 import javax.inject.Inject
 
 class GoogleAuthHelper @Inject constructor() {
@@ -19,7 +19,7 @@ class GoogleAuthHelper @Inject constructor() {
     suspend fun signInWithGoogle(context: Context, errorUnsupportedMsg: String): Result<String> {
         return try {
             val credentialManager = CredentialManager.create(context)
-            val webClientId = context.getString(R.string.default_web_client_id)
+            val webClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
 
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)

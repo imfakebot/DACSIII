@@ -15,8 +15,8 @@ class FeedbackRepository @Inject constructor(
     val realTimeMessages = socketManager.messageFlow
     val notifications = socketManager.notificationFlow
 
-    suspend fun createFeedback(title: String, description: String) =
-        apiService.createFeedback(CreateFeedbackRequest(title, description))
+    suspend fun createFeedback(title: String, category: String, content: String) =
+        apiService.createFeedback(CreateFeedbackRequest(title, category, content))
 
     suspend fun getFeedbackDetail(id: String) = apiService.getFeedbackDetail(id)
 

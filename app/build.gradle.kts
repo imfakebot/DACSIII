@@ -29,11 +29,12 @@ android {
         val baseUrl = localProperties.getProperty("API_BASE_URL")
         val apiBackend = localProperties.getProperty("API_BACKEND")
         val deeplinkForgotPassword = localProperties.getProperty("API_DEEPlINK_FORGOT_PASSWORD")
+        val googleWebClientId = localProperties.getProperty("GOOGLE_WEB_CLIENT_ID")
+        
         buildConfigField("String", "API_BASE_URL", "\"$baseUrl\"")
-
         buildConfigField("String", "API_BACKEND", "\"$apiBackend\"")
-
         buildConfigField("String", "API_DEEPlINK_FORGOT_PASSWORD", "\"$deeplinkForgotPassword\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$googleWebClientId\"")
     }
 
     buildTypes {

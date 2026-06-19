@@ -1,0 +1,91 @@
+package com.tanh.datsan.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.tanh.datsan.data.model.OverviewStatisticsResponse
+import com.tanh.datsan.data.model.RecentBookingItem
+import com.tanh.datsan.data.model.RevenueChartItem
+import com.tanh.datsan.data.repository.StatisticsRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+import javax.inject.Inject
+
+data class StatisticsUiState(
+    val overview: OverviewStatisticsResponse? = null,
+    val chartData: List<RevenueChartItem> = emptyList(),
+    val recentBookings: List<RecentBookingItem> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val isForbidden: Boolean = false // Xử lý lỗi 403 (Không đủ quyền)
+)
+
+@HiltViewModel
+class StatisticsViewModel @Inject constructor(
+    private val statisticsRepository: StatisticsRepository
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(StatisticsUiState())
+    val uiState: StateFlow<StatisticsUiState> = _uiState.asStateFlow()
+
+    // Theo yêu cầu BE, định dạng phải chuẩn ISO 8601
+    private fun formatToISO8601(date: Date?): String? {
+        if (date == null) return null
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(date)
+    }
+
+    fun fetchStatistics(startDate: Date? = null, endDate: Date? = null, year: Int? = null, branchId: String? = null) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, isForbidden = false)
+            
+            val isoStartDate = formatToISO8601(startDate)
+            val isoEndDate = formatToISO8601(endDate)
+            val currentYear = year ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+
+            try {
+                // Gọi song song cả 3 API
+                val overviewResponse = statisticsRepository.getOverview(isoStartDate, isoEndDate, branchId)
+                val chartResponse = statisticsRepository.getRevenueChart(currentYear, branchId)
+                val bookingsResponse = statisticsRepository.getRecentBookings(isoStartDate, isoEndDate, branchId)
+
+                // Kiểm tra 403 Forbidden (Yêu cầu quyền Admin)
+                if (overviewResponse.code() == 403 || chartResponse.code() == 403 || bookingsResponse.code() == 403) {
+                    _uiState.value = _uiState.value.copy(isLoading = false, isForbidden = true)
+                    return@launch
+                }
+
+                val isOverviewSuccess = overviewResponse.isSuccessful
+                val isChartSuccess = chartResponse.isSuccessful
+                val isBookingsSuccess = bookingsResponse.isSuccessful
+
+                if (isOverviewSuccess && isChartSuccess) {
+                    _uiState.value = _uiState.value.copy(
+                        overview = overviewResponse.body(),
+                        chartData = chartResponse.body() ?: emptyList(),
+                        recentBookings = if (isBookingsSuccess) bookingsResponse.body() ?: emptyList() else emptyList(),
+                        isLoading = false
+                    )
+                } else {
+                    val errorCode = if (!isOverviewSuccess) overviewResponse.code() else chartResponse.code()
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Lỗi khi tải dữ liệu thống kê (Code: $errorCode)"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Lỗi kết nối: ${e.message}"
+                )
+            }
+        }
+    }
+}

@@ -201,4 +201,9 @@ object NetworkModule {
     @Singleton
     fun provideFeedbackApiService(retrofit: Retrofit): com.tanh.datsan.data.network.FeedbackApiService =
         retrofit.create(com.tanh.datsan.data.network.FeedbackApiService::class.java)
-    }
+
+    @Provides
+    @Singleton
+    fun provideStatisticsApiService(retrofit: Retrofit): com.tanh.datsan.data.network.StatisticsApiService =
+        retrofit.create(com.tanh.datsan.data.network.StatisticsApiService::class.java)
+}
