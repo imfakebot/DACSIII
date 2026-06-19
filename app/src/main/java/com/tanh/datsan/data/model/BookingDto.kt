@@ -10,6 +10,8 @@ data class CreateBookingDto(
     val durationMinutes: Int,
     val voucherCode: String? = null,
     val platform: String? = "mobile",
+    val customerName: String? = null,
+    val customerPhone: String? = null
 )
 
 data class BookingResponse(
@@ -82,4 +84,18 @@ data class BookingTimeSlot(
     @SerializedName("startTime") val startTime: String,
     @SerializedName("endTime") val endTime: String,
     @SerializedName("status") val status: String
+)
+
+data class BookingPaginatedResponseDto(
+    val data: List<BookingResponse>,
+    val meta: Metadata? = null
+)
+
+data class AdminCreateBookingDto(
+    @SerializedName("fieldId") val fieldId: String,
+    @SerializedName("startTime") val startTime: String,
+    @SerializedName("durationMinutes") val durationMinutes: Int,
+    @SerializedName("customerName") val customerName: String? = null,
+    @SerializedName("customerPhone") val customerPhone: String? = null,
+    @SerializedName("status") val status: String = "completed"
 )

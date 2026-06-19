@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -50,12 +51,12 @@ import java.text.SimpleDateFormat
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    onBackClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onNavigateToResetPassword: (String) -> Unit,
     viewModel: ProfileViewModel = hiltViewModel(),
     mainViewModel: MainViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel(),
-    onBackClick: () -> Unit = {},
-    onLogoutClick: () -> Unit = {},
-    onNavigateToResetPassword: (String) -> Unit = {}
+    authViewModel: AuthViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()

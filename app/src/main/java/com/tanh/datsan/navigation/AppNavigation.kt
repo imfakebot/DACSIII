@@ -16,6 +16,11 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
+import com.tanh.datsan.ui.admin.booking.AdminCreateBookingScreen
+import com.tanh.datsan.ui.admin.field.FieldFormScreen
+import com.tanh.datsan.ui.admin.field.FieldImageUploadScreen
+import com.tanh.datsan.ui.admin.pricing.AdminTimeSlotScreen
+
 import com.tanh.datsan.ui.auth.ForgotPasswordScreen
 import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.OtpScreen
@@ -58,6 +63,9 @@ fun AppNavigation() {
     val bottomBarRoutes = when (userRole) {
         "super_admin", "branch_manager" -> listOf(
             AdminBottomNavItem.Dashboard.route,
+            AdminBottomNavItem.Branch.route,
+            AdminBottomNavItem.Field.route,
+            AdminBottomNavItem.Users.route,
             AdminBottomNavItem.QrScanner.route,
             AdminBottomNavItem.Profile.route
         )
@@ -357,7 +365,183 @@ fun AppNavigation() {
             }
 
             composable(AdminBottomNavItem.Dashboard.route) {
-                // TODO
+                com.tanh.datsan.ui.admin.AdminStatisticsScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(AdminBottomNavItem.Branch.route) {
+                val branchViewModel: com.tanh.datsan.viewmodel.BranchViewModel = hiltViewModel()
+                val branches by branchViewModel.branches.collectAsState()
+                val uiState by branchViewModel.uiState.collectAsState()
+
+                com.tanh.datsan.ui.admin.branch.BranchScreen(
+                    branches = branches,
+                    uiState = uiState,
+                    onFetchBranches = { branchViewModel.fetchBranches() },
+                    onNavigateToCreate = { navController.navigate("branch_form") },
+                    onNavigateToEdit = { branchId -> navController.navigate("branch_form?branchId=$branchId") },
+                    onDeleteBranch = { branchId -> branchViewModel.deleteBranch(branchId) },
+                    onResetUiState = { branchViewModel.resetUiState() }
+                )
+            }
+
+            composable(
+                route = "branch_form?branchId={branchId}",
+                arguments = listOf(navArgument("branchId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val branchId = backStackEntry.arguments?.getString("branchId")
+                val branchViewModel: BranchViewModel = hiltViewModel()
+                val uiState by branchViewModel.uiState.collectAsState()
+                val selectedBranch by branchViewModel.selectedBranch.collectAsState()
+                val availableManagers by branchViewModel.availableManagers.collectAsState()
+                val cities by branchViewModel.cities.collectAsState()
+                val wards by branchViewModel.wards.collectAsState()
+                val isLoadingCities by branchViewModel.isLoadingCities.collectAsState()
+                val isLoadingWards by branchViewModel.isLoadingWards.collectAsState()
+
+                LaunchedEffect(branchId) {
+                    branchViewModel.fetchAvailableManagers()
+                    if (branchId != null) {
+                        branchViewModel.getBranchById(branchId)
+                    } else {
+                        branchViewModel.clearSelectedBranch()
+                    }
+                }
+
+                com.tanh.datsan.ui.admin.branch.BranchFormScreen(
+                    branchId = branchId,
+                    uiState = uiState,
+                    selectedBranch = selectedBranch,
+                    onFetchBranch = { id -> branchViewModel.getBranchById(id) },
+                    onCreateBranch = { dto -> branchViewModel.createBranch(dto) },
+                    onUpdateBranch = { id, dto -> branchViewModel.updateBranch(id, dto) },
+                    availableManagers = availableManagers,
+                    cities = cities,
+                    wards = wards,
+                    isLoadingCities = isLoadingCities,
+                    isLoadingWards = isLoadingWards,
+                    onFetchCities = { branchViewModel.fetchCities() },
+                    onFetchWards = { cityId -> branchViewModel.fetchWards(cityId) },
+                    onBackClick = { navController.popBackStack() },
+                    onResetUiState = { branchViewModel.resetUiState() },
+                    onClearSelectedBranch = { branchViewModel.clearSelectedBranch() }
+                )
+            }
+
+            composable(AdminBottomNavItem.Field.route) {
+                val adminFieldViewModel: com.tanh.datsan.viewmodel.AdminFieldViewModel = hiltViewModel()
+                val fields by adminFieldViewModel.fields.collectAsState()
+                val uiState by adminFieldViewModel.uiState.collectAsState()
+                val branches by adminFieldViewModel.branches.collectAsState()
+                val isLoadingMore by adminFieldViewModel.isLoadingMore.collectAsState()
+
+                com.tanh.datsan.ui.admin.field.AdminFieldScreen(
+                    userRole = userRole,
+                    fields = fields,
+                    branches = branches,
+                    uiState = uiState,
+                    onFetchData = { adminFieldViewModel.fetchInitialData() },
+                    onNavigateToCreate = { navController.navigate("field_form") },
+                    onNavigateToEdit = { fieldId -> navController.navigate("field_form?fieldId=$fieldId") },
+                    onNavigateToUploadImages = { fieldId -> navController.navigate("field_upload_images/$fieldId") },
+                    onDeleteField = { fieldId -> adminFieldViewModel.deleteField(fieldId) },
+                    onResetUiState = { adminFieldViewModel.resetUiState() },
+                    isLoadingMore = isLoadingMore,
+                    onLoadMore = { adminFieldViewModel.loadMoreFields() }
+                )
+            }
+
+            composable(
+                route = "field_form?fieldId={fieldId}",
+                arguments = listOf(navArgument("fieldId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                })
+            ) { backStackEntry ->
+                val fieldId = backStackEntry.arguments?.getString("fieldId")
+                val adminFieldViewModel: com.tanh.datsan.viewmodel.AdminFieldViewModel = hiltViewModel()
+                val uiState by adminFieldViewModel.uiState.collectAsState()
+                val selectedField by adminFieldViewModel.selectedField.collectAsState()
+                val fieldTypes by adminFieldViewModel.fieldTypes.collectAsState()
+                val branches by adminFieldViewModel.branches.collectAsState()
+                val utilities by adminFieldViewModel.utilities.collectAsState()
+
+                LaunchedEffect(fieldId) {
+                    if (fieldId != null) {
+                        adminFieldViewModel.getFieldById(fieldId)
+                    } else {
+                        adminFieldViewModel.fetchInitialData()
+                    }
+                }
+
+                com.tanh.datsan.ui.admin.field.FieldFormScreen(
+                    fieldId = fieldId,
+                    userRole = userRole,
+                    uiState = uiState,
+                    selectedField = selectedField,
+                    fieldTypes = fieldTypes,
+                    branches = branches,
+                    utilities = utilities,
+                    onFetchField = { id -> adminFieldViewModel.getFieldById(id) },
+                    onCreateField = { dto -> adminFieldViewModel.createField(dto) },
+                    onUpdateField = { id, dto -> adminFieldViewModel.updateField(id, dto) },
+                    onBackClick = { navController.popBackStack() },
+                    onResetUiState = { adminFieldViewModel.resetUiState() },
+                    onClearSelectedField = { adminFieldViewModel.clearSelectedField() }
+                )
+            }
+
+            composable(
+                route = "field_upload_images/{fieldId}",
+                arguments = listOf(navArgument("fieldId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
+                val adminFieldViewModel: com.tanh.datsan.viewmodel.AdminFieldViewModel = hiltViewModel()
+                val uiState by adminFieldViewModel.uiState.collectAsState()
+
+                com.tanh.datsan.ui.admin.field.FieldImageUploadScreen(
+                    fieldId = fieldId,
+                    uiState = uiState,
+                    onUploadImages = { id, uris -> adminFieldViewModel.uploadImages(id, uris) },
+                    onBackClick = { navController.popBackStack() },
+                    onResetUiState = { adminFieldViewModel.resetUiState() }
+                )
+            }
+
+            composable(AdminBottomNavItem.Users.route) {
+                val adminUserViewModel: com.tanh.datsan.viewmodel.AdminUserViewModel = hiltViewModel()
+                val users by adminUserViewModel.users.collectAsState()
+                val uiState by adminUserViewModel.uiState.collectAsState()
+
+                com.tanh.datsan.ui.admin.user.AdminUserScreen(
+                    users = users,
+                    uiState = uiState,
+                    onFetchUsers = { adminUserViewModel.fetchUsers() },
+                    onNavigateToCreateEmployee = { navController.navigate("create_employee") },
+                    onBanUser = { userId -> adminUserViewModel.banUser(userId) },
+                    onUnbanUser = { userId -> adminUserViewModel.unbanUser(userId) },
+                    onResetUiState = { adminUserViewModel.resetUiState() }
+                )
+            }
+
+            composable("create_employee") {
+                val adminUserViewModel: com.tanh.datsan.viewmodel.AdminUserViewModel = hiltViewModel()
+                val uiState by adminUserViewModel.uiState.collectAsState()
+                val branches by adminUserViewModel.branches.collectAsState()
+
+                com.tanh.datsan.ui.admin.user.CreateEmployeeScreen(
+                    uiState = uiState,
+                    branches = branches,
+                    onCreateEmployee = { dto -> adminUserViewModel.createEmployee(dto) },
+                    onBackClick = { navController.popBackStack() },
+                    onResetUiState = { adminUserViewModel.resetUiState() }
+                )
             }
 
             composable("notification") {
@@ -422,6 +606,15 @@ fun AppNavigation() {
                 }
             }
 
+            composable(AdminBottomNavItem.Menu.route) {
+                com.tanh.datsan.ui.admin.menu.AdminMenuScreen(
+                    onNavigateToFieldTypes = { navController.navigate("admin_field_types") },
+                    onNavigateToUtilities = { navController.navigate("admin_utilities") },
+                    onNavigateToBookings = { navController.navigate("admin_bookings") },
+                    onNavigateToTimeSlots = { navController.navigate("admin_timeslot") }
+                )
+            }
+
             composable(AdminBottomNavItem.Profile.route) {
                 ProfileScreen(
                     onBackClick = { navController.popBackStack() },
@@ -431,9 +624,80 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile cho Admin
                         navController.navigate("reset_password/$email")
                     }
+                )
+            }
+
+            composable("admin_timeslot") {
+                val viewModel: com.tanh.datsan.viewmodel.AdminTimeSlotViewModel = hiltViewModel()
+                val timeSlots by viewModel.timeSlots.collectAsState()
+                val uiState by viewModel.uiState.collectAsState()
+
+                AdminTimeSlotScreen(
+                    timeSlots = timeSlots,
+                    uiState = uiState,
+                    onFetchData = { viewModel.fetchTimeSlots() },
+                    onUpdateSlot = { id, price, isPeak -> viewModel.updateTimeSlot(id, price, isPeak) },
+                    onResetState = { viewModel.resetUiState() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable("admin_field_types") {
+                com.tanh.datsan.ui.admin.category.AdminFieldTypeScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable("admin_utilities") {
+                com.tanh.datsan.ui.admin.category.AdminUtilityScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable("admin_bookings") {
+                com.tanh.datsan.ui.admin.booking.AdminBookingScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToCreateBooking = {
+                        navController.navigate("admin_create_booking")
+                    }
+                )
+            }
+
+            composable("admin_create_booking") {
+                val viewModel: AdminCreateBookingViewModel = hiltViewModel()
+                val branches by viewModel.branches.collectAsState()
+                val fields by viewModel.fields.collectAsState()
+                val availableSlots by viewModel.availableSlots.collectAsState()
+                val selectedBranch by viewModel.selectedBranch.collectAsState()
+                val selectedField by viewModel.selectedField.collectAsState()
+                val selectedDate by viewModel.selectedDate.collectAsState()
+                val selectedSlot by viewModel.selectedSlot.collectAsState()
+                val uiState by viewModel.uiState.collectAsState()
+                val selectedDuration by viewModel.selectedDuration.collectAsState()
+                val priceState by viewModel.priceState.collectAsState()
+
+                AdminCreateBookingScreen(
+                    branches = branches,
+                    fields = fields,
+                    availableSlots = availableSlots,
+                    selectedBranch = selectedBranch,
+                    selectedField = selectedField,
+                    selectedDate = selectedDate,
+                    selectedSlot = selectedSlot,
+                    uiState = uiState,
+                    onFetchBranches = { viewModel.fetchBranches() },
+                    onSelectBranch = { viewModel.selectBranch(it) },
+                    onSelectField = { viewModel.selectField(it) },
+                    onSelectDate = { viewModel.selectDate(it) },
+                    onSelectSlot = { viewModel.selectSlot(it) },
+                    onCreateBooking = { name, phone -> viewModel.createBooking(name, phone) },
+                    onBackClick = { navController.popBackStack() },
+                    onResetUiState = { viewModel.resetUiState() },
+                    selectedDuration=selectedDuration,
+                    onSelectDuration = { viewModel.selectDuration(it) },
+                    priceState = priceState
                 )
             }
         }

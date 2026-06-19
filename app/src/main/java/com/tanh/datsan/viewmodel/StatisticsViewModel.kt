@@ -2,9 +2,10 @@ package com.tanh.datsan.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.OverviewStatisticsResponse
-import com.tanh.datsan.data.model.RecentBookingItem
 import com.tanh.datsan.data.model.RevenueChartItem
+import com.tanh.datsan.data.repository.BookingRepository
 import com.tanh.datsan.data.repository.StatisticsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +21,7 @@ import javax.inject.Inject
 data class StatisticsUiState(
     val overview: OverviewStatisticsResponse? = null,
     val chartData: List<RevenueChartItem> = emptyList(),
-    val recentBookings: List<RecentBookingItem> = emptyList(),
+    val recentBookings: List<BookingResponse> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
     val isForbidden: Boolean = false // Xử lý lỗi 403 (Không đủ quyền)
@@ -28,7 +29,8 @@ data class StatisticsUiState(
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
-    private val statisticsRepository: StatisticsRepository
+    private val statisticsRepository: StatisticsRepository,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(StatisticsUiState())
@@ -54,23 +56,28 @@ class StatisticsViewModel @Inject constructor(
                 // Gọi song song cả 3 API
                 val overviewResponse = statisticsRepository.getOverview(isoStartDate, isoEndDate, branchId)
                 val chartResponse = statisticsRepository.getRevenueChart(currentYear, branchId)
-                val bookingsResponse = statisticsRepository.getRecentBookings(isoStartDate, isoEndDate, branchId)
 
                 // Kiểm tra 403 Forbidden (Yêu cầu quyền Admin)
-                if (overviewResponse.code() == 403 || chartResponse.code() == 403 || bookingsResponse.code() == 403) {
+                if (overviewResponse.code() == 403 || chartResponse.code() == 403) {
                     _uiState.value = _uiState.value.copy(isLoading = false, isForbidden = true)
                     return@launch
                 }
 
                 val isOverviewSuccess = overviewResponse.isSuccessful
                 val isChartSuccess = chartResponse.isSuccessful
-                val isBookingsSuccess = bookingsResponse.isSuccessful
+
+                // Lấy danh sách booking gần đây (endpoint admin)
+                val recentBookings = try {
+                    bookingRepository.getAdminBookings(branchId = branchId, status = null, page = 1, limit = 10).data
+                } catch (e: Exception) {
+                    emptyList()
+                }
 
                 if (isOverviewSuccess && isChartSuccess) {
                     _uiState.value = _uiState.value.copy(
                         overview = overviewResponse.body(),
                         chartData = chartResponse.body() ?: emptyList(),
-                        recentBookings = if (isBookingsSuccess) bookingsResponse.body() ?: emptyList() else emptyList(),
+                        recentBookings = recentBookings,
                         isLoading = false
                     )
                 } else {

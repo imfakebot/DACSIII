@@ -1,7 +1,6 @@
 package com.tanh.datsan.data.network
 
 import com.tanh.datsan.data.model.OverviewStatisticsResponse
-import com.tanh.datsan.data.model.RecentBookingItem
 import com.tanh.datsan.data.model.RevenueChartItem
 import retrofit2.Response
 import retrofit2.http.GET
@@ -20,11 +19,4 @@ interface StatisticsApiService {
         @Query("year") year: Int?,
         @Query("branchId") branchId: String?
     ): Response<List<RevenueChartItem>>
-
-    @GET("statistics/recent-bookings")
-    suspend fun getRecentBookings(
-        @Query("startDate") startDate: String?,
-        @Query("endDate") endDate: String?,
-        @Query("branchId") branchId: String?
-    ): Response<List<RecentBookingItem>>
 }

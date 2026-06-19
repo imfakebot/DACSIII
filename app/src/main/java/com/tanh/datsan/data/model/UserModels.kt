@@ -59,3 +59,32 @@ data class AvatarUpdateResponse(
     @SerializedName("message") val message: String,
     @SerializedName("avatarUrl") val avatarUrl: String
 )
+
+data class RoleDto(
+    @SerializedName("id") val id: String?,
+    @SerializedName("name") val name: String?,
+    @SerializedName("roleName") val roleName: String?,
+    @SerializedName("code") val code: String?
+)
+
+data class AccountResponseDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("role") val role: RoleDto?,
+    @SerializedName("isActive", alternate = ["is_active"]) val isActive: Boolean?,
+    @SerializedName("userProfile") val userProfile: UserProfileDto?
+)
+
+data class AccountPaginatedResponseDto(
+    @SerializedName("data") val data: List<AccountResponseDto>,
+    @SerializedName("total") val total: Int,
+    @SerializedName("page") val page: Int,
+    @SerializedName("limit") val limit: Int
+)
+
+data class CreateEmployeeDto(
+    @SerializedName("email") val email: String,
+    @SerializedName("role") val role: String,
+    @SerializedName("password") val password: String? = null,
+    @SerializedName("branchId") val branchId: String? = null
+)

@@ -15,4 +15,19 @@ interface UserApiService {
     @Multipart
     @PATCH("users/me/avatar")
     suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<AvatarUpdateResponse>
+
+    @GET("users/admin/all")
+    suspend fun getAdminUsers(
+        @Query("page") page: Int? = 1,
+        @Query("limit") limit: Int? = 10
+    ): AccountPaginatedResponseDto
+
+    @PATCH("users/admin/{id}/ban")
+    suspend fun banUser(@Path("id") id: String): MessageResponseDto
+
+    @PATCH("users/admin/{id}/unban")
+    suspend fun unbanUser(@Path("id") id: String): MessageResponseDto
+
+    @POST("users/create-employee")
+    suspend fun createEmployee(@Body dto: CreateEmployeeDto): AccountResponseDto
 }

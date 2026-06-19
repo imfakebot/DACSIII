@@ -6,6 +6,7 @@ import com.tanh.datsan.BuildConfig
 import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.data.network.AuthApiService
 import com.tanh.datsan.data.network.BookingApiService
+import com.tanh.datsan.data.network.BranchApiService
 import com.tanh.datsan.data.network.FieldApiService
 import com.tanh.datsan.data.network.NotificationApiService
 import com.tanh.datsan.data.network.PricingApiService
@@ -206,4 +207,9 @@ object NetworkModule {
     @Singleton
     fun provideStatisticsApiService(retrofit: Retrofit): com.tanh.datsan.data.network.StatisticsApiService =
         retrofit.create(com.tanh.datsan.data.network.StatisticsApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBranchApiService(retrofit: Retrofit): BranchApiService =
+        retrofit.create(BranchApiService::class.java)
 }
