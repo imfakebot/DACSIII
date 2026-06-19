@@ -2,12 +2,17 @@ package com.tanh.datsan.navigation
 
 import android.util.Log
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,11 +21,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
+import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.auth.ForgotPasswordScreen
 import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.OtpScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
 import com.tanh.datsan.ui.auth.ResetPasswordScreen
+import com.tanh.datsan.ui.feedback.ChatScreen
+import com.tanh.datsan.ui.feedback.FeedbackListScreen
 import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.main.MainScreen
@@ -33,15 +41,8 @@ import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
 import com.tanh.datsan.ui.admin.AdminStatisticsScreen
+import com.tanh.datsan.ui.admin.AdminUserManagementScreen
 import com.tanh.datsan.viewmodel.*
-import com.tanh.datsan.ui.feedback.ChatScreen
-import com.tanh.datsan.ui.feedback.*
-
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.ui.graphics.Color
 
 @Composable
 fun AppNavigation() {
@@ -179,7 +180,7 @@ fun AppNavigation() {
                         navController.navigate("otp/$email/$isRegister")
                     },
                     onAuthenticated = { role ->
-                        val destination = if (role == "super_admin"  || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        val destination = if (role == "super_admin" || role == "staff") AdminBottomNavItem.Dashboard.route else BottomNavItem.Home.route
                         navController.navigate(destination) {
                             popUpTo("login") { inclusive = true }
                         }
@@ -256,7 +257,7 @@ fun AppNavigation() {
                     onCompleteLogin = { code -> authViewModel.completeLogin(email, code) },
                     onNavigateBack = { navController.popBackStack() },
                     onSuccess = { role ->
-                        val destination = if (role == "super_admin"  || role == "staff") "admin_dashboard" else BottomNavItem.Home.route
+                        val destination = if (role == "super_admin" || role == "staff") AdminBottomNavItem.Dashboard.route else BottomNavItem.Home.route
                         navController.navigate(destination) {
                             popUpTo(BottomNavItem.Home.route) { inclusive = true }
                         }
@@ -382,6 +383,23 @@ fun AppNavigation() {
                 )
             }
 
+            composable(AdminBottomNavItem.Users.route) {
+                val adminUserViewModel: AdminUserViewModel = hiltViewModel()
+                val uiState by adminUserViewModel.uiState.collectAsState()
+
+                AdminUserManagementScreen(
+                    uiState = uiState,
+                    onGoToPage = { page -> adminUserViewModel.goToPage(page) },
+                    onRefresh = { adminUserViewModel.fetchAllUsers() },
+                    onBanUser = { user -> adminUserViewModel.banUser(user) },
+                    onUnbanUser = { user -> adminUserViewModel.unbanUser(user) },
+                    onClearError = { adminUserViewModel.clearError() },
+                    onSearchQueryChanged = { query -> adminUserViewModel.onSearchQueryChanged(query) },
+                    onRoleFilterChanged = { role -> adminUserViewModel.onRoleFilterChanged(role) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
             composable("notification") {
                 val notificationViewModel: NotificationViewModel = hiltViewModel()
                 val notifications by notificationViewModel.notifications.collectAsState()
@@ -428,7 +446,6 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile
                         navController.navigate("reset_password/$email")
                     }
                 )
@@ -461,7 +478,6 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile cho Admin
                         navController.navigate("reset_password/$email")
                     }
                 )

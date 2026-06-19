@@ -9,6 +9,8 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.ui.graphics.vector.ImageVector
 
+import androidx.compose.material.icons.rounded.People
+
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val title: String) {
     object Home : BottomNavItem("home", Icons.Rounded.Home, "Trang chủ")
     object History : BottomNavItem("history", Icons.Rounded.Event, "Lịch đặt")
@@ -18,6 +20,7 @@ sealed class BottomNavItem(val route: String, val icon: ImageVector, val title: 
 
 sealed class AdminBottomNavItem(val route: String, val icon: ImageVector, val title: String) {
     object Dashboard : AdminBottomNavItem("admin_dashboard", Icons.Rounded.Dashboard, "Tổng quan")
+    object Users : AdminBottomNavItem("admin_users", Icons.Rounded.People, "Người dùng")
     object QrScanner : AdminBottomNavItem("admin_qr", Icons.Rounded.QrCodeScanner, "Quét mã")
     object Profile : AdminBottomNavItem("admin_profile", Icons.Rounded.Person, "Cá nhân")
 }

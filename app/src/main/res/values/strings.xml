@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">Datsan</string>
-    <string name="default_web_client_id">54269365989-8v14na7br989nnnj9rtud93i73n52qoq.apps.googleusercontent.com</string>
     <string name="btn_confirm">Xác nhận</string>
     <string name="btn_back">Quay lại</string>
     <string name="loading">Đang xử lý…</string>
