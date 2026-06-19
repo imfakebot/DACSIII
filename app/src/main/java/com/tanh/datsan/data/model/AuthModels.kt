@@ -21,7 +21,9 @@ data class UserResponse(
     @SerializedName("avatar_url", alternate = ["avatarUrl"])
     val avatarUrl: String?,
     @SerializedName("full_name", alternate = ["fullName"])
-    val fullName: String?
+    val fullName: String?,
+
+    val status: Boolean
 )
 
 data class LoginResponse(

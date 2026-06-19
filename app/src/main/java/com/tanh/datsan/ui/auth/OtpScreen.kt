@@ -33,13 +33,13 @@ fun OtpScreen(
     var otpCode by remember { mutableStateOf("") }
 
     LaunchedEffect(uiState) {
-        when (val state = uiState) {
+        when (uiState) {
             is AuthUiState.Authenticated -> {
-                onSuccess(state.role)
+                onSuccess(uiState.role)
                 onResetState()
             }
             is AuthUiState.Success -> {
-                onSuccess("user") // Handle registration success case by default
+                onSuccess(uiState.message)
                 onResetState()
             }
             else -> {}

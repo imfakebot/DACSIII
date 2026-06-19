@@ -7,6 +7,7 @@ import com.tanh.datsan.core.TokenManager
 import com.tanh.datsan.core.UserManager
 import com.tanh.datsan.data.model.*
 import com.tanh.datsan.data.repository.AuthRepository
+import com.tanh.datsan.utils.JwtUtil.getRoleFromToken
 import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -63,7 +64,8 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val response = authRepository.resetPassword(ResetPasswordRequest(token, newPassword))
+                val response =
+                    authRepository.resetPassword(ResetPasswordRequest(token, newPassword))
                 if (response.isSuccessful) {
                     _uiEvent.emit(AuthUiEvent.ShowToast("Đặt lại mật khẩu thành công!"))
                     _uiEvent.emit(AuthUiEvent.NavigateBackToLogin)
@@ -92,7 +94,15 @@ class AuthViewModel @Inject constructor(
             try {
                 val response = if (isRegister) {
                     // Logic gửi lại OTP cho đăng ký
-                    authRepository.initiateRegistration(RegisterRequest(full_name = "", email, phone_number = "", gender = "", password = ""))
+                    authRepository.initiateRegistration(
+                        RegisterRequest(
+                            full_name = "",
+                            email,
+                            phone_number = "",
+                            gender = "",
+                            password = ""
+                        )
+                    )
                 } else {
                     authRepository.initiateLogin(LoginRequest(email))
                 }
@@ -110,7 +120,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun initiateRegistration(request: RegisterRequest) {
-        Log.d("AuthViewModel","Request: $request")
+        Log.d("AuthViewModel", "Request: $request")
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
@@ -142,7 +152,7 @@ class AuthViewModel @Inject constructor(
                 )
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
-                    if(loginResponse!=null){
+                    if (loginResponse != null) {
                         tokenManager.saveToken(loginResponse.accessToken)
                         userManager.setUserInfo(
                             loginResponse.user?.fullName,
@@ -197,13 +207,19 @@ class AuthViewModel @Inject constructor(
                             "AuthViewModel",
                             "Login successful for user: ${loginResponse.user?.fullName}"
                         )
-                        tokenManager.saveToken(loginResponse.accessToken)
-                        userManager.setUserInfo(
-                            loginResponse.user?.fullName,
-                            loginResponse.user?.avatarUrl
-                        )
-                        val role = com.tanh.datsan.utils.JwtUtil.getRoleFromToken(loginResponse.accessToken)
-                        _uiState.value = AuthUiState.Authenticated(role)
+                        if (loginResponse.user?.status == false) {
+                            _uiState.value = AuthUiState.Error("Tài khoản của bạn đã bị khóa.")
+                            _isLoading.value = false
+                            return@launch
+                        } else {
+                            tokenManager.saveToken(loginResponse.accessToken)
+                            userManager.setUserInfo(
+                                loginResponse.user?.fullName,
+                                loginResponse.user?.avatarUrl
+                            )
+                            val role = getRoleFromToken(loginResponse.accessToken)
+                            _uiState.value = AuthUiState.Authenticated(role)
+                        }
                     } else {
                         _uiState.value = AuthUiState.Error("Login response body is null")
                     }
@@ -230,10 +246,11 @@ class AuthViewModel @Inject constructor(
                             loginResponse.user?.fullName,
                             loginResponse.user?.avatarUrl
                         )
-                        val role = com.tanh.datsan.utils.JwtUtil.getRoleFromToken(loginResponse.accessToken)
+                        val role =
+                            getRoleFromToken(loginResponse.accessToken)
                         _uiState.value = AuthUiState.Authenticated(role)
                     } else {
-                        Log.d("AuthViewModel","Login response body is null")
+                        Log.d("AuthViewModel", "Login response body is null")
                         _uiState.value = AuthUiState.Error("Login response body is null")
                     }
                 } else {
