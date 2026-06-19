@@ -11,6 +11,7 @@ import com.tanh.datsan.data.network.NotificationApiService
 import com.tanh.datsan.data.network.PricingApiService
 import com.tanh.datsan.data.network.ReviewApiService
 import com.tanh.datsan.data.network.UserApiService
+import com.tanh.datsan.data.network.BranchApiService
 import com.tanh.datsan.data.network.VoucherApiService
 import com.tanh.datsan.utils.ResponseHelper.responseCount
 import dagger.Module
@@ -206,4 +207,9 @@ object NetworkModule {
     @Singleton
     fun provideStatisticsApiService(retrofit: Retrofit): com.tanh.datsan.data.network.StatisticsApiService =
         retrofit.create(com.tanh.datsan.data.network.StatisticsApiService::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBranchApiService(retrofit: Retrofit): BranchApiService =
+        retrofit.create(BranchApiService::class.java)
 }

@@ -11,6 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -42,6 +45,9 @@ import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
 import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.admin.AdminUserManagementScreen
+import com.tanh.datsan.ui.admin.AdminBranchListScreen
+import com.tanh.datsan.ui.admin.AdminBranchFormScreen
+import com.tanh.datsan.ui.admin.AdminFieldListScreen
 import com.tanh.datsan.viewmodel.*
 
 @Composable
@@ -397,6 +403,90 @@ fun AppNavigation() {
                     onSearchQueryChanged = { query -> adminUserViewModel.onSearchQueryChanged(query) },
                     onRoleFilterChanged = { role -> adminUserViewModel.onRoleFilterChanged(role) },
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // ---- Admin Branch Management ----
+            composable(AdminBottomNavItem.Branches.route) {
+                val branchVm: AdminBranchViewModel = hiltViewModel()
+                val branchState by branchVm.uiState.collectAsState()
+
+                LaunchedEffect(Unit) {
+                    branchVm.fetchBranches()
+                }
+
+                AdminBranchListScreen(
+                    uiState = branchState,
+                    onRefresh = { branchVm.fetchBranches() },
+                    onAddBranch = { navController.navigate("admin_branch_form/new") },
+                    onEditBranch = { branch ->
+                        navController.navigate("admin_branch_form/${branch.id}")
+                    },
+                    onDeleteBranch = { branchVm.deleteBranch(it.id) },
+                    onViewFields = { branch ->
+                        navController.navigate("admin_fields/${branch.id}?branchName=${branch.name}")
+                    },
+                    onClearMessages = { branchVm.clearMessages() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                "admin_branch_form/{branchId}",
+                arguments = listOf(navArgument("branchId") { type = NavType.StringType })
+            ) { backStack ->
+                val branchId = backStack.arguments?.getString("branchId") ?: "new"
+                val branchVm: AdminBranchViewModel = hiltViewModel()
+                val branchState by branchVm.uiState.collectAsState()
+                val editingBranch = if (branchId == "new") null else branchState.branches.find { it.id == branchId }
+
+                LaunchedEffect(Unit) {
+                    branchVm.loadFormData()
+                }
+
+                AdminBranchFormScreen(
+                    uiState = branchState,
+                    editingBranch = editingBranch,
+                    onSave = { request ->
+                        if (editingBranch == null) {
+                            branchVm.createBranch(request) { navController.popBackStack() }
+                        } else {
+                            branchVm.updateBranch(editingBranch.id, request) { navController.popBackStack() }
+                        }
+                    },
+                    onWardsCitySelected = { cityId -> branchVm.fetchWards(cityId) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                "admin_fields/{branchId}?branchName={branchName}",
+                arguments = listOf(
+                    navArgument("branchId") { type = NavType.StringType },
+                    navArgument("branchName") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) { backStack ->
+                val branchId = backStack.arguments?.getString("branchId") ?: ""
+                val branchName = backStack.arguments?.getString("branchName") ?: ""
+                val fieldVm: AdminFieldViewModel = hiltViewModel()
+                val fieldState by fieldVm.uiState.collectAsState()
+                var showFieldForm by remember { mutableStateOf(false) }
+                var editingField by remember { mutableStateOf<com.tanh.datsan.data.model.FieldResponse?>(null) }
+
+                LaunchedEffect(branchId) { fieldVm.init(branchId, branchName) }
+
+                AdminFieldListScreen(
+                    uiState = fieldState,
+                    onAddField = { editingField = null; showFieldForm = true },
+                    onEditField = { editingField = it; showFieldForm = true },
+                    onDeleteField = { fieldVm.deleteField(it.id) },
+                    onClearMessages = { fieldVm.clearMessages() },
+                    onBackClick = { navController.popBackStack() },
+                    showForm = showFieldForm,
+                    editingField = editingField,
+                    onSubmitCreate = { req -> fieldVm.createField(req) { showFieldForm = false } },
+                    onSubmitUpdate = { id, req -> fieldVm.updateField(id, req) { showFieldForm = false } },
+                    onDismissForm = { showFieldForm = false }
                 )
             }
 

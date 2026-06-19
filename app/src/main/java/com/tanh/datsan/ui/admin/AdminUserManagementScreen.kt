@@ -119,13 +119,6 @@ fun AdminUserManagementScreen(
                                 color = TextSecondary
                             )
                         }
-                        // Refresh button
-                        IconButton(
-                            onClick = onRefresh,
-                            modifier = Modifier.size(40.dp).background(AccentBlue.copy(alpha = 0.08f), CircleShape)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Làm mới", tint = AccentBlue, modifier = Modifier.size(20.dp))
-                        }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
@@ -438,6 +431,12 @@ fun UserAdminCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                user.userProfile?.phoneNumber?.let { phone ->
+                    if (phone.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(text = phone, fontSize = 12.sp, color = TextSecondary)
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     // Role badge
@@ -453,11 +452,22 @@ fun UserAdminCard(
                             fontWeight = FontWeight.SemiBold
                         )
                     }
-                    // Phone (if available)
-                    user.userProfile?.phoneNumber?.let { phone ->
-                        if (phone.isNotBlank()) {
-                            Text(text = phone, fontSize = 11.sp, color = TextSecondary)
-                        }
+                    // Status badge
+                    val isSuspended = user.status == "suspended"
+                    val isDeleted = user.status == "deleted"
+                    val statusColor = if (isSuspended) RedBan else if (isDeleted) TextSecondary else GreenUnban
+                    val statusText = if (isSuspended) "Đã khóa" else if (isDeleted) "Đã xóa" else "Hoạt động"
+                    Box(
+                        modifier = Modifier
+                            .background(statusColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = statusText,
+                            fontSize = 10.sp,
+                            color = statusColor,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                 }
             }
@@ -482,33 +492,36 @@ fun UserAdminCard(
                     onDismissRequest = { showMenu = false },
                     containerColor = Color.White
                 ) {
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Block, contentDescription = null, tint = RedBan, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Khóa tài khoản", fontSize = 14.sp, color = RedBan, fontWeight = FontWeight.Medium)
+                    if (user.status != "suspended") {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Block, contentDescription = null, tint = RedBan, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Khóa tài khoản", fontSize = 14.sp, color = RedBan, fontWeight = FontWeight.Medium)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                onBanClick(user)
                             }
-                        },
-                        onClick = {
-                            showMenu = false
-                            onBanClick(user)
-                        }
-                    )
-                    Divider(color = DividerColor, thickness = 0.5.dp)
-                    DropdownMenuItem(
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GreenUnban, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Mở khóa tài khoản", fontSize = 14.sp, color = GreenUnban, fontWeight = FontWeight.Medium)
+                        )
+                    }
+                    if (user.status == "suspended") {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GreenUnban, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Mở khóa tài khoản", fontSize = 14.sp, color = GreenUnban, fontWeight = FontWeight.Medium)
+                                }
+                            },
+                            onClick = {
+                                showMenu = false
+                                onUnbanClick(user)
                             }
-                        },
-                        onClick = {
-                            showMenu = false
-                            onUnbanClick(user)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

@@ -1,11 +1,12 @@
 package com.tanh.datsan.data.network
 
 import com.tanh.datsan.data.model.ApiFieldResponse
+import com.tanh.datsan.data.model.CreateFieldRequest
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.FieldType
-import retrofit2.http.GET
-import retrofit2.http.Path
-import retrofit2.http.Query
+import com.tanh.datsan.data.model.UpdateFieldRequest
+import retrofit2.Response
+import retrofit2.http.*
 
 interface FieldApiService {
     @GET("fields")
@@ -28,4 +29,17 @@ interface FieldApiService {
 
     @GET("field-types")
     suspend fun getAllFieldTypes(): List<FieldType>
+
+    // Admin CRUD
+    @POST("fields")
+    suspend fun createField(@Body request: CreateFieldRequest): Response<FieldResponse>
+
+    @PUT("fields/{id}")
+    suspend fun updateField(
+        @Path("id") id: String,
+        @Body request: UpdateFieldRequest
+    ): Response<FieldResponse>
+
+    @DELETE("fields/{id}")
+    suspend fun deleteField(@Path("id") id: String): Response<Unit>
 }

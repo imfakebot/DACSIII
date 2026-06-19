@@ -122,7 +122,11 @@ class AdminUserViewModel @Inject constructor(
             try {
                 val response = userRepository.banUser(user.id)
                 if (response.isSuccessful) {
-                    _uiState.update { it.copy(isActionLoading = false) }
+                    val updatedAllUsers = _uiState.value.allUsers.map { 
+                        if (it.id == user.id) it.copy(status = "suspended") else it 
+                    }
+                    _uiState.update { it.copy(isActionLoading = false, allUsers = updatedAllUsers) }
+                    applyFiltersAndPagination()
                 } else {
                     _uiState.update { it.copy(isActionLoading = false, errorMessage = "Không thể khóa tài khoản") }
                 }
@@ -138,7 +142,11 @@ class AdminUserViewModel @Inject constructor(
             try {
                 val response = userRepository.unbanUser(user.id)
                 if (response.isSuccessful) {
-                    _uiState.update { it.copy(isActionLoading = false) }
+                    val updatedAllUsers = _uiState.value.allUsers.map { 
+                        if (it.id == user.id) it.copy(status = "active") else it 
+                    }
+                    _uiState.update { it.copy(isActionLoading = false, allUsers = updatedAllUsers) }
+                    applyFiltersAndPagination()
                 } else {
                     _uiState.update { it.copy(isActionLoading = false, errorMessage = "Không thể mở khóa tài khoản") }
                 }
