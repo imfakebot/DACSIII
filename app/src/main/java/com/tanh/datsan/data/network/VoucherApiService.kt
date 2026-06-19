@@ -1,8 +1,10 @@
 package com.tanh.datsan.data.network
 
+import com.tanh.datsan.data.model.CreateVoucherDto
 import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.data.model.CheckVoucherResponse
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -26,4 +28,8 @@ interface VoucherApiService {
 
     @POST("voucher/{id}/collect")
     suspend fun collectVoucher(@Path("id") voucherId: String): Response<Unit>
+
+    // Admin endpoint
+    @POST("voucher")
+    suspend fun createVoucher(@Body request: CreateVoucherDto): Response<Voucher>
 }

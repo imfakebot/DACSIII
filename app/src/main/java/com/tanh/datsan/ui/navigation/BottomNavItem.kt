@@ -6,6 +6,7 @@ import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.LocalOffer
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Schedule
@@ -30,6 +31,7 @@ sealed class AdminBottomNavItem(val route: String, val icon: ImageVector, val ti
     object FieldTypes : AdminBottomNavItem("admin_field_types", Icons.Rounded.Category, "Loại sân")
     object Utilities : AdminBottomNavItem("admin_utilities", Icons.Rounded.Star, "Tiện ích")
     object TimeSlot : AdminBottomNavItem("admin_timeslot", Icons.Rounded.Schedule, "Khung Giờ & Giá")
+    object Voucher : AdminBottomNavItem("admin_voucher", Icons.Rounded.LocalOffer, "Mã Giảm Giá")
     object Users : AdminBottomNavItem("admin_users", Icons.Rounded.People, "Người dùng")
     object Bookings : AdminBottomNavItem("admin_bookings", Icons.Rounded.Event, "Đơn đặt sân")
     object QrScanner : AdminBottomNavItem("admin_qr", Icons.Rounded.QrCodeScanner, "Quét mã")

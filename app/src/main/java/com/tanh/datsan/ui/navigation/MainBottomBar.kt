@@ -138,6 +138,7 @@ fun MainBottomBar(navController: NavController, userRole: String) {
                     menuItems.add(AdminBottomNavItem.FieldTypes)
                     menuItems.add(AdminBottomNavItem.Utilities)
                     menuItems.add(AdminBottomNavItem.TimeSlot)
+                    menuItems.add(AdminBottomNavItem.Voucher)
                 }
 
                 if (userRole == "super_admin") {

@@ -700,6 +700,11 @@ fun AppNavigation() {
                     priceState = priceState
                 )
             }
+            composable("admin_voucher") {
+                com.tanh.datsan.ui.admin.voucher.AdminVoucherScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

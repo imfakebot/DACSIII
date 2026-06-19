@@ -1,7 +1,8 @@
 package com.tanh.datsan.data.repository
 
-import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.data.model.CheckVoucherResponse
+import com.tanh.datsan.data.model.CreateVoucherDto
+import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.data.network.VoucherApiService
 import retrofit2.Response
 import javax.inject.Inject
@@ -29,5 +30,9 @@ class VoucherRepository @Inject constructor(
 
     suspend fun collectVoucher(voucherId: String): Response<Unit> {
         return voucherApiService.collectVoucher(voucherId)
+    }
+
+    suspend fun createVoucher(request: CreateVoucherDto): Response<Voucher> {
+        return voucherApiService.createVoucher(request)
     }
 }
