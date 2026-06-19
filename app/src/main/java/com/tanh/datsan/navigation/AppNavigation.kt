@@ -2,12 +2,20 @@ package com.tanh.datsan.navigation
 
 import android.util.Log
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,11 +24,14 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
+import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.auth.ForgotPasswordScreen
 import com.tanh.datsan.ui.auth.LoginScreen
 import com.tanh.datsan.ui.auth.OtpScreen
 import com.tanh.datsan.ui.auth.RegisterScreen
 import com.tanh.datsan.ui.auth.ResetPasswordScreen
+import com.tanh.datsan.ui.feedback.ChatScreen
+import com.tanh.datsan.ui.feedback.FeedbackListScreen
 import com.tanh.datsan.ui.home.booking.BookingSuccessScreen
 import com.tanh.datsan.ui.home.detail.DetailScreen
 import com.tanh.datsan.ui.home.main.MainScreen
@@ -32,6 +43,11 @@ import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
 import com.tanh.datsan.ui.profile.ProfileScreen
 import com.tanh.datsan.ui.staff.QrScannerScreen
+import com.tanh.datsan.ui.admin.AdminStatisticsScreen
+import com.tanh.datsan.ui.admin.AdminUserManagementScreen
+import com.tanh.datsan.ui.admin.AdminBranchListScreen
+import com.tanh.datsan.ui.admin.AdminBranchFormScreen
+import com.tanh.datsan.ui.admin.AdminFieldListScreen
 import com.tanh.datsan.viewmodel.*
 
 @Composable
@@ -96,6 +112,17 @@ fun AppNavigation() {
             if (currentRoute in bottomBarRoutes) {
                 MainBottomBar(navController = navController, userRole = userRole)
             }
+        },
+        floatingActionButton = {
+            if (currentRoute in bottomBarRoutes && userRole == "user" && isLoggedIn) {
+                FloatingActionButton(
+                    onClick = { navController.navigate("feedback_list") },
+                    containerColor = Color(0xFF007BFF),
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Default.Chat, contentDescription = "Chat Hỗ trợ")
+                }
+            }
         }
     ) { innerPadding ->
         NavHost(
@@ -158,8 +185,9 @@ fun AppNavigation() {
                     onOtpSent = { email, isRegister ->
                         navController.navigate("otp/$email/$isRegister")
                     },
-                    onAuthenticated = {
-                        navController.navigate(BottomNavItem.Home.route) {
+                    onAuthenticated = { role ->
+                        val destination = if (role == "super_admin" || role == "staff") AdminBottomNavItem.Dashboard.route else BottomNavItem.Home.route
+                        navController.navigate(destination) {
                             popUpTo("login") { inclusive = true }
                         }
                     },
@@ -234,8 +262,9 @@ fun AppNavigation() {
                     },
                     onCompleteLogin = { code -> authViewModel.completeLogin(email, code) },
                     onNavigateBack = { navController.popBackStack() },
-                    onSuccess = {
-                        navController.navigate(BottomNavItem.Home.route) {
+                    onSuccess = { role ->
+                        val destination = if (role == "super_admin" || role == "staff") AdminBottomNavItem.Dashboard.route else BottomNavItem.Home.route
+                        navController.navigate(destination) {
                             popUpTo(BottomNavItem.Home.route) { inclusive = true }
                         }
                     },
@@ -355,7 +384,110 @@ fun AppNavigation() {
             }
 
             composable(AdminBottomNavItem.Dashboard.route) {
-                // TODO
+                AdminStatisticsScreen(
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(AdminBottomNavItem.Users.route) {
+                val adminUserViewModel: AdminUserViewModel = hiltViewModel()
+                val uiState by adminUserViewModel.uiState.collectAsState()
+
+                AdminUserManagementScreen(
+                    uiState = uiState,
+                    onGoToPage = { page -> adminUserViewModel.goToPage(page) },
+                    onRefresh = { adminUserViewModel.fetchAllUsers() },
+                    onBanUser = { user -> adminUserViewModel.banUser(user) },
+                    onUnbanUser = { user -> adminUserViewModel.unbanUser(user) },
+                    onClearError = { adminUserViewModel.clearError() },
+                    onSearchQueryChanged = { query -> adminUserViewModel.onSearchQueryChanged(query) },
+                    onRoleFilterChanged = { role -> adminUserViewModel.onRoleFilterChanged(role) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // ---- Admin Branch Management ----
+            composable(AdminBottomNavItem.Branches.route) {
+                val branchVm: AdminBranchViewModel = hiltViewModel()
+                val branchState by branchVm.uiState.collectAsState()
+
+                LaunchedEffect(Unit) {
+                    branchVm.fetchBranches()
+                }
+
+                AdminBranchListScreen(
+                    uiState = branchState,
+                    onRefresh = { branchVm.fetchBranches() },
+                    onAddBranch = { navController.navigate("admin_branch_form/new") },
+                    onEditBranch = { branch ->
+                        navController.navigate("admin_branch_form/${branch.id}")
+                    },
+                    onDeleteBranch = { branchVm.deleteBranch(it.id) },
+                    onViewFields = { branch ->
+                        navController.navigate("admin_fields/${branch.id}?branchName=${branch.name}")
+                    },
+                    onClearMessages = { branchVm.clearMessages() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                "admin_branch_form/{branchId}",
+                arguments = listOf(navArgument("branchId") { type = NavType.StringType })
+            ) { backStack ->
+                val branchId = backStack.arguments?.getString("branchId") ?: "new"
+                val branchVm: AdminBranchViewModel = hiltViewModel()
+                val branchState by branchVm.uiState.collectAsState()
+                val editingBranch = if (branchId == "new") null else branchState.branches.find { it.id == branchId }
+
+                LaunchedEffect(Unit) {
+                    branchVm.loadFormData()
+                }
+
+                AdminBranchFormScreen(
+                    uiState = branchState,
+                    editingBranch = editingBranch,
+                    onSave = { request ->
+                        if (editingBranch == null) {
+                            branchVm.createBranch(request) { navController.popBackStack() }
+                        } else {
+                            branchVm.updateBranch(editingBranch.id, request) { navController.popBackStack() }
+                        }
+                    },
+                    onWardsCitySelected = { cityId -> branchVm.fetchWards(cityId) },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable(
+                "admin_fields/{branchId}?branchName={branchName}",
+                arguments = listOf(
+                    navArgument("branchId") { type = NavType.StringType },
+                    navArgument("branchName") { type = NavType.StringType; defaultValue = "" }
+                )
+            ) { backStack ->
+                val branchId = backStack.arguments?.getString("branchId") ?: ""
+                val branchName = backStack.arguments?.getString("branchName") ?: ""
+                val fieldVm: AdminFieldViewModel = hiltViewModel()
+                val fieldState by fieldVm.uiState.collectAsState()
+                var showFieldForm by remember { mutableStateOf(false) }
+                var editingField by remember { mutableStateOf<com.tanh.datsan.data.model.FieldResponse?>(null) }
+
+                LaunchedEffect(branchId) { fieldVm.init(branchId, branchName) }
+
+                AdminFieldListScreen(
+                    uiState = fieldState,
+                    onAddField = { editingField = null; showFieldForm = true },
+                    onEditField = { editingField = it; showFieldForm = true },
+                    onDeleteField = { fieldVm.deleteField(it.id) },
+                    onClearMessages = { fieldVm.clearMessages() },
+                    onBackClick = { navController.popBackStack() },
+                    showForm = showFieldForm,
+                    editingField = editingField,
+                    onSubmitCreate = { req -> fieldVm.createField(req) { showFieldForm = false } },
+                    onSubmitUpdate = { id, req -> fieldVm.updateField(id, req) { showFieldForm = false } },
+                    onDismissForm = { showFieldForm = false }
+                )
             }
 
             composable("notification") {
@@ -404,9 +536,26 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile
                         navController.navigate("reset_password/$email")
                     }
+                )
+            }
+
+            composable("feedback_list") {
+                FeedbackListScreen(
+                    onBackClick = { navController.popBackStack() },
+                    onNavigateToChat = { id -> navController.navigate("chat/$id") }
+                )
+            }
+
+            composable(
+                "chat/{feedbackId}",
+                arguments = listOf(navArgument("feedbackId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val feedbackId = backStackEntry.arguments?.getString("feedbackId") ?: ""
+                ChatScreen(
+                    feedbackId = feedbackId,
+                    onBackClick = { navController.popBackStack() }
                 )
             }
 
@@ -419,7 +568,6 @@ fun AppNavigation() {
                         }
                     },
                     onNavigateToResetPassword = { email ->
-                        // Điều hướng đến màn hình đổi mật khẩu từ Profile cho Admin
                         navController.navigate("reset_password/$email")
                     }
                 )

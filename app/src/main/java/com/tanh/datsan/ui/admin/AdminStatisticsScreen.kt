@@ -163,7 +163,7 @@ fun OverviewSection(overview: OverviewStatisticsResponse) {
             )
             // Card Booking bị hủy
             MetricCard(
-                title = "Đơn đã hủy/thất bại",
+                title = "Đơn đã hủy",
                 value = "${overview.transactions.failed}",
                 icon = Icons.Default.Cancel,
                 iconColor = Color(0xFFEF4444), // Đỏ

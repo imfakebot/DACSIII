@@ -24,4 +24,11 @@ class UserRepository @Inject constructor(
     suspend fun getCities() = locationApiService.getCities()
 
     suspend fun getWards(cityId: String) = locationApiService.getWards(cityId)
+
+    // Admin
+    suspend fun getAllUsers(page: Int, limit: Int) = userApiService.getAllUsers(page, limit)
+
+    suspend fun banUser(id: String) = userApiService.banUser(id)
+
+    suspend fun unbanUser(id: String) = userApiService.unbanUser(id)
 }

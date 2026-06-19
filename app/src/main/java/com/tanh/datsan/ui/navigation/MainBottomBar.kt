@@ -18,6 +18,8 @@ fun MainBottomBar(navController: NavController, userRole: String) {
     val items = when (userRole) {
         "super_admin", "branch_manager" -> listOf(
             AdminBottomNavItem.Dashboard,
+            AdminBottomNavItem.Users,
+            AdminBottomNavItem.Branches,
             AdminBottomNavItem.QrScanner,
             AdminBottomNavItem.Profile
         )

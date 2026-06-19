@@ -59,3 +59,26 @@ data class AvatarUpdateResponse(
     @SerializedName("message") val message: String,
     @SerializedName("avatarUrl") val avatarUrl: String
 )
+
+data class PaginatedResponse<T>(
+    @SerializedName("data") val data: List<T>,
+    @SerializedName("total") val total: Int?,
+    @SerializedName("page") val page: Int?,
+    @SerializedName("totalPages") val totalPages: Int?
+)
+
+data class UserAdminRole(
+    @SerializedName("id") val id: Int,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String?
+)
+
+data class UserAdminDto(
+    @SerializedName("id") val id: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("provider") val provider: String?,
+    @SerializedName("is_verified") val isVerified: Boolean?,
+    @SerializedName("status") val status: String?,
+    @SerializedName("role") val role: UserAdminRole?,
+    @SerializedName("userProfile") val userProfile: UserProfileDto?
+)
