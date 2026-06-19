@@ -2,7 +2,9 @@ package com.tanh.datsan.ui.admin
 
 import android.widget.Toast
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,19 +39,22 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.tanh.datsan.data.model.UserAdminDto
 import com.tanh.datsan.viewmodel.AdminUserUiState
+import com.tanh.datsan.utils.toFullImageUrl
 
-// ---- Light Design Tokens ----
-private val PageBg        = Color(0xFFF8F9FC)
-private val CardBg        = Color.White
-private val AccentBlue    = Color(0xFF3D7EF5)
-private val AccentPurple  = Color(0xFF7C5CDB)
-private val RedBan        = Color(0xFFEF4444)
-private val GreenUnban    = Color(0xFF22C55E)
-private val TextPrimary   = Color(0xFF111827)
-private val TextSecondary = Color(0xFF6B7280)
-private val DividerColor  = Color(0xFFE5E7EB)
-private val ChipSelectedBg   = Color(0xFF3D7EF5)
-private val ChipUnselectedBg = Color(0xFFF3F4F6)
+// ---- Sporty Premium Design Tokens ----
+private val PageBg        = Color(0xFF0F1923)
+private val CardBg        = Color(0xFF1A2733)
+private val AccentGreen   = Color(0xFF00E676)
+private val AccentTeal    = Color(0xFF00BFA5)
+private val RedBan        = Color(0xFFFF5252)
+private val GreenUnban    = Color(0xFF00E676)
+private val TextPrimary   = Color(0xFFFFFFFF)
+private val TextSecondary = Color(0xFF90A4AE)
+private val DividerColor  = Color(0xFF263238)
+
+private val HeaderGradient = Brush.linearGradient(listOf(Color(0xFF0F1923), Color(0xFF1A3A2A)))
+private val SportyAvatarGradientA = Brush.linearGradient(listOf(Color(0xFF00E676), Color(0xFF00BFA5)))
+private val SportyAvatarGradientB = Brush.linearGradient(listOf(Color(0xFFFF6D00), Color(0xFFFF1744)))
 
 data class RoleFilterChip(val label: String, val value: String?)
 
@@ -80,6 +86,7 @@ fun AdminUserManagementScreen(
 ) {
     val context = LocalContext.current
     var pendingAction by remember { mutableStateOf<ConfirmAction?>(null) }
+    var selectedUserForDetails by remember { mutableStateOf<UserAdminDto?>(null) }
 
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let {
@@ -91,10 +98,11 @@ fun AdminUserManagementScreen(
     Box(modifier = Modifier.fillMaxSize().background(PageBg)) {
         Column(modifier = Modifier.fillMaxSize()) {
 
-            // ---- Header ----
-            Surface(
-                modifier = Modifier.fillMaxWidth().shadow(elevation = 2.dp),
-                color = CardBg
+            // ---- Header with gradient background ----
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(HeaderGradient)
             ) {
                 Column(modifier = Modifier.padding(top = 48.dp, bottom = 16.dp)) {
                     // Title Row
@@ -106,88 +114,148 @@ fun AdminUserManagementScreen(
                     ) {
                         IconButton(
                             onClick = onBackClick,
-                            modifier = Modifier.size(40.dp).background(Color(0xFFF3F4F6), CircleShape)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color(0xFF263238), CircleShape)
                         ) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Trở về", tint = TextPrimary, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = "Trở về",
+                                tint = AccentGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Quản lý người dùng", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                             Text(
-                                text = if (uiState.isLoading) "Đang tải..." else "Tổng cộng: ${uiState.totalFiltered} tài khoản",
+                                "Quản lý người dùng",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                color = TextPrimary
+                            )
+                            Text(
+                                text = if (uiState.isLoading) "Đang tải..."
+                                else "Tổng cộng: ${uiState.totalFiltered} tài khoản",
                                 fontSize = 12.sp,
-                                color = TextSecondary
+                                color = AccentGreen.copy(alpha = 0.7f)
                             )
                         }
                     }
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Search Bar
+                    // Search Bar — dark toned with neon green focus border
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = onSearchQueryChanged,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                         placeholder = {
-                            Text("Tìm theo tên, email hoặc số điện thoại...", color = TextSecondary, fontSize = 14.sp)
+                            Text(
+                                "Tìm theo tên, email hoặc số điện thoại...",
+                                color = TextSecondary,
+                                fontSize = 14.sp
+                            )
                         },
                         leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = AccentGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
                         },
                         trailingIcon = {
                             if (uiState.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { onSearchQueryChanged("") }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Xóa", tint = TextSecondary, modifier = Modifier.size(18.dp))
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Xóa",
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
                                 }
                             }
                         },
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentBlue,
+                            focusedBorderColor = AccentGreen,
                             unfocusedBorderColor = DividerColor,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color(0xFFF9FAFB),
+                            focusedContainerColor = CardBg,
+                            unfocusedContainerColor = Color(0xFF162029),
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
-                            cursorColor = AccentBlue,
+                            cursorColor = AccentGreen,
                         ),
                         singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Role Filter Chips
+                    // Role Filter Dropdown — dark theme with green accent
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState())
                             .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        roleFilters.forEach { chip ->
-                            val isSelected = uiState.selectedRole == chip.value
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { onRoleFilterChanged(chip.value) },
-                                label = {
-                                    Text(chip.label, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal)
+                        Text(
+                            "Lọc theo vai trò:",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = TextSecondary
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        var expandedRole by remember { mutableStateOf(false) }
+
+                        ExposedDropdownMenuBox(
+                            expanded = expandedRole,
+                            onExpandedChange = { expandedRole = !expandedRole }
+                        ) {
+                            OutlinedTextField(
+                                value = roleFilters.find { it.value == uiState.selectedRole }?.label
+                                    ?: "Tất cả",
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRole)
                                 },
-                                shape = RoundedCornerShape(20.dp),
-                                colors = FilterChipDefaults.filterChipColors(
-                                    containerColor = ChipUnselectedBg,
-                                    selectedContainerColor = ChipSelectedBg,
-                                    labelColor = TextSecondary,
-                                    selectedLabelColor = Color.White
-                                ),
-                                border = FilterChipDefaults.filterChipBorder(
-                                    borderColor = DividerColor,
-                                    selectedBorderColor = ChipSelectedBg,
-                                    borderWidth = 1.dp,
-                                    selectedBorderWidth = 0.dp,
-                                    enabled = true,
-                                    selected = isSelected
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = AccentGreen,
+                                    unfocusedBorderColor = DividerColor,
+                                    focusedContainerColor = CardBg,
+                                    unfocusedContainerColor = CardBg,
+                                    focusedTextColor = TextPrimary,
+                                    unfocusedTextColor = TextPrimary,
+                                    focusedTrailingIconColor = AccentGreen,
+                                    unfocusedTrailingIconColor = TextSecondary
                                 )
                             )
+                            ExposedDropdownMenu(
+                                expanded = expandedRole,
+                                onDismissRequest = { expandedRole = false },
+                                containerColor = CardBg
+                            ) {
+                                roleFilters.forEach { chip ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                chip.label,
+                                                fontWeight = if (uiState.selectedRole == chip.value) FontWeight.Bold else FontWeight.Normal,
+                                                color = if (uiState.selectedRole == chip.value) AccentGreen else TextPrimary
+                                            )
+                                        },
+                                        onClick = {
+                                            onRoleFilterChanged(chip.value)
+                                            expandedRole = false
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -198,27 +266,54 @@ fun AdminUserManagementScreen(
             // ---- Content ----
             when {
                 uiState.isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = AccentBlue, strokeWidth = 3.dp, modifier = Modifier.size(40.dp))
+                            CircularProgressIndicator(
+                                color = AccentGreen,
+                                strokeWidth = 3.dp,
+                                modifier = Modifier.size(40.dp)
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                             Text("Đang tải dữ liệu...", color = TextSecondary, fontSize = 14.sp)
                         }
                     }
                 }
                 uiState.displayedUsers.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Box(
-                                modifier = Modifier.size(80.dp).background(Color(0xFFF3F4F6), CircleShape),
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(CardBg, CircleShape)
+                                    .border(BorderStroke(2.dp, AccentGreen.copy(alpha = 0.3f)), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Person, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(40.dp))
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = AccentGreen.copy(alpha = 0.5f),
+                                    modifier = Modifier.size(40.dp)
+                                )
                             }
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Không tìm thấy người dùng", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Không tìm thấy người dùng",
+                                color = TextPrimary,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("Thử thay đổi bộ lọc hoặc từ khóa", color = TextSecondary, fontSize = 13.sp)
+                            Text(
+                                "Thử thay đổi bộ lọc hoặc từ khóa",
+                                color = TextSecondary,
+                                fontSize = 13.sp
+                            )
                         }
                     }
                 }
@@ -232,16 +327,18 @@ fun AdminUserManagementScreen(
                             UserAdminCard(
                                 user = user,
                                 onBanClick = { pendingAction = ConfirmAction.Ban(it) },
-                                onUnbanClick = { pendingAction = ConfirmAction.Unban(it) }
+                                onUnbanClick = { pendingAction = ConfirmAction.Unban(it) },
+                                onClick = { selectedUserForDetails = user }
                             )
                         }
                         item { Spacer(modifier = Modifier.height(4.dp)) }
                     }
 
-                    // ---- Pagination ----
+                    // ---- Pagination — dark themed, green accent for active ----
                     Surface(
-                        modifier = Modifier.fillMaxWidth().shadow(elevation = 4.dp),
-                        color = CardBg
+                        modifier = Modifier.fillMaxWidth(),
+                        color = CardBg,
+                        shadowElevation = 8.dp
                     ) {
                         Row(
                             modifier = Modifier
@@ -253,22 +350,25 @@ fun AdminUserManagementScreen(
                             OutlinedButton(
                                 onClick = { onGoToPage(uiState.currentPage - 1) },
                                 enabled = uiState.currentPage > 1,
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentBlue),
-                                border = androidx.compose.foundation.BorderStroke(
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = AccentGreen,
+                                    disabledContentColor = TextSecondary.copy(alpha = 0.4f)
+                                ),
+                                border = BorderStroke(
                                     1.5.dp,
-                                    if (uiState.currentPage > 1) AccentBlue else DividerColor
+                                    if (uiState.currentPage > 1) AccentGreen else DividerColor
                                 )
                             ) {
-                                Text("← Trước", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("← Trước", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     "${uiState.currentPage} / ${uiState.totalPages}",
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.Black,
                                     fontSize = 16.sp,
-                                    color = TextPrimary
+                                    color = AccentGreen
                                 )
                                 Text("Trang", fontSize = 11.sp, color = TextSecondary)
                             }
@@ -276,13 +376,15 @@ fun AdminUserManagementScreen(
                             Button(
                                 onClick = { onGoToPage(uiState.currentPage + 1) },
                                 enabled = uiState.currentPage < uiState.totalPages,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = AccentBlue,
-                                    disabledContainerColor = Color(0xFFD1D5DB)
+                                    containerColor = AccentGreen,
+                                    contentColor = Color(0xFF0F1923),
+                                    disabledContainerColor = DividerColor,
+                                    disabledContentColor = TextSecondary.copy(alpha = 0.5f)
                                 )
                             ) {
-                                Text("Tiếp →", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                                Text("Tiếp →", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -291,7 +393,7 @@ fun AdminUserManagementScreen(
         }
     }
 
-    // ---- Confirm Dialog ----
+    // ---- Confirm Dialog — dark themed ----
     pendingAction?.let { action ->
         val isBanning = action is ConfirmAction.Ban
         val user = when (action) {
@@ -302,7 +404,7 @@ fun AdminUserManagementScreen(
 
         AlertDialog(
             onDismissRequest = { pendingAction = null },
-            containerColor = Color.White,
+            containerColor = CardBg,
             titleContentColor = TextPrimary,
             textContentColor = TextSecondary,
             title = {
@@ -316,7 +418,7 @@ fun AdminUserManagementScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         if (isBanning) "Khóa tài khoản" else "Mở khóa tài khoản",
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         fontSize = 17.sp
                     )
                 }
@@ -328,7 +430,8 @@ fun AdminUserManagementScreen(
                     else
                         "Tài khoản \"$displayName\" sẽ được kích hoạt trở lại. Bạn có chắc không?",
                     lineHeight = 22.sp,
-                    fontSize = 14.sp
+                    fontSize = 14.sp,
+                    color = TextSecondary
                 )
             },
             confirmButton = {
@@ -341,33 +444,112 @@ fun AdminUserManagementScreen(
                         pendingAction = null
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isBanning) RedBan else GreenUnban
+                        containerColor = if (isBanning) RedBan else GreenUnban,
+                        contentColor = if (isBanning) Color.White else Color(0xFF0F1923)
                     ),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Xác nhận", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Xác nhận", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 OutlinedButton(
                     onClick = { pendingAction = null },
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor)
+                    border = BorderStroke(1.dp, DividerColor)
                 ) {
                     Text("Hủy")
                 }
             }
         )
     }
+
+    // ---- User Details Dialog — dark themed ----
+    selectedUserForDetails?.let { user ->
+        AlertDialog(
+            onDismissRequest = { selectedUserForDetails = null },
+            containerColor = CardBg,
+            title = {
+                Text(
+                    text = "Thông tin chi tiết",
+                    fontWeight = FontWeight.Black,
+                    fontSize = 18.sp,
+                    color = TextPrimary
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        // Avatar in details
+                        val initial = (user.userProfile?.fullName?.firstOrNull()
+                            ?: user.email.firstOrNull() ?: '?').uppercaseChar().toString()
+                        val avatarGradient =
+                            if ((initial.firstOrNull()?.code ?: 0) % 2 == 0)
+                                SportyAvatarGradientA
+                            else
+                                SportyAvatarGradientB
+
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(CircleShape)
+                                .background(avatarGradient),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (!user.userProfile?.avatarUrl.isNullOrBlank()) {
+                                AsyncImage(
+                                    model = user.userProfile?.avatarUrl?.toFullImageUrl(),
+                                    contentDescription = "Avatar",
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Text(
+                                    initial,
+                                    fontSize = 32.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = DividerColor)
+
+                    Text("Tên: ${user.userProfile?.fullName ?: "N/A"}", color = TextPrimary)
+                    Text("Email: ${user.email}", color = TextPrimary)
+                    Text("SĐT: ${user.userProfile?.phoneNumber ?: "N/A"}", color = TextPrimary)
+                    Text("Vai trò: ${user.role?.name ?: "N/A"}", color = TextPrimary)
+                    Text(
+                        "Trạng thái: ${if (user.status == "suspended") "Bị khóa" else "Hoạt động"}",
+                        color = TextPrimary
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { selectedUserForDetails = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AccentGreen,
+                        contentColor = Color(0xFF0F1923)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Đóng", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
+    }
 }
 
-// ---- User Card with Dropdown ----
+// ---- User Card with Dropdown — sporty dark card with green left border accent ----
 @Composable
 fun UserAdminCard(
     user: UserAdminDto,
     onBanClick: (UserAdminDto) -> Unit,
-    onUnbanClick: (UserAdminDto) -> Unit
+    onUnbanClick: (UserAdminDto) -> Unit,
+    onClick: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -375,152 +557,226 @@ fun UserAdminCard(
         ?: user.email.firstOrNull() ?: '?').uppercaseChar().toString()
 
     val avatarGradient = if ((initial.firstOrNull()?.code ?: 0) % 2 == 0)
-        Brush.linearGradient(listOf(Color(0xFF3D7EF5), Color(0xFF7C5CDB)))
+        SportyAvatarGradientA
     else
-        Brush.linearGradient(listOf(Color(0xFFFF6B6B), Color(0xFFFF8E53)))
+        SportyAvatarGradientB
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .shadow(elevation = 1.dp, shape = RoundedCornerShape(16.dp)),
+            .fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = CardBg),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp),
+        onClick = onClick
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Green left accent strip
             Box(
                 modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape)
-                    .background(avatarGradient),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!user.userProfile?.avatarUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = user.userProfile?.avatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(
+                        Brush.linearGradient(listOf(AccentGreen, AccentTeal)),
+                        RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
                     )
-                } else {
-                    Text(initial, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            }
+            )
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .clip(CircleShape)
+                        .background(avatarGradient),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val raw = user.userProfile?.avatarUrl
+                    val full = raw?.toFullImageUrl()
+                    android.util.Log.d("AVATAR", "raw=$raw | full=$full")
 
-            // Info
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = user.userProfile?.fullName ?: "Chưa cập nhật tên",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = user.email,
-                    fontSize = 12.sp,
-                    color = TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                user.userProfile?.phoneNumber?.let { phone ->
-                    if (phone.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(text = phone, fontSize = 12.sp, color = TextSecondary)
+                    if (!user.userProfile?.avatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = user.userProfile?.avatarUrl?.toFullImageUrl(),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            initial,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    // Role badge
-                    Box(
-                        modifier = Modifier
-                            .background(AccentPurple.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                // Info
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = user.userProfile?.fullName ?: "Chưa cập nhật tên",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = TextPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = user.email,
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    user.userProfile?.phoneNumber?.let { phone ->
+                        if (phone.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(text = phone, fontSize = 12.sp, color = TextSecondary)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Role badge — pill shaped with glow border
+                        Box(
+                            modifier = Modifier
+                                .border(
+                                    BorderStroke(1.dp, AccentTeal.copy(alpha = 0.5f)),
+                                    RoundedCornerShape(20.dp)
+                                )
+                                .background(
+                                    AccentTeal.copy(alpha = 0.12f),
+                                    RoundedCornerShape(20.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = user.role?.name ?: "N/A",
+                                fontSize = 10.sp,
+                                color = AccentTeal,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        // Status badge — pill shaped with glow effect
+                        val isSuspended = user.status == "suspended"
+                        val isDeleted = user.status == "deleted"
+                        val statusColor =
+                            if (isSuspended) RedBan else if (isDeleted) TextSecondary else GreenUnban
+                        val statusText =
+                            if (isSuspended) "Đã khóa" else if (isDeleted) "Đã xóa" else "Hoạt động"
+                        Box(
+                            modifier = Modifier
+                                .border(
+                                    BorderStroke(1.dp, statusColor.copy(alpha = 0.5f)),
+                                    RoundedCornerShape(20.dp)
+                                )
+                                .background(
+                                    statusColor.copy(alpha = 0.12f),
+                                    RoundedCornerShape(20.dp)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = statusText,
+                                fontSize = 10.sp,
+                                color = statusColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+                // Action Dropdown — outlined green
+                Box {
+                    OutlinedButton(
+                        onClick = { showMenu = true },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = AccentGreen
+                        ),
+                        border = BorderStroke(1.dp, AccentGreen.copy(alpha = 0.5f)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier.height(36.dp)
                     ) {
                         Text(
-                            text = user.role?.name ?: "N/A",
-                            fontSize = 10.sp,
-                            color = AccentPurple,
-                            fontWeight = FontWeight.SemiBold
+                            "Hành động",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentGreen
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = AccentGreen
                         )
                     }
-                    // Status badge
-                    val isSuspended = user.status == "suspended"
-                    val isDeleted = user.status == "deleted"
-                    val statusColor = if (isSuspended) RedBan else if (isDeleted) TextSecondary else GreenUnban
-                    val statusText = if (isSuspended) "Đã khóa" else if (isDeleted) "Đã xóa" else "Hoạt động"
-                    Box(
-                        modifier = Modifier
-                            .background(statusColor.copy(alpha = 0.1f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        containerColor = CardBg
                     ) {
-                        Text(
-                            text = statusText,
-                            fontSize = 10.sp,
-                            color = statusColor,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-            }
-
-            // Action Dropdown
-            Box {
-                OutlinedButton(
-                    onClick = { showMenu = true },
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
-                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                    modifier = Modifier.height(36.dp)
-                ) {
-                    Text("Hành động", fontSize = 11.sp, fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, modifier = Modifier.size(16.dp))
-                }
-
-                DropdownMenu(
-                    expanded = showMenu,
-                    onDismissRequest = { showMenu = false },
-                    containerColor = Color.White
-                ) {
-                    if (user.status != "suspended") {
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Block, contentDescription = null, tint = RedBan, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Khóa tài khoản", fontSize = 14.sp, color = RedBan, fontWeight = FontWeight.Medium)
+                        if (user.status != "suspended") {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.Block,
+                                            contentDescription = null,
+                                            tint = RedBan,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Khóa tài khoản",
+                                            fontSize = 14.sp,
+                                            color = RedBan,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onBanClick(user)
                                 }
-                            },
-                            onClick = {
-                                showMenu = false
-                                onBanClick(user)
-                            }
-                        )
-                    }
-                    if (user.status == "suspended") {
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = GreenUnban, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Mở khóa tài khoản", fontSize = 14.sp, color = GreenUnban, fontWeight = FontWeight.Medium)
+                            )
+                        }
+                        if (user.status == "suspended") {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = GreenUnban,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            "Mở khóa tài khoản",
+                                            fontSize = 14.sp,
+                                            color = GreenUnban,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onUnbanClick(user)
                                 }
-                            },
-                            onClick = {
-                                showMenu = false
-                                onUnbanClick(user)
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }

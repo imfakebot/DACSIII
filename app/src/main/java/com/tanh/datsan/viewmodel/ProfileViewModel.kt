@@ -185,6 +185,7 @@ class ProfileViewModel @Inject constructor(
                     displayCityName = profile.address?.cityName ?: "",
                     displayWardName = profile.address?.wardName ?: "",
                     avatarUrl = profile.avatarUrl,
+                    avatarUpdateTimestamp = System.currentTimeMillis(),
                     email = accountResponse.email
                 )
             }

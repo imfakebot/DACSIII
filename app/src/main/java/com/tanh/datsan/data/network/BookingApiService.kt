@@ -44,4 +44,10 @@ interface BookingApiService {
     suspend fun downloadTicket(
         @Path("bookingId") bookingId: String
     ): Response<ResponseBody>
+
+    @GET("bookings/me")
+    suspend fun getMyBookings(
+        @Query("page") page: Int = 1,
+        @Query("limit") limit: Int = 50
+    ): Response<com.tanh.datsan.data.model.PaginatedResponse<BookingResponse>>
 }

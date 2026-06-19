@@ -71,6 +71,9 @@ class AdminUserViewModel @Inject constructor(
 
         // 1. Filter
         val filtered = state.allUsers.filter { user ->
+            // Bỏ qua super_admin không hiển thị
+            if (user.role?.name?.lowercase() == "super_admin") return@filter false
+
             val matchSearch = if (query.isEmpty()) true else
                 user.email.lowercase().contains(query) ||
                 user.userProfile?.fullName?.lowercase()?.contains(query) == true ||

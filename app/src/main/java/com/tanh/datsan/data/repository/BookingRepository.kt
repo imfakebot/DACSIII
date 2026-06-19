@@ -34,4 +34,6 @@ class BookingRepository @Inject constructor(
     suspend fun downloadTicket(bookingId: String): Response<ResponseBody> {
         return bookingApiService.downloadTicket(bookingId)
     }
+
+    suspend fun getMyBookings(page: Int = 1, limit: Int = 50) = bookingApiService.getMyBookings(page, limit)
 }

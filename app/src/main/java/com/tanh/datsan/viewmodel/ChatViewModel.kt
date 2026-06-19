@@ -1,5 +1,5 @@
-package com.tanh.datsan.viewmodel
 
+package com.tanh.datsan.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.ChatMessage

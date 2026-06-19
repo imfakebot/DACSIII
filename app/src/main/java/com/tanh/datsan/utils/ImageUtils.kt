@@ -24,21 +24,33 @@ fun Uri.toFile(context: Context): File? {
     }
 }
 
-fun String?.toFullImageUrl(): String {
-    if (this.isNullOrEmpty()) {
-        return ""
+fun String?.toFullImageUrl(timestamp: Long? = null): String {
+    if (this.isNullOrEmpty()) return ""
+
+    val baseUrl = BuildConfig.API_BASE_URL.trimEnd('/')
+
+    val formattedUrl = when {
+        this.startsWith("http://") || this.startsWith("https://") -> {
+            // Replace localhost (hoặc bất kỳ host nào) bằng IP thật từ config
+            val uri = android.net.Uri.parse(this)
+            val path = uri.encodedPath ?: "/"
+            val query = if (uri.encodedQuery != null) "?${uri.encodedQuery}" else ""
+            "$baseUrl$path$query"
+        }
+        this.startsWith("/") -> "$baseUrl$this"
+        else -> "$baseUrl/$this"
     }
 
-    val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
+    // Fix double slash (trừ phần http://)
+    val cleaned = formattedUrl.replaceFirst("://", "PLACEHOLDER")
+        .replace("//", "/")
+        .replaceFirst("PLACEHOLDER", "://")
 
-    if (this.startsWith("http://") || this.startsWith("https://")) {
-        return this.replace(BuildConfig.API_BACKEND, baseUrl)
-    }
-
-    return if (this.startsWith("/")) {
-        "$baseUrl$this"
+    return if (timestamp != null) {
+        if (cleaned.contains("?")) "$cleaned&t=$timestamp"
+        else "$cleaned?t=$timestamp"
     } else {
-        "$baseUrl/$this"
+        cleaned
     }
 }
 

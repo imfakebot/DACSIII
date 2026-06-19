@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -17,13 +18,18 @@ import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
 
+enum class TimeRange {
+    TODAY, WEEK, MONTH
+}
+
 data class StatisticsUiState(
     val overview: OverviewStatisticsResponse? = null,
     val chartData: List<RevenueChartItem> = emptyList(),
     val recentBookings: List<RecentBookingItem> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isForbidden: Boolean = false // Xử lý lỗi 403 (Không đủ quyền)
+    val isForbidden: Boolean = false, // Xử lý lỗi 403 (Không đủ quyền)
+    val selectedTimeRange: TimeRange = TimeRange.MONTH
 )
 
 @HiltViewModel
@@ -40,6 +46,35 @@ class StatisticsViewModel @Inject constructor(
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
         sdf.timeZone = TimeZone.getTimeZone("UTC")
         return sdf.format(date)
+    }
+
+    init {
+        // Khởi tạo mặc định là Tháng
+        setTimeRange(TimeRange.MONTH)
+    }
+
+    fun setTimeRange(timeRange: TimeRange) {
+        _uiState.update { it.copy(selectedTimeRange = timeRange) }
+        
+        val calendar = java.util.Calendar.getInstance()
+        val endDate = calendar.time
+        
+        when (timeRange) {
+            TimeRange.TODAY -> {
+                calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                calendar.set(java.util.Calendar.MINUTE, 0)
+                calendar.set(java.util.Calendar.SECOND, 0)
+                calendar.set(java.util.Calendar.MILLISECOND, 0)
+            }
+            TimeRange.WEEK -> {
+                calendar.add(java.util.Calendar.DAY_OF_YEAR, -7)
+            }
+            TimeRange.MONTH -> {
+                calendar.add(java.util.Calendar.MONTH, -1)
+            }
+        }
+        val startDate = calendar.time
+        fetchStatistics(startDate = startDate, endDate = endDate)
     }
 
     fun fetchStatistics(startDate: Date? = null, endDate: Date? = null, year: Int? = null, branchId: String? = null) {

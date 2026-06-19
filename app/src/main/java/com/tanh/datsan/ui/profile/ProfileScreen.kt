@@ -203,7 +203,9 @@ fun ProfileScreen(
                                 shadowElevation = 16.dp
                             ) {
                                 AsyncImage(
-                                    model = uiState.avatarUrl?.toFullImageUrl(),
+                                    model = uiState.avatarUrl?.toFullImageUrl(
+                                        timestamp = uiState.avatarUpdateTimestamp.takeIf { it > 0L }
+                                    ),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxSize()

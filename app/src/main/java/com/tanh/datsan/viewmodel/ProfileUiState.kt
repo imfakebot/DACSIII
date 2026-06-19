@@ -19,6 +19,7 @@ data class ProfileUiState(
     val isEditing: Boolean = false,
     val toastMessage: String? = null,
     val avatarUrl: String? = null,
+    val avatarUpdateTimestamp: Long = 0L,
     val email: String = "",
     val cities: List<CityDto> = emptyList(),
     val wards: List<WardDto> = emptyList(),
