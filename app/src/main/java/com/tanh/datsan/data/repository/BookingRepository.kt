@@ -60,4 +60,8 @@ class BookingRepository @Inject constructor(
     suspend fun createAdminBooking(request: AdminCreateBookingDto): BookingResponse {
         return bookingApiService.createAdminBooking(request)
     }
+
+    suspend fun cancelBooking(bookingId: String): Response<com.tanh.datsan.data.model.MessageResponseDto> {
+        return bookingApiService.cancelBooking(bookingId)
+    }
 }

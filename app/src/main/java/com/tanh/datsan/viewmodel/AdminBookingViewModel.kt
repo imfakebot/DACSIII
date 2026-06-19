@@ -102,6 +102,23 @@ class AdminBookingViewModel @Inject constructor(
         }
     }
 
+    fun cancelBooking(bookingId: String) {
+        viewModelScope.launch {
+            _uiState.value = AdminBookingUiState.Loading
+            try {
+                val response = bookingRepository.cancelBooking(bookingId)
+                if (response.isSuccessful) {
+                    _uiState.value = AdminBookingUiState.Success(response.body()?.message ?: "Hủy đơn thành công")
+                    fetchAdminBookings(branchId = currentBranchId, status = currentStatus, refresh = true)
+                } else {
+                    _uiState.value = AdminBookingUiState.Error("Hủy đơn thất bại: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _uiState.value = AdminBookingUiState.Error("Lỗi kết nối: ${e.message}")
+            }
+        }
+    }
+
     fun resetUiState() {
         _uiState.value = AdminBookingUiState.Idle
     }

@@ -20,7 +20,8 @@ fun BookingHistoryScreen(
     bookings: List<BookingResponse>,
     uiState: BookingHistoryUiState,
     currentStatus: String?,
-    onFetchBookings: (String?) -> Unit
+    onFetchBookings: (String?) -> Unit,
+    onCancelBooking: (String) -> Unit
 ) {
     val tabs = listOf(
         Pair(null, "Tất cả"),
@@ -82,7 +83,10 @@ fun BookingHistoryScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(bookings) { booking ->
-                            BookingItem(booking = booking)
+                            BookingItem(
+                                booking = booking,
+                                onCancelBooking = { booking.id?.let { onCancelBooking(it) } }
+                            )
                         }
                     }
                 }
@@ -92,7 +96,10 @@ fun BookingHistoryScreen(
 }
 
 @Composable
-fun BookingItem(booking: BookingResponse) {
+fun BookingItem(
+    booking: BookingResponse,
+    onCancelBooking: () -> Unit = {}
+) {
     val statusText = when (booking.status?.lowercase()) {
         "pending" -> "Chờ xác nhận"
         "confirmed" -> "Đã xác nhận"
@@ -158,12 +165,30 @@ fun BookingItem(booking: BookingResponse) {
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Tổng tiền: ${currencyFormatter.format(booking.totalPrice ?: 0)}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val status = booking.status?.lowercase()
+                if (status == "pending" || status == "approved" || status == "confirmed") {
+                    TextButton(
+                        onClick = onCancelBooking,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Hủy đơn", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                Text(
+                    text = "Tổng: ${currencyFormatter.format(booking.totalPrice ?: 0)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

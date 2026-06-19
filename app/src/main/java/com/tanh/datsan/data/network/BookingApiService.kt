@@ -64,4 +64,9 @@ interface BookingApiService {
 
     @POST("bookings/management/create")
     suspend fun createAdminBooking(@Body request: AdminCreateBookingDto): BookingResponse
+
+    @retrofit2.http.PATCH("bookings/{id}/cancel")
+    suspend fun cancelBooking(
+        @Path("id") bookingId: String
+    ): Response<com.tanh.datsan.data.model.MessageResponseDto>
 }

@@ -562,7 +562,18 @@ fun AppNavigation() {
             }
 
             composable(BottomNavItem.History.route) {
-                // TODO: Implement History Screen
+                val viewModel: com.tanh.datsan.viewmodel.BookingHistoryViewModel = hiltViewModel()
+                val bookings by viewModel.bookings.collectAsState()
+                val uiState by viewModel.uiState.collectAsState()
+                val currentStatus by viewModel.currentStatus.collectAsState()
+
+                com.tanh.datsan.ui.home.history.BookingHistoryScreen(
+                    bookings = bookings,
+                    uiState = uiState,
+                    currentStatus = currentStatus,
+                    onFetchBookings = { status -> viewModel.fetchMyBookings(status) },
+                    onCancelBooking = { id -> viewModel.cancelBooking(id) }
+                )
             }
 
             composable(BottomNavItem.Voucher.route) {

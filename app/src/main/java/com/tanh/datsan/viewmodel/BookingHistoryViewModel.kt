@@ -59,4 +59,22 @@ class BookingHistoryViewModel @Inject constructor(
     fun resetUiState() {
         _uiState.value = BookingHistoryUiState.Idle
     }
+
+    fun cancelBooking(bookingId: String) {
+        viewModelScope.launch {
+            _uiState.value = BookingHistoryUiState.Loading
+            try {
+                val response = bookingRepository.cancelBooking(bookingId)
+                if (response.isSuccessful) {
+                    _uiState.value = BookingHistoryUiState.Success(response.body()?.message ?: "Hủy đơn thành công")
+                    // Refresh the current list after cancelling
+                    fetchMyBookings(status = _currentStatus.value, page = 1)
+                } else {
+                    _uiState.value = BookingHistoryUiState.Error("Hủy đơn thất bại: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                _uiState.value = BookingHistoryUiState.Error("Lỗi kết nối: ${e.message}")
+            }
+        }
+    }
 }

@@ -66,7 +66,24 @@ fun AdminBookingScreen(
             }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is AdminBookingUiState.Success -> {
+                snackbarHostState.showSnackbar((uiState as AdminBookingUiState.Success).message ?: "Thành công")
+                viewModel.resetUiState()
+            }
+            is AdminBookingUiState.Error -> {
+                snackbarHostState.showSnackbar((uiState as AdminBookingUiState.Error).message)
+                viewModel.resetUiState()
+            }
+            else -> {}
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = AppBg,
         topBar = {
             TopAppBar(
@@ -110,7 +127,10 @@ fun AdminBookingScreen(
                     contentPadding = PaddingValues(bottom = 100.dp)
                 ) {
                     items(bookings, key = { it.id ?: it.code ?: it.hashCode().toString() }) { booking ->
-                        BookingCard(booking = booking)
+                        BookingCard(
+                            booking = booking,
+                            onCancelBooking = { booking.id?.let { viewModel.cancelBooking(it) } }
+                        )
                     }
 
                     if (isLoadingMore) {
@@ -127,7 +147,10 @@ fun AdminBookingScreen(
 }
 
 @Composable
-fun BookingCard(booking: BookingResponse) {
+fun BookingCard(
+    booking: BookingResponse,
+    onCancelBooking: () -> Unit = {}
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -171,8 +194,21 @@ fun BookingCard(booking: BookingResponse) {
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                val status = booking.status?.lowercase()
+                if (status == "pending" || status == "approved" || status == "confirmed") {
+                    TextButton(
+                        onClick = onCancelBooking,
+                        colors = ButtonDefaults.textButtonColors(contentColor = StatusRejectedColor)
+                    ) {
+                        Text("Hủy đơn", fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
                 Text(
                     text = "${booking.totalPrice ?: 0} VND",
                     fontWeight = FontWeight.ExtraBold,
