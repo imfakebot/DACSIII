@@ -71,7 +71,7 @@ data class AccountResponseDto(
     @SerializedName("id") val id: String,
     @SerializedName("email") val email: String,
     @SerializedName("role") val role: RoleDto?,
-    @SerializedName("isActive", alternate = ["is_active"]) val isActive: Boolean?,
+    @SerializedName("isActive", alternate = ["is_active", "status"]) val isActive: Boolean?,
     @SerializedName("userProfile") val userProfile: UserProfileDto?
 )
 

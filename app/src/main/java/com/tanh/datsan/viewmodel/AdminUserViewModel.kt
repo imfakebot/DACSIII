@@ -51,15 +51,15 @@ class AdminUserViewModel @Inject constructor(
         fetchUsers()
     }
 
-    fun fetchUsers(page: Int = 1, limit: Int = 20) {
+    fun fetchUsers(page: Int = 1, limit: Int = 20, showLoading: Boolean = true) {
         viewModelScope.launch {
-            _uiState.value = AdminUserUiState.Loading
+            if (showLoading) _uiState.value = AdminUserUiState.Loading
             try {
                 val response = adminUserRepository.getAdminUsers(page, limit)
                 _paginationInfo.value = response
                 // If it's page 1, replace. Otherwise, append (for infinite scroll). For simplicity, just replace.
                 _users.value = response.data
-                _uiState.value = AdminUserUiState.Idle
+                if (showLoading) _uiState.value = AdminUserUiState.Idle
             } catch (e: Exception) {
                 android.util.Log.e("AdminUserViewModel", "Lỗi lấy danh sách người dùng", e)
                 if (e is retrofit2.HttpException) {
@@ -81,8 +81,15 @@ class AdminUserViewModel @Inject constructor(
                     adminUserRepository.unbanUser(id)
                 }
                 val actionMsg = if (isActive) "Khóa" else "Mở khóa"
+                
+                // Cập nhật danh sách local để giao diện đổi ngay lập tức
+                val updatedUsers = _users.value.map {
+                    if (it.id == id) it.copy(isActive = !isActive) else it
+                }
+                _users.value = updatedUsers
+
                 _uiState.value = AdminUserUiState.Success("$actionMsg tài khoản thành công")
-                fetchUsers() // Cập nhật lại danh sách sau khi đổi trạng thái
+                fetchUsers(showLoading = false) // Cập nhật lại danh sách sau khi đổi trạng thái (chạy ngầm)
             } catch (e: Exception) {
                 _uiState.value = AdminUserUiState.Error("Lỗi: ${e.message}")
             }
@@ -95,7 +102,7 @@ class AdminUserViewModel @Inject constructor(
             try {
                 adminUserRepository.createEmployee(dto)
                 _uiState.value = AdminUserUiState.Success("Tạo nhân viên thành công")
-                fetchUsers()
+                fetchUsers(showLoading = false)
             } catch (e: Exception) {
                 _uiState.value = AdminUserUiState.Error(e.message ?: "Lỗi khi tạo nhân viên")
             }
