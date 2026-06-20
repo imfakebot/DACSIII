@@ -73,6 +73,7 @@ fun ProfileScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showCitySheet by remember { mutableStateOf(false) }
     var showWardSheet by remember { mutableStateOf(false) }
+    var showChangePasswordDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.toastMessage) {
         uiState.toastMessage?.let {
@@ -396,11 +397,7 @@ fun ProfileScreen(
                                 value = stringResource(R.string.profile_reset_pwd_hint),
                                 color = Color(0xFFF59E0B),
                                 onClick = {
-                                    uiState.profile?.email?.let {
-                                        authViewModel.forgotPassword(
-                                            it
-                                        )
-                                    }
+                                    showChangePasswordDialog = true
                                 }
                             )
                             PremiumDivider()
@@ -555,6 +552,84 @@ fun ProfileScreen(
                     }
                 },
                 shape = RoundedCornerShape(24.dp)
+            )
+        }
+
+        if (showChangePasswordDialog) {
+            var oldPassword by remember { mutableStateOf("") }
+            var newPassword by remember { mutableStateOf("") }
+            var confirmPassword by remember { mutableStateOf("") }
+            var oldPasswordVisible by remember { mutableStateOf(false) }
+            var newPasswordVisible by remember { mutableStateOf(false) }
+
+            AlertDialog(
+                onDismissRequest = { showChangePasswordDialog = false },
+                title = { Text("Đổi mật khẩu", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = oldPassword,
+                            onValueChange = { oldPassword = it },
+                            label = { Text("Mật khẩu hiện tại") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = if (oldPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
+                                    Icon(if (oldPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = newPassword,
+                            onValueChange = { newPassword = it },
+                            label = { Text("Mật khẩu mới (tối thiểu 8 ký tự)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = if (newPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            trailingIcon = {
+                                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                                    Icon(if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = confirmPassword,
+                            onValueChange = { confirmPassword = it },
+                            label = { Text("Xác nhận mật khẩu mới") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            visualTransformation = if (newPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (newPassword.length < 8) {
+                                Toast.makeText(context, "Mật khẩu mới phải từ 8 ký tự trở lên", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            if (newPassword != confirmPassword) {
+                                Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            viewModel.changePassword(oldPassword, newPassword)
+                            showChangePasswordDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                    ) {
+                        Text("Xác nhận", color = Color.White)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showChangePasswordDialog = false }) {
+                        Text("Hủy", color = Color.Gray)
+                    }
+                },
+                shape = RoundedCornerShape(16.dp)
             )
         }
 

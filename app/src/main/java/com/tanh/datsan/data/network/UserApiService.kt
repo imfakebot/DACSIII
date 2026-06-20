@@ -12,6 +12,9 @@ interface UserApiService {
     @PUT("users/me/profile")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<AuthMessageResponse>
 
+    @PATCH("users/me/password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<MessageResponseDto>
+
     @Multipart
     @PATCH("users/me/avatar")
     suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<AvatarUpdateResponse>

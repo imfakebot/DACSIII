@@ -261,6 +261,32 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    fun changePassword(oldPass: String, newPass: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val request = com.tanh.datsan.data.model.ChangePasswordRequest(
+                    oldPassword = oldPass,
+                    newPassword = newPass
+                )
+                val response = userRepository.changePassword(request)
+                if (response.isSuccessful) {
+                    _uiState.update { 
+                        it.copy(
+                            toastMessage = "Đổi mật khẩu thành công",
+                            isLoading = false
+                        ) 
+                    }
+                } else {
+                    val errorMsg = parseError(response.errorBody()?.string())
+                    _uiState.update { it.copy(toastMessage = "Lỗi: $errorMsg", isLoading = false) }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(toastMessage = "Lỗi kết nối", isLoading = false) }
+            }
+        }
+    }
+
     fun uploadAvatar(imageFile: File) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)

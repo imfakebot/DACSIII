@@ -18,6 +18,9 @@ class UserRepository @Inject constructor(
     suspend fun updateProfile(request: com.tanh.datsan.data.model.UpdateProfileRequest) =
         userApiService.updateProfile(request)
 
+    suspend fun changePassword(request: com.tanh.datsan.data.model.ChangePasswordRequest) =
+        userApiService.changePassword(request)
+
     suspend fun updateAvatar(avatar: okhttp3.MultipartBody.Part) =
         userApiService.uploadAvatar(avatar)
 

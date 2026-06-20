@@ -19,6 +19,11 @@ data class UpdateProfileRequest(
     @SerializedName("address") val address: AddressDto? = null
 )
 
+data class ChangePasswordRequest(
+    @SerializedName("oldPassword") val oldPassword: String,
+    @SerializedName("newPassword") val newPassword: String
+)
+
 // --- PHẦN NHẬN VỀ (RESPONSE) ---
 
 data class AddressResponseDto(
