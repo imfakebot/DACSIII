@@ -41,18 +41,16 @@ class AdminFeedbackViewModel @Inject constructor(
             try {
                 val state = _uiState.value
                 val response = repository.getAllFeedbacks(
-                    page = page,
-                    limit = 20,
                     status = state.currentStatusFilter,
                     type = state.currentTypeFilter
                 )
                 if (response.isSuccessful && response.body() != null) {
-                    val paginateData = response.body()!!
+                    val listData = response.body()!!
                     _uiState.update {
                         it.copy(
-                            feedbacks = paginateData.data,
-                            currentPage = paginateData.page,
-                            totalRecords = paginateData.total,
+                            feedbacks = listData,
+                            currentPage = 1,
+                            totalRecords = listData.size,
                             isLoading = false
                         )
                     }
@@ -90,25 +88,6 @@ class AdminFeedbackViewModel @Inject constructor(
         }
     }
 
-    fun updateStatus(id: String, newStatus: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val response = repository.updateFeedbackStatus(id, newStatus)
-                if (response.isSuccessful) {
-                    _uiState.update { it.copy(toastMessage = "Cập nhật trạng thái thành công") }
-                    fetchFeedbackDetail(id) // refresh detail
-                    fetchAllFeedbacks(_uiState.value.currentPage) // refresh list
-                } else {
-                    val msg = parseError(response.errorBody()?.string())
-                    _uiState.update { it.copy(toastMessage = "Lỗi: $msg", isLoading = false) }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(toastMessage = "Lỗi kết nối: ${e.message}", isLoading = false) }
-            }
-        }
-    }
-
     fun replyFeedback(id: String, reply: String) {
         if (reply.isBlank()) return
         viewModelScope.launch {
@@ -118,25 +97,6 @@ class AdminFeedbackViewModel @Inject constructor(
                 if (response.isSuccessful) {
                     _uiState.update { it.copy(toastMessage = "Gửi phản hồi thành công") }
                     fetchFeedbackDetail(id)
-                } else {
-                    val msg = parseError(response.errorBody()?.string())
-                    _uiState.update { it.copy(toastMessage = "Lỗi: $msg", isLoading = false) }
-                }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(toastMessage = "Lỗi kết nối: ${e.message}", isLoading = false) }
-            }
-        }
-    }
-
-    fun deleteFeedback(id: String, onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            try {
-                val response = repository.deleteFeedback(id)
-                if (response.isSuccessful) {
-                    _uiState.update { it.copy(toastMessage = "Đã xóa Feedback", isLoading = false) }
-                    fetchAllFeedbacks(_uiState.value.currentPage)
-                    onSuccess()
                 } else {
                     val msg = parseError(response.errorBody()?.string())
                     _uiState.update { it.copy(toastMessage = "Lỗi: $msg", isLoading = false) }

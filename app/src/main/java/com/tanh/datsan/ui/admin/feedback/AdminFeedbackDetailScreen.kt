@@ -46,30 +46,7 @@ fun AdminFeedbackDetailScreen(
         }
     }
 
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Xác nhận xóa") },
-            text = { Text("Bạn có chắc chắn muốn xóa Feedback này không?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteFeedback(feedbackId) {
-                            onNavigateBack()
-                        }
-                    }
-                ) {
-                    Text("Xóa", color = Color.Red)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Hủy")
-                }
-            }
-        )
-    }
+    // Removed delete dialog since backend doesn't support deletion
 
     Scaffold(
         topBar = {
@@ -81,9 +58,7 @@ fun AdminFeedbackDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
-                    }
+                    // Removed delete action
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.White
@@ -161,51 +136,7 @@ fun AdminFeedbackDetailScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Action Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Chuyển trạng thái", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            OutlinedButton(
-                                onClick = { viewModel.updateStatus(feedbackId, "pending") },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = if (feedback.status == "pending") Color.White else Color(0xFFF59E0B),
-                                    containerColor = if (feedback.status == "pending") Color(0xFFF59E0B) else Color.Transparent
-                                )
-                            ) {
-                                Text("Pending")
-                            }
-                            OutlinedButton(
-                                onClick = { viewModel.updateStatus(feedbackId, "processing") },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = if (feedback.status == "processing") Color.White else Color(0xFF3B82F6),
-                                    containerColor = if (feedback.status == "processing") Color(0xFF3B82F6) else Color.Transparent
-                                )
-                            ) {
-                                Text("Processing")
-                            }
-                            OutlinedButton(
-                                onClick = { viewModel.updateStatus(feedbackId, "resolved") },
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = if (feedback.status == "resolved") Color.White else Color(0xFF10B981),
-                                    containerColor = if (feedback.status == "resolved") Color(0xFF10B981) else Color.Transparent
-                                )
-                            ) {
-                                Text("Resolved")
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
+                // Action Card for status update has been removed because it is managed automatically by the backend.
 
                 // Reply Card
                 Card(

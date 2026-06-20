@@ -291,7 +291,6 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    // Input handlers
     fun onFullNameChange(value: String) {
         _uiState.update { it.copy(fullName = value) }
     }
