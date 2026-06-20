@@ -18,6 +18,7 @@ import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
 import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.admin.booking.AdminCreateBookingScreen
+import com.tanh.datsan.ui.admin.branch.BranchFormScreen
 import com.tanh.datsan.ui.admin.category.AdminFieldTypeScreen
 import com.tanh.datsan.ui.admin.field.AdminFieldScreen
 import com.tanh.datsan.ui.admin.field.FieldFormScreen
@@ -38,6 +39,7 @@ import com.tanh.datsan.ui.home.review.AllReviewScreen
 import com.tanh.datsan.ui.home.voucher.VoucherScreen
 import com.tanh.datsan.ui.admin.review.AdminReviewScreen
 import com.tanh.datsan.ui.admin.user.AdminUserScreen
+import com.tanh.datsan.ui.admin.user.CreateEmployeeScreen
 import com.tanh.datsan.ui.home.review.MyReviewsScreen
 import com.tanh.datsan.ui.home.review.WriteReviewScreen
 import com.tanh.datsan.ui.navigation.AdminBottomNavItem
@@ -495,7 +497,7 @@ fun AppNavigation() {
                     }
                 }
 
-                com.tanh.datsan.ui.admin.branch.BranchFormScreen(
+                BranchFormScreen(
                     branchId = branchId,
                     uiState = uiState,
                     selectedBranch = selectedBranch,
@@ -628,7 +630,7 @@ fun AppNavigation() {
                 val uiState by adminUserViewModel.uiState.collectAsState()
                 val branches by adminUserViewModel.branches.collectAsState()
 
-                com.tanh.datsan.ui.admin.user.CreateEmployeeScreen(
+                CreateEmployeeScreen(
                     uiState = uiState,
                     branches = branches,
                     onCreateEmployee = { dto -> adminUserViewModel.createEmployee(dto) },
