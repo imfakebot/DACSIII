@@ -50,11 +50,11 @@ class FeedbackListViewModel @Inject constructor(
         }
     }
 
-    fun createFeedback(title: String, category: String, content: String, onSuccess: (String) -> Unit) {
+    fun createFeedback(title: String, type: String, content: String, images: List<String>?, onSuccess: (String) -> Unit) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val response = feedbackRepository.createFeedback(title, category, content)
+                val response = feedbackRepository.createFeedback(title, type, content, images)
                 if (response.isSuccessful && response.body() != null) {
                     _uiState.value = _uiState.value.copy(isLoading = false)
                     onSuccess(response.body()!!.id)

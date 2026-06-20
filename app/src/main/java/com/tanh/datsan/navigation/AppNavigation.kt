@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tanh.datsan.data.model.LoginRequest
 import com.tanh.datsan.ui.admin.booking.AdminCreateBookingScreen
+import com.tanh.datsan.ui.admin.category.AdminFieldTypeScreen
 import com.tanh.datsan.ui.admin.field.FieldFormScreen
 import com.tanh.datsan.ui.admin.field.FieldImageUploadScreen
 import com.tanh.datsan.ui.admin.pricing.AdminTimeSlotScreen
@@ -32,6 +33,9 @@ import com.tanh.datsan.ui.home.main.MainScreen
 import com.tanh.datsan.ui.home.notification.NotificationScreen
 import com.tanh.datsan.ui.home.review.AllReviewScreen
 import com.tanh.datsan.ui.home.voucher.VoucherScreen
+import com.tanh.datsan.ui.admin.review.AdminReviewScreen
+import com.tanh.datsan.ui.home.review.MyReviewsScreen
+import com.tanh.datsan.ui.home.review.WriteReviewScreen
 import com.tanh.datsan.ui.navigation.AdminBottomNavItem
 import com.tanh.datsan.ui.navigation.BottomNavItem
 import com.tanh.datsan.ui.navigation.MainBottomBar
@@ -315,17 +319,91 @@ fun AppNavigation() {
             ) { backStackEntry ->
                 val fieldId = backStackEntry.arguments?.getString("fieldId") ?: ""
                 val reviewViewModel: ReviewViewModel = hiltViewModel()
+                val reviewUserViewModel: UserViewModel = hiltViewModel()
                 val reviews by reviewViewModel.reviews.collectAsState()
+                val reviewMeta by reviewViewModel.reviewMeta.collectAsState()
                 val isLoading by reviewViewModel.isLoading.collectAsState()
                 val errorMessage by reviewViewModel.errorMessage.collectAsState()
+                val isLoggedIn by reviewUserViewModel.isLoggedIn.collectAsState()
 
                 AllReviewScreen(
                     fieldId = fieldId,
                     reviews = reviews,
+                    reviewMeta = reviewMeta,
                     isLoading = isLoading,
                     errorMessage = errorMessage,
+                    isLoggedIn = isLoggedIn,
                     onFetchReview = { id -> reviewViewModel.fetchReview(id) },
                     onClearError = { reviewViewModel.clearError() },
+                    onBackClick = { navController.popBackStack() },
+                    onWriteReviewClick = {
+                        // Navigate without bookingId — user picks from my bookings
+                        navController.navigate("my_reviews")
+                    }
+                )
+            }
+
+            // ── Write review ─────────────────────────────────────────────────
+            composable(
+                "write_review/{bookingId}/{fieldId}/{fieldName}",
+                arguments = listOf(
+                    navArgument("bookingId") { type = NavType.StringType },
+                    navArgument("fieldId") { type = NavType.StringType },
+                    navArgument("fieldName") { type = NavType.StringType }
+                )
+            ) { backStackEntry ->
+                val bookingId = backStackEntry.arguments?.getString("bookingId") ?: ""
+                val fieldName = backStackEntry.arguments?.getString("fieldName") ?: "Sân"
+                val reviewViewModel: ReviewViewModel = hiltViewModel()
+                val uiState by reviewViewModel.uiState.collectAsState()
+
+                WriteReviewScreen(
+                    bookingId = bookingId,
+                    fieldName = fieldName,
+                    uiState = uiState,
+                    onSubmit = { bId, rating, comment ->
+                        reviewViewModel.createReview(bId, rating, comment)
+                    },
+                    onResetUiState = { reviewViewModel.resetUiState() },
+                    onBackClick = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            // ── My reviews ────────────────────────────────────────────────────
+            composable("my_reviews") {
+                val reviewViewModel: ReviewViewModel = hiltViewModel()
+                val myReviews by reviewViewModel.myReviews.collectAsState()
+                val isLoading by reviewViewModel.isLoading.collectAsState()
+                val uiState by reviewViewModel.uiState.collectAsState()
+
+                MyReviewsScreen(
+                    myReviews = myReviews,
+                    isLoading = isLoading,
+                    uiState = uiState,
+                    onFetchMyReviews = { reviewViewModel.fetchMyReviews() },
+                    onResetUiState = { reviewViewModel.resetUiState() },
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            // ── Admin reviews ─────────────────────────────────────────────────
+            composable("admin_reviews") {
+                val adminReviewViewModel: AdminReviewViewModel = hiltViewModel()
+                val reviews by adminReviewViewModel.reviews.collectAsState()
+                val uiState by adminReviewViewModel.uiState.collectAsState()
+                val filterRating by adminReviewViewModel.filterRating.collectAsState()
+
+                AdminReviewScreen(
+                    reviews = reviews,
+                    uiState = uiState,
+                    filterRating = filterRating,
+                    onFetchReviews = { branchId, rating ->
+                        adminReviewViewModel.fetchReviews(branchId, rating)
+                    },
+                    onDeleteReview = { id -> adminReviewViewModel.deleteReview(id) },
+                    onReplyReview = { id, reply -> adminReviewViewModel.replyReview(id, reply) },
+                    onResetUiState = { adminReviewViewModel.resetUiState() },
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -524,8 +602,7 @@ fun AppNavigation() {
                     uiState = uiState,
                     onFetchUsers = { adminUserViewModel.fetchUsers() },
                     onNavigateToCreateEmployee = { navController.navigate("create_employee") },
-                    onBanUser = { userId -> adminUserViewModel.banUser(userId) },
-                    onUnbanUser = { userId -> adminUserViewModel.unbanUser(userId) },
+                    onToggleActive = { userId, isActive -> adminUserViewModel.toggleActive(userId, isActive) },
                     onResetUiState = { adminUserViewModel.resetUiState() }
                 )
             }
@@ -572,7 +649,12 @@ fun AppNavigation() {
                     uiState = uiState,
                     currentStatus = currentStatus,
                     onFetchBookings = { status -> viewModel.fetchMyBookings(status) },
-                    onCancelBooking = { id -> viewModel.cancelBooking(id) }
+                    onCancelBooking = { id -> viewModel.cancelBooking(id) },
+                    onWriteReview = { bId, fId, fName ->
+                        navController.navigate(
+                            "write_review/$bId/$fId/${java.net.URLEncoder.encode(fName, "UTF-8")}"
+                        )
+                    }
                 )
             }
 
@@ -597,15 +679,18 @@ fun AppNavigation() {
                 val checkLoggedIn by profileUserViewModel.isLoggedIn.collectAsState()
                 if (checkLoggedIn) {
                     ProfileScreen(
-                        onBackClick = { navController.popBackStack() },
+                        showBackButton = false,
+                        onBackClick = {},
                         onLogoutClick = {
                             navController.navigate("login") {
                                 popUpTo(0) { inclusive = true }
                             }
                         },
                         onNavigateToResetPassword = { email ->
-                            // Điều hướng đến màn hình đổi mật khẩu từ Profile
                             navController.navigate("reset_password/$email")
+                        },
+                        onNavigateToFeedbacks = {
+                            navController.navigate("my_feedbacks")
                         }
                     )
                 } else {
@@ -622,22 +707,39 @@ fun AppNavigation() {
                     onNavigateToFieldTypes = { navController.navigate("admin_field_types") },
                     onNavigateToUtilities = { navController.navigate("admin_utilities") },
                     onNavigateToBookings = { navController.navigate("admin_bookings") },
-                    onNavigateToTimeSlots = { navController.navigate("admin_timeslot") }
+                    onNavigateToTimeSlots = { navController.navigate("admin_timeslot") },
+                    onNavigateToReviews = { navController.navigate("admin_reviews") },
+                    onNavigateToFeedbacks = { navController.navigate("admin_feedbacks") }
                 )
             }
 
             composable(AdminBottomNavItem.Profile.route) {
-                ProfileScreen(
-                    onBackClick = { navController.popBackStack() },
-                    onLogoutClick = {
+                val adminProfileUserViewModel: UserViewModel = hiltViewModel()
+                val adminCheckLoggedIn by adminProfileUserViewModel.isLoggedIn.collectAsState()
+
+                if (adminCheckLoggedIn) {
+                    ProfileScreen(
+                        showBackButton = false,
+                        onBackClick = {},
+                        onLogoutClick = {
+                            navController.navigate("login") {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        },
+                        onNavigateToResetPassword = { email ->
+                            navController.navigate("reset_password/$email")
+                        },
+                        onNavigateToFeedbacks = {
+                            navController.navigate("my_feedbacks")
+                        }
+                    )
+                } else {
+                    LaunchedEffect(Unit) {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
-                    },
-                    onNavigateToResetPassword = { email ->
-                        navController.navigate("reset_password/$email")
                     }
-                )
+                }
             }
 
             composable("admin_timeslot") {
@@ -656,7 +758,7 @@ fun AppNavigation() {
             }
 
             composable("admin_field_types") {
-                com.tanh.datsan.ui.admin.category.AdminFieldTypeScreen(
+                AdminFieldTypeScreen(
                     onBackClick = { navController.popBackStack() }
                 )
             }
@@ -714,6 +816,33 @@ fun AppNavigation() {
             composable("admin_voucher") {
                 com.tanh.datsan.ui.admin.voucher.AdminVoucherScreen(
                     onBackClick = { navController.popBackStack() }
+                )
+            }
+
+            composable("my_feedbacks") {
+                val viewModel: FeedbackListViewModel = hiltViewModel()
+                com.tanh.datsan.ui.feedback.FeedbackListScreen(
+                    onBackClick = { navController.popBackStack() },
+                    viewModel = viewModel
+                )
+            }
+
+            composable("admin_feedbacks") {
+                com.tanh.datsan.ui.admin.feedback.AdminFeedbackScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onNavigateToDetail = { id -> navController.navigate("admin_feedback_detail/$id") }
+                )
+            }
+            
+            composable(
+                route = "admin_feedback_detail/{id}",
+                arguments = listOf(navArgument("id") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val id = backStackEntry.arguments?.getString("id") ?: ""
+                
+                com.tanh.datsan.ui.admin.feedback.AdminFeedbackDetailScreen(
+                    feedbackId = id,
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

@@ -6,8 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,8 +25,7 @@ fun AdminUserScreen(
     uiState: AdminUserUiState,
     onFetchUsers: () -> Unit,
     onNavigateToCreateEmployee: () -> Unit,
-    onBanUser: (String) -> Unit,
-    onUnbanUser: (String) -> Unit,
+    onToggleActive: (String, Boolean) -> Unit,
     onResetUiState: () -> Unit
 ) {
     val context = LocalContext.current
@@ -107,11 +106,7 @@ fun AdminUserScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (isBan) {
-                            onBanUser(userId)
-                        } else {
-                            onUnbanUser(userId)
-                        }
+                        onToggleActive(userId, isBan)
                         showConfirmDialog = null
                     }
                 ) {
@@ -172,8 +167,8 @@ fun UserItem(
             }
             IconButton(onClick = { onToggleBanStatus(isActive) }) { // If active, click to ban
                 Icon(
-                    imageVector = if (isActive) Icons.Filled.Block else Icons.Filled.CheckCircleOutline,
-                    contentDescription = if (isActive) "Ban User" else "Unban User",
+                    imageVector = if (isActive) Icons.Filled.Lock else Icons.Filled.LockOpen,
+                    contentDescription = if (isActive) "Khóa User" else "Mở khóa User",
                     tint = if (isActive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             }

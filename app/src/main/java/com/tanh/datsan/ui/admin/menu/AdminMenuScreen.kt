@@ -6,9 +6,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.rounded.Category
+import androidx.compose.material.icons.rounded.ChatBubble
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.SportsSoccer
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Feedback
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,6 +33,8 @@ fun AdminMenuScreen(
     onNavigateToUtilities: () -> Unit,
     onNavigateToBookings: () -> Unit,
     onNavigateToTimeSlots: () -> Unit,
+    onNavigateToReviews: () -> Unit = {},
+    onNavigateToFeedbacks: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -97,6 +101,20 @@ fun AdminMenuScreen(
                                 label = "Quản lý Khung Giờ & Giá",
                                 color = Color(0xFF8B5CF6),
                                 onClick = onNavigateToTimeSlots
+                            )
+                            MenuDivider()
+                            MenuItem(
+                                icon = Icons.Rounded.ChatBubble,
+                                label = "Quản lý Đánh Giá",
+                                color = Color(0xFFEC4899),
+                                onClick = onNavigateToReviews
+                            )
+                            MenuDivider()
+                            MenuItem(
+                                icon = Icons.Rounded.Feedback,
+                                label = "Quản lý Feedback",
+                                color = Color(0xFFEF4444),
+                                onClick = onNavigateToFeedbacks
                             )
                         }
                     }

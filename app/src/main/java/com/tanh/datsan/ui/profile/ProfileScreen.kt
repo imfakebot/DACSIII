@@ -54,6 +54,8 @@ fun ProfileScreen(
     onBackClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onNavigateToResetPassword: (String) -> Unit,
+    onNavigateToFeedbacks: () -> Unit = {},
+    showBackButton: Boolean = true,
     viewModel: ProfileViewModel = hiltViewModel(),
     mainViewModel: MainViewModel = hiltViewModel(),
     authViewModel: AuthViewModel = hiltViewModel()
@@ -122,12 +124,14 @@ fun ProfileScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
+                    if (showBackButton) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -398,6 +402,14 @@ fun ProfileScreen(
                                         )
                                     }
                                 }
+                            )
+                            PremiumDivider()
+                            PremiumSettingsItem(
+                                icon = Icons.Rounded.Feedback,
+                                label = "Góp ý & Báo lỗi",
+                                value = "Gửi phản hồi cho chúng tôi",
+                                color = Color(0xFF3B82F6),
+                                onClick = onNavigateToFeedbacks
                             )
                         }
 

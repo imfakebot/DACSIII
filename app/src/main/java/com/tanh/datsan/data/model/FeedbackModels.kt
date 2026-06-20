@@ -6,51 +6,49 @@ data class FeedbackResponse(
     val id: String,
     val title: String?,
     val content: String?,
-    val description: String?,
+    val type: String?, // "bug", "suggestion", "complaint", "other"
+    val images: List<String>?,
     val status: String,
+    val adminReply: String?,
     @SerializedName("created_at")
     val createdAt: String,
     @SerializedName("updated_at")
     val updatedAt: String,
-    val user: FeedbackUser?,
-    val responses: List<ChatMessage>?
+    val user: FeedbackUser?
 )
 
 data class FeedbackUser(
-    val id: String,
+    val id: String?,
     val email: String,
     @SerializedName("userProfile")
     val profile: FeedbackUserProfile?
 )
 
 data class FeedbackUserProfile(
-    @SerializedName("fullName")
+    @SerializedName("full_name", alternate = ["fullName"])
     val fullName: String?,
-    @SerializedName("avatarUrl")
+    @SerializedName("avatar_url", alternate = ["avatarUrl"])
     val avatarUrl: String?
-)
-
-data class ChatMessage(
-    val id: String,
-    val content: String,
-    @SerializedName("created_at")
-    val createdAt: String,
-    val responder: ChatResponder?
-)
-
-data class ChatResponder(
-    val id: String,
-    val fullName: String?,
-    val avatarUrl: String?,
-    val role: String // "user", "admin", "staff"
 )
 
 data class CreateFeedbackRequest(
     val title: String,
-    val category: String,
-    val content: String
+    val type: String,
+    val content: String,
+    val images: List<String>? = null
 )
 
 data class ReplyFeedbackRequest(
-    val content: String
+    val adminReply: String
+)
+
+data class UpdateFeedbackStatusRequest(
+    val status: String
+)
+
+data class FeedbackPaginateResponse(
+    val data: List<FeedbackResponse>,
+    val total: Int,
+    val page: Int,
+    val limit: Int
 )

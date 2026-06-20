@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.feedback
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,7 +62,6 @@ import java.util.TimeZone
 @Composable
 fun FeedbackListScreen(
     onBackClick: () -> Unit,
-    onNavigateToChat: (String) -> Unit,
     viewModel: FeedbackListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -109,7 +110,7 @@ fun FeedbackListScreen(
                 )
             } else if (uiState.feedbacks.isEmpty()) {
                 Text(
-                    text = "Chưa có đoạn chat nào. Hãy tạo một yêu cầu mới!",
+                    text = "Chưa có phản hồi nào. Hãy tạo một yêu cầu mới!",
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.Gray
                 )
@@ -121,8 +122,7 @@ fun FeedbackListScreen(
                 ) {
                     items(uiState.feedbacks.sortedByDescending { it.createdAt }) { feedback ->
                         FeedbackItem(
-                            feedback = feedback,
-                            onClick = { onNavigateToChat(feedback.id) }
+                            feedback = feedback
                         )
                     }
                 }
@@ -134,8 +134,8 @@ fun FeedbackListScreen(
                 onDismiss = { showCreateDialog = false },
                 onCreate = { title, category, content ->
                     showCreateDialog = false
-                    viewModel.createFeedback(title, category, content) { newId ->
-                        onNavigateToChat(newId)
+                    viewModel.createFeedback(title, category, content, null) { newId ->
+                        viewModel.fetchMyFeedbacks()
                     }
                 }
             )
@@ -144,7 +144,7 @@ fun FeedbackListScreen(
 }
 
 @Composable
-fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
+fun FeedbackItem(feedback: FeedbackResponse) {
     // Format thời gian
     val timeString = remember(feedback.createdAt) {
         try {
@@ -160,8 +160,7 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
 
     Surface(
         modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
         shadowElevation = 2.dp
@@ -188,10 +187,10 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = feedback.content ?: feedback.description ?: "",
+                text = feedback.content ?: "",
                 fontSize = 14.sp,
                 color = Color.DarkGray,
-                maxLines = 2,
+                maxLines = 4,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -212,6 +211,32 @@ fun FeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
                     color = statusColor
                 )
             }
+            
+            if (!feedback.adminReply.isNullOrEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFE8F5E9))
+                        .padding(12.dp)
+                        .fillMaxWidth()
+                ) {
+                    Column {
+                        Text(
+                            text = "Admin phản hồi:",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = feedback.adminReply,
+                            fontSize = 14.sp,
+                            color = Color(0xFF1B5E20)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -228,7 +253,7 @@ fun CreateFeedbackDialog(
     var expanded by remember { mutableStateOf(false) }
 
     val categories = listOf(
-        "support" to "Hỗ trợ kỹ thuật",
+        "bug" to "Báo lỗi",
         "suggestion" to "Góp ý",
         "complaint" to "Khiếu nại",
         "other" to "Khác"
@@ -294,7 +319,7 @@ fun CreateFeedbackDialog(
                 enabled = title.isNotBlank() && content.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF007BFF))
             ) {
-                Text("Bắt đầu chat")
+                Text("Gửi yêu cầu")
             }
         },
         dismissButton = {

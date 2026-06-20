@@ -155,8 +155,9 @@ class AuthViewModel @Inject constructor(
                     if (loginResponse != null) {
                         tokenManager.saveToken(loginResponse.accessToken)
                         userManager.setUserInfo(
-                            loginResponse.user?.fullName,
-                            loginResponse.user?.avatarUrl
+                            loginResponse.user?.userProfile?.fullName ?: loginResponse.user?.fullName,
+                            loginResponse.user?.userProfile?.avatarUrl ?: loginResponse.user?.avatarUrl,
+                            loginResponse.user?.managedBranchId
                         )
                     }
                     _uiState.value = AuthUiState.Success("Registration complete. Please login.")
@@ -214,8 +215,9 @@ class AuthViewModel @Inject constructor(
                         } else {
                             tokenManager.saveToken(loginResponse.accessToken)
                             userManager.setUserInfo(
-                                loginResponse.user?.fullName,
-                                loginResponse.user?.avatarUrl
+                                loginResponse.user?.userProfile?.fullName ?: loginResponse.user?.fullName,
+                                loginResponse.user?.userProfile?.avatarUrl ?: loginResponse.user?.avatarUrl,
+                                loginResponse.user?.managedBranchId
                             )
                             val role = getRoleFromToken(loginResponse.accessToken)
                             _uiState.value = AuthUiState.Authenticated(role)
@@ -243,8 +245,9 @@ class AuthViewModel @Inject constructor(
                     if (loginResponse != null) {
                         tokenManager.saveToken(loginResponse.accessToken)
                         userManager.setUserInfo(
-                            loginResponse.user?.fullName,
-                            loginResponse.user?.avatarUrl
+                            loginResponse.user?.userProfile?.fullName ?: loginResponse.user?.fullName,
+                            loginResponse.user?.userProfile?.avatarUrl ?: loginResponse.user?.avatarUrl,
+                            loginResponse.user?.managedBranchId
                         )
                         val role =
                             getRoleFromToken(loginResponse.accessToken)

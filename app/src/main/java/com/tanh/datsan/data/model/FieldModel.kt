@@ -102,23 +102,40 @@ data class FieldModel(
 
 data class ReviewPaginateResponse(
     val data: List<Review>,
-    val meta :ReviewMeta
+    val meta: ReviewMeta
 )
 
 data class ReviewUser(
-    @SerializedName("full_name")
-    val fullName:String?,
-    @SerializedName("avatar_url")
-    val avatarUrl : String?
+    @SerializedName("full_name", alternate = ["fullName"])
+    val fullName: String?,
+    @SerializedName("avatar_url", alternate = ["avatarUrl"])
+    val avatarUrl: String?
 )
 
 data class Review(
-    val id:String,
-    val rating:Int,
-    val comment:String?,
+    val id: String,
+    val rating: Int,
+    val comment: String?,
     val createdAt: String,
-    @SerializedName("userProfile")
-    val user: ReviewUser?
+    @SerializedName("userProfile", alternate = ["user"])
+    val user: ReviewUser?,
+    // Extended fields
+    val bookingId: String? = null,
+    val fieldId: String? = null,
+    val images: List<String>? = null,
+    val adminReply: String? = null,
+    val field: ReviewField? = null
+)
+
+data class ReviewField(
+    val id: String,
+    val name: String,
+    val branch: ReviewBranch? = null
+)
+
+data class ReviewBranch(
+    val id: String,
+    val name: String
 )
 
 data class ReviewMeta(
@@ -128,3 +145,15 @@ data class ReviewMeta(
     val lastPage: Int,
     val averageRating: Float?
 )
+
+// Request DTOs
+data class CreateReviewDto(
+    val bookingId: String,
+    val rating: Int,
+    val comment: String? = null,
+    val images: List<String>? = null
+)
+
+data class AdminReplyDto(
+    val adminReply: String
+)

@@ -3,6 +3,8 @@ package com.tanh.datsan.ui.home.history
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,7 +23,8 @@ fun BookingHistoryScreen(
     uiState: BookingHistoryUiState,
     currentStatus: String?,
     onFetchBookings: (String?) -> Unit,
-    onCancelBooking: (String) -> Unit
+    onCancelBooking: (String) -> Unit,
+    onWriteReview: (bookingId: String, fieldId: String, fieldName: String) -> Unit = { _, _, _ -> }
 ) {
     val tabs = listOf(
         Pair(null, "Tất cả"),
@@ -85,7 +88,13 @@ fun BookingHistoryScreen(
                         items(bookings) { booking ->
                             BookingItem(
                                 booking = booking,
-                                onCancelBooking = { booking.id?.let { onCancelBooking(it) } }
+                                onCancelBooking = { booking.id?.let { onCancelBooking(it) } },
+                                onWriteReview = {
+                                    val bId = booking.id ?: return@BookingItem
+                                    val fId = booking.field?.id ?: return@BookingItem
+                                    val fName = booking.field?.name ?: "Sân"
+                                    onWriteReview(bId, fId, fName)
+                                }
                             )
                         }
                     }
@@ -98,7 +107,8 @@ fun BookingHistoryScreen(
 @Composable
 fun BookingItem(
     booking: BookingResponse,
-    onCancelBooking: () -> Unit = {}
+    onCancelBooking: () -> Unit = {},
+    onWriteReview: () -> Unit = {}
 ) {
     val statusText = when (booking.status?.lowercase()) {
         "pending" -> "Chờ xác nhận"
@@ -171,15 +181,31 @@ fun BookingItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val status = booking.status?.lowercase()
-                if (status == "pending" || status == "approved" || status == "confirmed") {
-                    TextButton(
-                        onClick = onCancelBooking,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Hủy đơn", fontWeight = FontWeight.Bold)
+                when {
+                    status == "pending" || status == "approved" || status == "confirmed" -> {
+                        TextButton(
+                            onClick = onCancelBooking,
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        ) {
+                            Text("Hủy đơn", fontWeight = FontWeight.Bold)
+                        }
                     }
-                } else {
-                    Spacer(modifier = Modifier.width(1.dp))
+                    status == "finished" || status == "completed" -> {
+                        TextButton(
+                            onClick = onWriteReview,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = androidx.compose.ui.graphics.Color(0xFFEA580C)
+                            )
+                        ) {
+                            Icon(
+                                Icons.Rounded.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(" Đánh giá", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    else -> Spacer(modifier = Modifier.width(1.dp))
                 }
 
                 Text(

@@ -14,16 +14,21 @@ data class UserBranch(
 data class UserResponse(
     val id: String,
     val email: String,
-    val role: String,
+    val role: String?,
+    val managedBranchId: String?,
     @SerializedName("is_profile_complete", alternate = ["isProfileComplete"])
-    val isProfileComplete: Boolean,
+    val isProfileComplete: Boolean?,
     val branch: UserBranch?,
+    @SerializedName("userProfile")
+    val userProfile: AccountProfile?,
+    
+    // Fallback in case they are at root
     @SerializedName("avatar_url", alternate = ["avatarUrl"])
     val avatarUrl: String?,
     @SerializedName("full_name", alternate = ["fullName"])
     val fullName: String?,
 
-    val status: Boolean
+    val status: Boolean?
 )
 
 data class LoginResponse(

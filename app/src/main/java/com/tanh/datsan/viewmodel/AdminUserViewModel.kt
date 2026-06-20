@@ -71,30 +71,20 @@ class AdminUserViewModel @Inject constructor(
         }
     }
 
-    fun banUser(id: String) {
+    fun toggleActive(id: String, isActive: Boolean) {
         viewModelScope.launch {
             _uiState.value = AdminUserUiState.Loading
             try {
-                adminUserRepository.banUser(id)
-                _uiState.value = AdminUserUiState.Success("Khóa tài khoản thành công")
-                // Refresh list
-                fetchUsers(_paginationInfo.value?.page ?: 1)
+                if (isActive) {
+                    adminUserRepository.banUser(id)
+                } else {
+                    adminUserRepository.unbanUser(id)
+                }
+                val actionMsg = if (isActive) "Khóa" else "Mở khóa"
+                _uiState.value = AdminUserUiState.Success("$actionMsg tài khoản thành công")
+                fetchUsers() // Cập nhật lại danh sách sau khi đổi trạng thái
             } catch (e: Exception) {
-                _uiState.value = AdminUserUiState.Error(e.message ?: "Lỗi khi khóa tài khoản")
-            }
-        }
-    }
-
-    fun unbanUser(id: String) {
-        viewModelScope.launch {
-            _uiState.value = AdminUserUiState.Loading
-            try {
-                adminUserRepository.unbanUser(id)
-                _uiState.value = AdminUserUiState.Success("Mở khóa tài khoản thành công")
-                // Refresh list
-                fetchUsers(_paginationInfo.value?.page ?: 1)
-            } catch (e: Exception) {
-                _uiState.value = AdminUserUiState.Error(e.message ?: "Lỗi khi mở khóa tài khoản")
+                _uiState.value = AdminUserUiState.Error("Lỗi: ${e.message}")
             }
         }
     }

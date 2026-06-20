@@ -87,10 +87,11 @@ class UserViewModel @Inject constructor(
             try {
                 Log.d("UserViewModel", "Calling userRepository.getUserProfile()")
                 val account = userRepository.getUserProfile()
-                Log.d("UserViewModel", "Fetched user profile successfully: ${account.userProfile.fullName}")
+                Log.d("UserViewModel", "Fetched user profile successfully: ${account.userProfile?.fullName}")
                 userManager.setUserInfo(
-                    name = account.userProfile.fullName,
-                    avatarUrl = account.userProfile.avatarUrl
+                    name = account.userProfile?.fullName ?: "",
+                    avatarUrl = account.userProfile?.avatarUrl,
+                    branchId = account.managedBranchId
                 )
             } catch (e: Exception) {
                 Log.e("UserViewModel", "Error fetching user profile: ${e.message}", e)

@@ -58,7 +58,7 @@ class ProfileViewModel @Inject constructor(
 
             _uiState.update {
                 it.copy(
-                    fullName = currentProfile.fullName,
+                    fullName = currentProfile.fullName ?: "",
                     phoneNumber = currentProfile.phoneNumber ?: "",
                     gender = currentProfile.gender ?: "",
                     dateOfBirth = currentProfile.dateOfBirth ?: "",
@@ -176,19 +176,23 @@ class ProfileViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     profile = accountResponse,
-                    fullName = profile.fullName,
-                    phoneNumber = profile.phoneNumber ?: "",
-                    gender = profile.gender ?: "",
-                    dateOfBirth = profile.dateOfBirth ?: "",
-                    bio = profile.bio ?: "",
-                    street = profile.address?.street ?: "",
-                    displayCityName = profile.address?.cityName ?: "",
-                    displayWardName = profile.address?.wardName ?: "",
-                    avatarUrl = profile.avatarUrl,
+                    fullName = profile?.fullName ?: "",
+                    phoneNumber = profile?.phoneNumber ?: "",
+                    gender = profile?.gender ?: "",
+                    dateOfBirth = profile?.dateOfBirth ?: "",
+                    bio = profile?.bio ?: "",
+                    street = profile?.address?.street ?: "",
+                    displayCityName = profile?.address?.cityName ?: "",
+                    displayWardName = profile?.address?.wardName ?: "",
+                    avatarUrl = profile?.avatarUrl,
                     email = accountResponse.email
                 )
             }
-            userManager.setUserInfo(name = profile.fullName, avatarUrl = profile.avatarUrl)
+            userManager.setUserInfo(
+                name = profile?.fullName ?: "",
+                avatarUrl = profile?.avatarUrl,
+                branchId = accountResponse.managedBranchId
+            )
         } catch (e: Exception) {
             Log.e("PROFILE_VM", "Error fetching profile: ${e.message}")
             val errorMessage = if (e is HttpException) {
@@ -265,6 +269,7 @@ class ProfileViewModel @Inject constructor(
                 val body = MultipartBody.Part.createFormData("avatar", imageFile.name, requestFile)
 
                 val response = userRepository.updateAvatar(body)
+                Log.d("Profileviewmodel","response upload avatar : $response")
                 if (response.isSuccessful) {
                     _uiState.value =
                         _uiState.value.copy(toastMessage = "Tải ảnh đại diện thành công")
