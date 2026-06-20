@@ -19,6 +19,7 @@ import com.tanh.datsan.data.model.LoginRequest
 import com.tanh.datsan.ui.admin.AdminStatisticsScreen
 import com.tanh.datsan.ui.admin.booking.AdminCreateBookingScreen
 import com.tanh.datsan.ui.admin.branch.BranchFormScreen
+import com.tanh.datsan.ui.admin.branch.BranchScreen
 import com.tanh.datsan.ui.admin.category.AdminFieldTypeScreen
 import com.tanh.datsan.ui.admin.field.AdminFieldScreen
 import com.tanh.datsan.ui.admin.field.FieldFormScreen
@@ -348,8 +349,7 @@ fun AppNavigation() {
                     }
                 )
             }
-
-            // ── Write review ─────────────────────────────────────────────────
+            
             composable(
                 "write_review/{bookingId}/{fieldId}/{fieldName}",
                 arguments = listOf(
@@ -376,7 +376,6 @@ fun AppNavigation() {
                 )
             }
 
-            // ── My reviews ────────────────────────────────────────────────────
             composable("my_reviews") {
                 val reviewViewModel: ReviewViewModel = hiltViewModel()
                 val myReviews by reviewViewModel.myReviews.collectAsState()
@@ -393,7 +392,6 @@ fun AppNavigation() {
                 )
             }
 
-            // ── Admin reviews ─────────────────────────────────────────────────
             composable("admin_reviews") {
                 val adminReviewViewModel: AdminReviewViewModel = hiltViewModel()
                 val reviews by adminReviewViewModel.reviews.collectAsState()
@@ -459,7 +457,7 @@ fun AppNavigation() {
                 val branches by branchViewModel.branches.collectAsState()
                 val uiState by branchViewModel.uiState.collectAsState()
 
-                com.tanh.datsan.ui.admin.branch.BranchScreen(
+               BranchScreen(
                     branches = branches,
                     uiState = uiState,
                     onFetchBranches = { branchViewModel.fetchBranches() },
@@ -550,7 +548,7 @@ fun AppNavigation() {
                 })
             ) { backStackEntry ->
                 val fieldId = backStackEntry.arguments?.getString("fieldId")
-                val adminFieldViewModel: com.tanh.datsan.viewmodel.AdminFieldViewModel =
+                val adminFieldViewModel: AdminFieldViewModel =
                     hiltViewModel()
                 val uiState by adminFieldViewModel.uiState.collectAsState()
                 val selectedField by adminFieldViewModel.selectedField.collectAsState()
