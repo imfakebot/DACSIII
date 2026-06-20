@@ -12,8 +12,8 @@ import javax.inject.Singleton
 class AdminUserRepository @Inject constructor(
     private val apiService: UserApiService
 ) {
-    suspend fun getAdminUsers(page: Int = 1, limit: Int = 10): AccountPaginatedResponseDto =
-        apiService.getAdminUsers(page, limit)
+    suspend fun getAdminUsers(page: Int = 1, limit: Int = 10, search: String? = null): AccountPaginatedResponseDto =
+        apiService.getAdminUsers(page, limit, search)
 
     suspend fun banUser(id: String): MessageResponseDto =
         apiService.banUser(id)

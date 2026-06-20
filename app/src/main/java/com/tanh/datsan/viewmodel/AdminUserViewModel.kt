@@ -40,6 +40,13 @@ class AdminUserViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AdminUserUiState>(AdminUserUiState.Idle)
     val uiState: StateFlow<AdminUserUiState> = _uiState.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
     fun fetchInitialData() {
         viewModelScope.launch {
             try {
@@ -51,11 +58,11 @@ class AdminUserViewModel @Inject constructor(
         fetchUsers()
     }
 
-    fun fetchUsers(page: Int = 1, limit: Int = 20, showLoading: Boolean = true) {
+    fun fetchUsers(page: Int = 1, limit: Int = 20, search: String? = _searchQuery.value.takeIf { it.isNotBlank() }, showLoading: Boolean = true) {
         viewModelScope.launch {
             if (showLoading) _uiState.value = AdminUserUiState.Loading
             try {
-                val response = adminUserRepository.getAdminUsers(page, limit)
+                val response = adminUserRepository.getAdminUsers(page, limit, search)
                 _paginationInfo.value = response
                 // If it's page 1, replace. Otherwise, append (for infinite scroll). For simplicity, just replace.
                 _users.value = response.data

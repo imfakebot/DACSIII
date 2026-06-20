@@ -22,7 +22,8 @@ interface UserApiService {
     @GET("users/admin/all")
     suspend fun getAdminUsers(
         @Query("page") page: Int? = 1,
-        @Query("limit") limit: Int? = 10
+        @Query("limit") limit: Int? = 10,
+        @Query("search") search: String? = null
     ): AccountPaginatedResponseDto
 
     @PATCH("users/admin/{id}/ban")

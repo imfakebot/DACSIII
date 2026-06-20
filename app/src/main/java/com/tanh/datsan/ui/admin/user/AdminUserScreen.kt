@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,9 @@ import com.tanh.datsan.viewmodel.AdminUserUiState
 fun AdminUserScreen(
     users: List<AccountResponseDto>,
     uiState: AdminUserUiState,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
     onFetchUsers: () -> Unit,
     onNavigateToCreateEmployee: () -> Unit,
     onToggleActive: (String, Boolean) -> Unit,
@@ -72,26 +76,45 @@ fun AdminUserScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (uiState is AdminUserUiState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (users.isEmpty()) {
-                Text(
-                    text = "Không có người dùng nào.",
-                    modifier = Modifier.align(Alignment.Center)
+            Column(modifier = Modifier.fillMaxSize()) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    placeholder = { Text("Tìm kiếm theo tên...") },
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = onSearch) {
+                            Icon(Icons.Filled.Search, contentDescription = "Tìm kiếm")
+                        }
+                    }
                 )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(users) { user ->
-                        UserItem(
-                            user = user,
-                            onToggleBanStatus = { isBan ->
-                                showConfirmDialog = Pair(user.id, isBan)
-                            }
+
+                Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+                    if (uiState is AdminUserUiState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    } else if (users.isEmpty()) {
+                        Text(
+                            text = "Không có người dùng nào.",
+                            modifier = Modifier.align(Alignment.Center)
                         )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(users) { user ->
+                                UserItem(
+                                    user = user,
+                                    onToggleBanStatus = { isBan ->
+                                        showConfirmDialog = Pair(user.id, isBan)
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             }
