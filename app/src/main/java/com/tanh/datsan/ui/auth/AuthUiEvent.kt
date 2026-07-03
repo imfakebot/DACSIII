@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.auth
 
 sealed class AuthUiEvent {
     data class ShowToast(val message: String) : AuthUiEvent()

@@ -16,11 +16,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.tanh.datsan.viewmodel.AuthUiEvent
-import com.tanh.datsan.viewmodel.AuthViewModel
+import com.tanh.datsan.ui.auth.AuthUiEvent
+import com.tanh.datsan.ui.auth.AuthViewModel
 
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.tanh.datsan.R
 
 @Composable
@@ -82,11 +83,11 @@ fun VerifyOtpScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(text = "Xác thực OTP", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
+            Text(text = stringResource(R.string.otp_title), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Chúng tôi đã gửi mã xác thực gồm 6 kí tự đến email:\n$email",
+                text = stringResource(R.string.otp_description, email),
                 color = Color.White.copy(alpha = 0.8f), fontSize = 16.sp, modifier = Modifier.padding(bottom = 30.dp),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
@@ -101,7 +102,7 @@ fun VerifyOtpScreen(
                     TextField(
                         value = otpCode,
                         onValueChange = { if (it.length <= 6) otpCode = it },
-                        placeholder = { Text("Nhập mã OTP ", color = Color.White.copy(alpha = 0.6f)) },
+                        placeholder = { Text(stringResource(R.string.otp_hint), color = Color.White.copy(alpha = 0.6f)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                         modifier = Modifier.fillMaxWidth(),
                         colors = TextFieldDefaults.colors(
@@ -119,7 +120,7 @@ fun VerifyOtpScreen(
                     Button(
                         onClick = {
                             if (otpCode.length < 6) {
-                                Toast.makeText(context, "Vui lòng nhập đủ 6 số", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.otp_error_empty), Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.verifyOtp(email, otpCode, isLoginMode)
                             }
@@ -130,7 +131,7 @@ fun VerifyOtpScreen(
                         enabled = !isLoading
                     ) {
                         if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFF0F2027), strokeWidth = 2.dp)
-                        else Text("XÁC NHẬN", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        else Text(stringResource(R.string.btn_confirm).uppercase(), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -143,17 +144,17 @@ fun VerifyOtpScreen(
                 horizontalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(text = "Chưa nhận được mã? ", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
+                Text(text = stringResource(R.string.otp_not_received), color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
                 if (isTimerRunning) {
                     Text(
-                        text = "Gửi lại sau ${ticks}s",
+                        text = stringResource(R.string.otp_resend_wait, ticks),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                 } else {
                     Text(
-                        text = "Gửi lại ngay",
+                        text = stringResource(R.string.otp_resend_now),
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
@@ -165,7 +166,7 @@ fun VerifyOtpScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            TextButton(onClick = onBackToLogin) { Text("Quay lại", color = Color.White.copy(alpha = 0.6f)) }
+            TextButton(onClick = onBackToLogin) { Text(stringResource(R.string.btn_back), color = Color.White.copy(alpha = 0.6f)) }
         }
     }
 }

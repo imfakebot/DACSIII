@@ -17,7 +17,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
-import com.tanh.datsan.viewmodel.AuthUiState
+import com.tanh.datsan.ui.auth.AuthUiState
 
 @Composable
 fun OtpScreen(

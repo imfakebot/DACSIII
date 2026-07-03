@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.auth
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -120,11 +120,9 @@ class AuthViewModel @Inject constructor(
     }
 
     fun initiateRegistration(request: RegisterRequest) {
-        Log.d("AuthViewModel", "Request: $request")
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                Log.d("AuthViewModel", "Initiating registration for email=${request.email}")
                 val response = authRepository.initiateRegistration(request)
                 if (response.isSuccessful) {
                     _email.value = request.email
@@ -143,10 +141,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                Log.d(
-                    "AuthViewModel",
-                    "Completing registration for email=$email with code=$verificationCode"
-                )
                 val response = authRepository.completeRegistration(
                     VerifyEmailRequest(email, verificationCode)
                 )
@@ -175,7 +169,6 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                Log.d("AuthViewModel", "Initiating login for email=${request.email}")
                 val response = authRepository.initiateLogin(request)
                 if (response.isSuccessful) {
                     _email.value = request.email
@@ -194,20 +187,12 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
             try {
-                Log.d(
-                    "AuthViewModel",
-                    "Completing login for email=$email with code=$verificationCode"
-                )
                 val response = authRepository.completeLogin(
                     LoginCompleteRequest(email, verificationCode)
                 )
                 if (response.isSuccessful) {
                     val loginResponse = response.body()
                     if (loginResponse != null) {
-                        Log.d(
-                            "AuthViewModel",
-                            "Login successful for user: ${loginResponse.user?.fullName}"
-                        )
                         if (loginResponse.user?.status == false) {
                             _uiState.value = AuthUiState.Error("Tài khoản của bạn đã bị khóa.")
                             _isLoading.value = false
@@ -253,7 +238,6 @@ class AuthViewModel @Inject constructor(
                             getRoleFromToken(loginResponse.accessToken)
                         _uiState.value = AuthUiState.Authenticated(role)
                     } else {
-                        Log.d("AuthViewModel", "Login response body is null")
                         _uiState.value = AuthUiState.Error("Login response body is null")
                     }
                 } else {
@@ -261,7 +245,6 @@ class AuthViewModel @Inject constructor(
                     _uiState.value = AuthUiState.Error(errorMsg)
                 }
             } catch (e: Exception) {
-                Log.d("AuthViewModel", "Google login error: ${e.message}")
                 _uiState.value = AuthUiState.Error(e.message ?: "Unknown error")
             }
         }

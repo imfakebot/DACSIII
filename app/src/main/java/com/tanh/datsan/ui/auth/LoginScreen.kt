@@ -1,5 +1,6 @@
 package com.tanh.datsan.ui.auth
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -26,10 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
 import com.tanh.datsan.utils.GoogleAuthHelper
-import com.tanh.datsan.viewmodel.AuthUiState
+import com.tanh.datsan.ui.auth.AuthUiState
 import kotlinx.coroutines.launch
 
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 fun LoginScreen(
     uiState: AuthUiState,
@@ -210,7 +212,7 @@ fun LoginScreen(
                             scope.launch {
                                 val result = googleAuthHelper.signInWithGoogle(
                                     context,
-                                    "Google Sign-In không được hỗ trợ"
+                                    context.getString(R.string.error_google_sign_in)
                                 )
                                 result.onSuccess { idToken ->
                                     onGoogleLoginClick(idToken)
