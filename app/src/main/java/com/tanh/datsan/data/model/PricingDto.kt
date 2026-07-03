@@ -36,11 +36,26 @@ data class UpdateTimeSlotRequest(
     @SerializedName("is_peak_hour") val isPeakHour: Boolean? = null
 )
 
+data class CreateTimeSlotRequest(
+    @SerializedName("field_id") val fieldId: String,
+    @SerializedName("start_time") val startTime: String,
+    @SerializedName("end_time") val endTime: String,
+    val price: Double,
+    @SerializedName("is_peak_hour") val isPeakHour: Boolean
+)
+
 data class TimeSlotResponse(
     val id: Int,
     @SerializedName("start_time") val startTime: String,
     @SerializedName("end_time") val endTime: String,
     val price: Double,
     @SerializedName("is_peak_hour") val isPeakHour: Boolean,
-    val fieldType: FieldType? = null
+    val fieldType: FieldType? = null,
+    val field: TimeSlotField? = null
+)
+
+data class TimeSlotField(
+    val id: String,
+    val name: String,
+    val description: String?
 )
