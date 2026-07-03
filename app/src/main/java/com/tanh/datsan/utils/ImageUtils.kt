@@ -32,13 +32,22 @@ fun String?.toFullImageUrl(): String {
     val baseUrl = BuildConfig.API_BASE_URL.removeSuffix("/")
 
     if (this.startsWith("http://") || this.startsWith("https://")) {
+        val uploadsIndex = this.indexOf("/uploads/")
+        if (uploadsIndex != -1) {
+            val path = this.substring(uploadsIndex)
+            return "$baseUrl$path"
+        }
         return this.replace(BuildConfig.API_BACKEND, baseUrl)
     }
 
-    return if (this.startsWith("/")) {
+    return if (this.startsWith("/uploads/")) {
         "$baseUrl$this"
-    } else {
+    } else if (this.startsWith("uploads/")) {
         "$baseUrl/$this"
+    } else if (this.startsWith("/")) {
+        "$baseUrl/uploads$this"
+    } else {
+        "$baseUrl/uploads/$this"
     }
 }
 

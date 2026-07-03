@@ -73,13 +73,17 @@ import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.Voucher
+import com.tanh.datsan.ui.component.ErrorStateScreen
 import com.tanh.datsan.ui.component.FieldImageSlider
+import com.tanh.datsan.ui.component.FullScreenImageViewer
+import com.tanh.datsan.ui.component.LoadingStateScreen
+import com.tanh.datsan.ui.component.UtilityItem
 import com.tanh.datsan.ui.component.FullScreenImageViewer
 import com.tanh.datsan.ui.component.UtilityItem
 import com.tanh.datsan.utils.OpenVNPay
 import com.tanh.datsan.utils.toFullImageUrl
-import com.tanh.datsan.viewmodel.BookingUiState
-import com.tanh.datsan.viewmodel.DetailUiState
+import com.tanh.datsan.ui.home.detail.BookingUiState
+import com.tanh.datsan.ui.home.detail.DetailUiState
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -158,7 +162,7 @@ fun DetailScreen(
             OpenVNPay.openVnPay(context, url)
         } else if (bookingState is BookingUiState.Error) {
             coroutineScope.launch {
-                snackbarHostState.showSnackbar(bookingState.message ?: "Lỗi không xác định")
+                snackbarHostState.showSnackbar(bookingState.message ?: context.getString(R.string.error_unknown))
             }
         }
     }
@@ -185,8 +189,8 @@ fun DetailScreen(
         }
     ) { paddingValues ->
         when (val state = uiState) {
-            is DetailUiState.Loading -> LoadingState()
-            is DetailUiState.Error -> ErrorState(state.message)
+            is DetailUiState.Loading -> LoadingStateScreen()
+            is DetailUiState.Error -> ErrorStateScreen(state.message ?: stringResource(R.string.error_unknown), onBackClick)
             is DetailUiState.Success -> {
                 DetailContent(
                     field = state.field,
@@ -272,7 +276,6 @@ fun DetailContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = padding.calculateBottomPadding() + 24.dp)
         ) {
-            // 1. IMMERSIVE IMAGE HEADER
             item {
                 Box(
                     modifier = Modifier
@@ -296,7 +299,6 @@ fun DetailContent(
                         )
                     }
 
-                    // Dark Gradient Overlay
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -313,7 +315,6 @@ fun DetailContent(
                 }
             }
 
-            // 2. MAIN CONTENT CARD
             item {
                 Surface(
                     modifier = Modifier
@@ -325,7 +326,6 @@ fun DetailContent(
                 ) {
                     Column(Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
 
-                        // Category & Distance Row
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -375,7 +375,6 @@ fun DetailContent(
                             lineHeight = 38.sp
                         )
 
-                        // Address Row
                         Row(verticalAlignment = Alignment.Top) {
                             Icon(
                                 Icons.Rounded.LocationOn,
@@ -404,7 +403,6 @@ fun DetailContent(
 
                         Spacer(Modifier.height(24.dp))
 
-                        // Quick Info Surface
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -449,7 +447,6 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Amenities Section
                         Text(
                             stringResource(R.string.detail_section_amenities),
                             fontWeight = FontWeight.ExtraBold,
@@ -468,7 +465,6 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Description Section
                         Text(
                             stringResource(R.string.detail_section_description),
                             fontWeight = FontWeight.ExtraBold,
@@ -486,7 +482,6 @@ fun DetailContent(
 
                         SectionDivider()
 
-                        // Reviews Section
                         ReviewHeader(
                             fieldId = field.id,
                             reviewCount = field.reviewCount ?: 0,
@@ -494,13 +489,12 @@ fun DetailContent(
                             onNavigate = onNavigateToReview,
                             color = accentColor
                         )
-                        ReviewList(field.reviews)
+                        ReviewList(reviews = field.reviews)
                     }
                 }
             }
         }
 
-        // Floating Back Button (Glassmorphism)
         Surface(
             modifier = Modifier
                 .padding(top = 12.dp, start = 20.dp)
