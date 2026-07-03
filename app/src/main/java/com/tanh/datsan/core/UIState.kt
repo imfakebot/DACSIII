@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.core
 
 
 sealed class UiEvent {

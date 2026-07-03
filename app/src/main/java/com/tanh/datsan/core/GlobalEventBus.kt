@@ -8,7 +8,6 @@ import javax.inject.Singleton
 
 sealed class GlobalEvent {
     object Logout : GlobalEvent()
-
 }
 
 @Singleton

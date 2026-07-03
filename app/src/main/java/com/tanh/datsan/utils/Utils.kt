@@ -1,7 +1,10 @@
 package com.tanh.datsan.utils
 
+import android.util.Log
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -17,22 +20,8 @@ object DateUtil {
             val instant = Instant.parse(isoString)
             dateFormatter.withZone(zoneId).format(instant)
         } catch (e: Exception) {
+            Log.d("DateUtil", "Error parsing review time: $isoString", e)
             "Ngày không xác định"
-        }
-    }
-
-    fun formatBookingTimeRange(startIso: String, endIso: String): String {
-        return try {
-            val start = Instant.parse(startIso).atZone(zoneId)
-            val end = Instant.parse(endIso).atZone(zoneId)
-
-            "${start.format(timeFormatter)} - ${end.format(timeFormatter)} | ${
-                start.format(
-                    dateFormatter
-                )
-            }"
-        } catch (e: Exception) {
-            "Thời gian không xác định"
         }
     }
 
@@ -69,5 +58,48 @@ object DateUtil {
             e.printStackTrace()
         }
         return slots
+    }
+
+    /**
+     * Tạo chuỗi ISO 8601 kèm Timezone cho Backend (VD: 2026-06-20T17:30:00.000+07:00)
+     * @param date Format: yyyy-MM-dd
+     * @param time Format: HH:mm
+     */
+    fun getFormattedStartTimeWithTimezone(date: String, time: String): String {
+        return try {
+            val localDateTime = LocalDateTime.parse("${date}T${time}:00")
+            val zonedDateTime = localDateTime.atZone(zoneId)
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+            zonedDateTime.format(formatter)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "${date}T${time}:00.000+07:00"
+        }
+    }
+
+    /**
+     * Tính khoảng cách thời gian (phút) giữa 2 mốc giờ
+     * @param startTime Format: HH:mm
+     * @param endTime Format: HH:mm
+     */
+    fun calculateDurationMinutes(startTime: String, endTime: String): Int {
+        return try {
+            val start = LocalTime.parse(startTime)
+            val end = LocalTime.parse(endTime)
+            Duration.between(start, end).toMinutes().toInt()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            90
+        }
+    }
+
+    fun formatDateDash(isoDate: String): String {
+        return try {
+            val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", java.util.Locale.getDefault()).apply {
+                timeZone = java.util.TimeZone.getTimeZone("UTC")
+            }
+            val date = parser.parse(isoDate) ?: return isoDate
+            java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault()).format(date)
+        } catch (e: Exception) { isoDate }
     }
 }

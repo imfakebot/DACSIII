@@ -35,7 +35,7 @@ object NotificationHelper {
         )
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_app_logo)
             .setContentTitle(context.getString(R.string.booking_success))
             .setContentText("Bạn đã đặt sân $fieldName thành công. Mã: $bookingCode")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

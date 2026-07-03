@@ -13,7 +13,6 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-// Tách riêng file lưu trữ cài đặt
 private val Context.settingsDataStore by preferencesDataStore(name = "settings_prefs")
 
 @Singleton

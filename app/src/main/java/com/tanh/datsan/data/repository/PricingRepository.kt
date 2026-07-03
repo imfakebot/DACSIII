@@ -4,6 +4,7 @@ import com.tanh.datsan.data.model.CheckPriceDto
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.TimeSlotResponse
 import com.tanh.datsan.data.model.UpdateTimeSlotRequest
+import com.tanh.datsan.data.model.CreateTimeSlotRequest
 import com.tanh.datsan.data.network.PricingApiService
 import retrofit2.Response
 import javax.inject.Inject
@@ -25,5 +26,9 @@ class PricingRepository @Inject constructor(
 
     suspend fun updateTimeSlot(id: Int, request: UpdateTimeSlotRequest): Response<TimeSlotResponse> {
         return pricingApiService.updateTimeSlot(id, request)
+    }
+
+    suspend fun createTimeSlot(request: CreateTimeSlotRequest): Response<TimeSlotResponse> {
+        return pricingApiService.createTimeSlot(request)
     }
 }

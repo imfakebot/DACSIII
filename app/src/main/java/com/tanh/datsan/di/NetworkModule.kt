@@ -1,3 +1,8 @@
+// ============================================================================
+// Author: Tanh
+// Created on: 2026-06-21
+// Note: Core Network Module - Protected Logic
+// ============================================================================
 package com.tanh.datsan.di
 
 import android.content.Context
