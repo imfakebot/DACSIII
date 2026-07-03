@@ -29,12 +29,19 @@
     <string name="otp_description">Chúng tôi đã gửi mã xác thực gồm 6 số đến email:\n%1$s</string>
     <string name="otp_hint">Nhập mã OTP (6 số)</string>
     <string name="otp_error_empty">Vui lòng nhập đủ 6 số</string>
+    <string name="otp_not_received">Chưa nhận được mã? </string>
+    <string name="otp_resend_wait">Gửi lại sau %1$ds</string>
+    <string name="otp_resend_now">Gửi lại ngay</string>
 
     <string name="reset_title">Đặt lại mật khẩu</string>
+    <string name="reset_token_desc">Vui lòng nhập mã xác nhận (Token) đã được gửi đến email:\n%1$s</string>
     <string name="login_forgot_password">Quên mật khẩu</string>
     <string name="reset_token_hint">Mã xác nhận (Token)</string>
     <string name="reset_new_password">Mật khẩu mới (tối thiểu 8 ký tự)</string>
-    <string name="reset_confirm_password">Xác nhận mật khẩu mới</string>
+    <string name="reset_confirm_password">Xác nhận mật khẩu</string>
+    <string name="reset_btn_submit">Xác nhận đổi mật khẩu</string>
+    <string name="reset_val_empty_token">Vui lòng nhập mã xác nhận</string>
+    <string name="reset_val_password_short">Mật khẩu phải từ 8 ký tự trở lên</string>
     <string name="reset_success">Đổi mật khẩu thành công!</string>
     <string name="forgot_password_title">Quên mật khẩu</string>
     <string name="forgot_password_subtitle">Nhập email của bạn để nhận mã xác nhận đặt lại mật khẩu</string>
@@ -113,6 +120,7 @@
     <string name="error_unknown_address">Địa chỉ không xác định</string>
     <string name="error_api_generic">Lỗi gọi API: %1$s</string>
     <string name="error_payment_link">Không lấy được link thanh toán</string>
+    <string name="error_google_sign_in">Google Sign-In không được hỗ trợ</string>
     <string name="booking_date_label">Ngày đá</string>
     <string name="btn_confirm_caps">XÁC NHẬN</string>
     <string name="btn_select_caps">CHỌN</string>
@@ -165,13 +173,15 @@
     <string name="profile_theme_system">Theo hệ thống</string>
     <string name="profile_label_lang">Ngôn ngữ hiển thị</string>
     <string name="profile_lang_vi">Tiếng Việt</string>
-    <string name="profile_lang_en">English</string>
+    <string name="profile_lang_en">Tiếng Anh</string>
+    <string name="profile_label_feedback">Góp ý &amp; Báo lỗi</string>
+    <string name="profile_desc_feedback">Gửi phản hồi cho chúng tôi</string>
     <string name="profile_label_reset_pwd">Đổi mật khẩu</string>
     <string name="profile_reset_pwd_hint">Nên thay đổi định kỳ</string>
     <string name="profile_btn_save">Lưu thông tin mới</string>
     <string name="profile_btn_logout">Đăng xuất tài khoản</string>
     <string name="profile_logout_confirm_title">Xác nhận đăng xuất</string>
-    <string name="profile_logout_confirm_msg">Hành động này sẽ kết thúc phiên làm việc của bạn. Bạn vẫn có thể đăng nhập lại sau.</string>
+    <string name="profile_logout_confirm_msg">Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?</string>
     <string name="profile_btn_agree">Đồng ý</string>
     <string name="profile_btn_dismiss">Hủy bỏ</string>
     <string name="profile_btn_select_date">Chọn ngày</string>
@@ -186,7 +196,439 @@
     <string name="detail_btn_directions">Chỉ đường</string>
     <string name="detail_payment_failed">Thanh toán thất bại!</string>
     <string name="avatar_confirm">Bạn có chắc chắn muốn dùng ảnh này làm Avatar không?</string>
+    <string name="profile_pwd_current">Mật khẩu hiện tại</string>
+    <string name="error_upload_image">Lỗi khi tải ảnh lên: %1$s</string>
     <string name="update_avatar">Cập nhật ảnh đại diện</string>
     <string name="update">Cập nhật</string>
 
+    <!-- Admin Booking -->
+    <string name="success_default">Thành công</string>
+    <string name="admin_booking_title">Đơn đặt sân</string>
+    <string name="cd_back">Trở về</string>
+    <string name="status_pending">Chờ duyệt</string>
+    <string name="status_approved">Đã duyệt</string>
+    <string name="status_rejected">Từ chối</string>
+    <string name="status_completed">Hoàn thành</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="admin_booking_create">Tạo lịch đặt</string>
+    <string name="admin_booking_empty">Bạn chưa có đơn đặt sân nào</string>
+    <string name="customer_guest">Khách vãng lai</string>
+    <string name="customer_no_phone">Không có SDT</string>
+    <string name="booking_code_prefix">Mã: %1$s</string>
+    <string name="admin_btn_cancel">Hủy đơn</string>
+    <string name="admin_booking_total">Tổng: %1$s</string>
+    <string name="admin_create_booking_title">Tạo Đơn Tại Quầy</string>
+    <string name="admin_create_step1">1. Chọn Sân &amp; Thời Gian</string>
+    <string name="admin_select_branch">Chọn Chi Nhánh</string>
+    <string name="admin_select_field">Chọn Sân</string>
+    <string name="admin_create_step2">2. Khung Giờ Trống</string>
+    <string name="admin_no_slots">Không có khung giờ nào trong ngày này.</string>
+    <string name="admin_play_duration">Thời lượng đá</string>
+    <string name="admin_minutes">%1$s phút</string>
+    <string name="admin_create_step3">3. Thông Tin Khách Hàng</string>
+    <string name="admin_customer_name">Tên khách hàng</string>
+    <string name="admin_customer_phone">Số điện thoại</string>
+    <string name="admin_total_price">Tổng tiền:</string>
+    <string name="admin_btn_create_booking">Tạo Đơn</string>
+    <string name="admin_dialog_ok">OK</string>
+    <string name="admin_dialog_close">Đóng</string>
+    <!-- Branch Screen -->
+    <string name="branch_add">Thêm chi nhánh</string>
+    <string name="branch_delete_title">Xóa chi nhánh</string>
+    <string name="branch_delete_confirm">Bạn có chắc muốn xóa chi nhánh\n\"%1$s\" không?\nHành động này không thể hoàn tác.</string>
+    <string name="branch_delete">Xóa</string>
+    <string name="branch_cancel">Hủy</string>
+    <string name="branch_management">Quản lý chi nhánh</string>
+    <string name="branch_count">%1$d chi nhánh</string>
+    <string name="branch_active">Đang hoạt động</string>
+    <string name="branch_inactive">Ngưng hoạt động</string>
+    <string name="branch_edit">Chỉnh sửa</string>
+    <string name="branch_empty_title">Chưa có chi nhánh nào</string>
+    <string name="branch_empty_desc">Tạo chi nhánh đầu tiên để bắt đầu\nquản lý sân của bạn</string>
+
+    <!-- Branch Form -->
+    <string name="branch_form_val_required">Vui lòng nhập tên, giờ mở và đóng cửa</string>
+    <string name="branch_form_edit_title">Chỉnh sửa chi nhánh</string>
+    <string name="branch_form_create_title">Thêm chi nhánh mới</string>
+    <string name="branch_form_basic_info">Thông tin cơ bản</string>
+    <string name="branch_form_name">Tên chi nhánh *</string>
+    <string name="branch_form_name_hint">VD: Chi nhánh Quận 1</string>
+    <string name="branch_form_phone">Số điện thoại</string>
+    <string name="branch_form_phone_hint">VD: 0909 123 456</string>
+    <string name="branch_form_desc">Mô tả</string>
+    <string name="branch_form_desc_hint">Mô tả chi nhánh...</string>
+    <string name="branch_form_status">Trạng thái hoạt động</string>
+    <string name="branch_form_hours">Giờ hoạt động</string>
+    <string name="branch_form_open_time">Giờ mở cửa *</string>
+    <string name="branch_form_close_time">Giờ đóng cửa *</string>
+    <string name="branch_form_location">Địa chỉ &amp; Vị trí</string>
+    <string name="branch_form_city">Tỉnh / Thành phố</string>
+    <string name="branch_form_city_hint">Chọn tỉnh/thành phố</string>
+    <string name="branch_form_ward">Phường / Xã</string>
+    <string name="branch_form_ward_hint_no_city">Chọn tỉnh trước</string>
+    <string name="branch_form_ward_hint">Chọn phường/xã</string>
+    <string name="branch_form_street">Số nhà / Tên đường</string>
+    <string name="branch_form_street_hint">VD: 123 Nguyễn Văn Linh</string>
+    <string name="branch_form_gps">Toạ độ GPS</string>
+    <string name="branch_form_lat">Vĩ độ (Latitude)</string>
+    <string name="branch_form_lng">Kinh độ (Longitude)</string>
+    <string name="branch_form_open_maps">Mở Google Maps để lấy toạ độ</string>
+    <string name="branch_form_maps_hint">💡 Trong Google Maps: nhấn giữ vào vị trí → toạ độ hiện ở thanh tìm kiếm (lat, lng)</string>
+    <string name="branch_form_manager_section">Quản lý phụ trách</string>
+    <string name="branch_form_manager_hint">Chưa chọn quản lý</string>
+    <string name="branch_form_save">Lưu thay đổi</string>
+    <string name="branch_form_create_btn">Tạo chi nhánh</string>
+    <string name="branch_form_select_city">Chọn Tỉnh / Thành phố</string>
+    <string name="branch_form_select_ward">Chọn Phường / Xã</string>
+    <string name="branch_form_select_manager">Chọn Quản lý</string>
+    <string name="branch_form_no_manager">Không chọn quản lý</string>
+    <string name="branch_form_no_name">Không tên</string>
+
+    <!-- Admin Field Type -->
+    <string name="field_type_management">Quản lý Loại Sân</string>
+    <string name="field_type_add_new">Thêm mới</string>
+    <string name="field_type_delete_title">Xóa Loại Sân</string>
+    <string name="field_type_delete_confirm">Bạn có chắc muốn xóa loại sân \'%1$s\' không?</string>
+    <string name="field_type_delete">Xóa</string>
+    <string name="field_type_cancel">Hủy</string>
+    <string name="field_type_add_title">Thêm Loại Sân</string>
+    <string name="field_type_edit_title">Chỉnh Sửa Loại Sân</string>
+    <string name="field_type_name_label">Tên loại sân</string>
+    <string name="field_type_desc_label">Mô tả</string>
+    <string name="field_type_save">Lưu</string>
+
+    <!-- Admin Utility -->
+    <string name="utility_management">Quản lý Tiện Ích</string>
+    <string name="utility_add_new">Thêm mới</string>
+    <string name="utility_delete_title">Xóa Tiện Ích</string>
+    <string name="utility_delete_confirm">Bạn có chắc muốn xóa tiện ích \'%1$s\' không?</string>
+    <string name="utility_delete">Xóa</string>
+    <string name="utility_cancel">Hủy</string>
+    <string name="utility_free">Miễn phí</string>
+    <string name="utility_add_title">Thêm Tiện Ích</string>
+    <string name="utility_edit_title">Chỉnh Sửa Tiện Ích</string>
+    <string name="utility_name_label">Tên tiện ích</string>
+    <string name="utility_price_label">Giá (để trống nếu miễn phí)</string>
+    <string name="utility_save">Lưu</string>
+
+    <!-- Admin Field -->
+    <string name="field_management">Quản lý</string>
+    <string name="field_soccer">Sân Bóng</string>
+    <string name="field_total_count">Tổng cộng: %1$d sân</string>
+    <string name="field_add_new">Thêm sân bóng</string>
+    <string name="field_filter_all_branch">Tất cả chi nhánh</string>
+    <string name="field_delete_title">Xóa sân bóng</string>
+    <string name="field_delete_confirm">Bạn có chắc muốn xóa sân\n\"%1$s\" không?\nHành động này không thể hoàn tác.</string>
+    <string name="field_delete">Xóa</string>
+    <string name="field_cancel">Hủy</string>
+    <string name="field_options">Tùy chọn</string>
+    <string name="field_image_count">%1$d hình ảnh</string>
+    <string name="field_update_images">Cập nhật ảnh</string>
+    <string name="field_edit">Sửa</string>
+    <string name="field_active">Hoạt động</string>
+    <string name="field_inactive">Ngưng hoạt động</string>
+    <string name="field_empty_title">Chưa có sân bóng nào</string>
+    <string name="field_empty_desc">Hệ thống hiện chưa có dữ liệu.</string>
+    <string name="field_add_now">Thêm ngay</string>
+
+    <!-- Field Form -->
+    <string name="field_form_detail_title">Chi tiết Sân Bóng</string>
+    <string name="field_form_edit_title">Sửa Sân Bóng</string>
+    <string name="field_form_add_title">Thêm Sân Bóng</string>
+    <string name="field_form_val_required">Vui lòng nhập các trường bắt buộc (*)</string>
+    <string name="field_form_btn_update">CẬP NHẬT</string>
+    <string name="field_form_btn_create">TẠO MỚI</string>
+    <string name="field_form_basic_info">Thông tin cơ bản</string>
+    <string name="field_form_name_label">Tên sân bóng *</string>
+    <string name="field_form_name_hint">VD: Sân 5 người số 1</string>
+    <string name="field_form_type_label">Loại sân *</string>
+    <string name="field_form_type_hint">Chọn loại sân</string>
+    <string name="field_form_branch_label">Chi nhánh *</string>
+    <string name="field_form_branch_hint">Chọn chi nhánh</string>
+    <string name="field_form_utility_section">Tiện ích</string>
+    <string name="field_form_desc_status_section">Mô tả &amp; Trạng thái</string>
+    <string name="field_form_desc_hint">Nhập mô tả thêm về sân bóng</string>
+
+    <!-- Admin TimeSlot -->
+    <string name="timeslot_management">Quản lý Khung Giờ &amp; Giá</string>
+    <string name="timeslot_empty">Không có khung giờ nào.</string>
+    <string name="timeslot_field_type">Loại sân: %1$s</string>
+    <string name="timeslot_field_type_other">Khác</string>
+    <string name="timeslot_error">Lỗi</string>
+    <string name="timeslot_success">Thành công</string>
+    <string name="timeslot_ok">OK</string>
+    <string name="timeslot_price_label">Giá: %1$s</string>
+    <string name="timeslot_peak">Giờ vàng</string>
+    <string name="timeslot_edit_title">Cập nhật Khung Giờ</string>
+    <string name="timeslot_edit_slot">Khung giờ: %1$s - %2$s</string>
+    <string name="timeslot_edit_price_input">Giá tiền (VNĐ)</string>
+    <string name="timeslot_edit_is_peak">Là giờ vàng?</string>
+    <string name="timeslot_save">Lưu</string>
+    <string name="timeslot_cancel">Hủy</string>
+
+    <!-- Admin Statistics -->
+    <string name="stat_filter_today">Hôm nay</string>
+    <string name="stat_filter_7_days">7 ngày</string>
+    <string name="stat_filter_this_month">Tháng này</string>
+    <string name="stat_filter_last_month">Tháng trước</string>
+    <string name="stat_filter_this_year">Năm nay</string>
+    <string name="stat_filter_custom">Tùy chỉnh</string>
+    
+    <string name="stat_dashboard_title">Dashboard</string>
+    <string name="stat_dashboard_desc">Tổng quan hoạt động kinh doanh</string>
+    <string name="stat_recent_transactions">Giao dịch gần đây</string>
+    
+    <string name="stat_revenue_total">Tổng Doanh Thu</string>
+    <string name="stat_revenue_desc">Trong khoảng thời gian đã chọn</string>
+    <string name="stat_completed">Thành công</string>
+    <string name="stat_unit_order">đơn</string>
+    <string name="stat_cancelled">Đã hủy</string>
+    <string name="stat_pending">Chờ xử lý</string>
+    <string name="stat_pending_desc">đơn đang chờ</string>
+    <string name="stat_confirmed">Đã xác nhận</string>
+    
+    <string name="stat_chart_title">Doanh thu theo tháng</string>
+    <string name="stat_chart_total">Tổng: %1$s</string>
+    <string name="stat_chart_legend_highest">Cao nhất</string>
+    <string name="stat_chart_legend_has_revenue">Có doanh thu</string>
+    <string name="stat_chart_legend_no_revenue">Chưa có</string>
+    
+    <string name="stat_booking_code">Mã: %1$s</string>
+    
+    <string name="stat_picker_title">Chọn khoảng thời gian</string>
+    <string name="stat_picker_start">Chọn ngày bắt đầu</string>
+    <string name="stat_picker_apply">Áp dụng</string>
+    <string name="stat_picker_cancel">Hủy</string>
+    
+    <string name="stat_empty_title">Chưa có giao dịch</string>
+    <string name="stat_empty_desc">trong khoảng thời gian này</string>
+    
+    <string name="stat_denied_title">Không có quyền truy cập</string>
+    <string name="stat_denied_desc">Chỉ Admin/Quản lý mới xem được.</string>
+    <string name="stat_btn_back">Quay lại</string>
+    <string name="stat_btn_retry">Thử lại</string>
+
+    <!-- Admin User -->
+    <string name="user_management">Quản lý người dùng</string>
+    <string name="user_create_employee">Tạo nhân viên</string>
+    <string name="user_search_hint">Tìm kiếm theo tên...</string>
+    <string name="user_search_btn">Tìm kiếm</string>
+    <string name="user_empty">Không có người dùng nào.</string>
+    <string name="user_ban_title">Khóa tài khoản</string>
+    <string name="user_unban_title">Mở khóa tài khoản</string>
+    <string name="user_ban_confirm">Bạn có chắc chắn muốn khóa tài khoản này không?</string>
+    <string name="user_unban_confirm">Bạn có chắc chắn muốn mở khóa tài khoản này không?</string>
+    <string name="user_ban_btn">Khóa</string>
+    <string name="user_unban_btn">Mở khóa</string>
+    <string name="user_cancel">Hủy</string>
+    <string name="user_email_label">Email: %1$s</string>
+    <string name="user_role_label">Role: %1$s</string>
+    <string name="user_status_label">Trạng thái: %1$s</string>
+    <string name="user_status_active">Hoạt động</string>
+    <string name="user_status_banned">Bị khóa</string>
+    <string name="user_ban_icon_desc">Khóa User</string>
+    <string name="user_unban_icon_desc">Mở khóa User</string>
+
+    <string name="create_employee_title">Tạo tài khoản nhân viên</string>
+    <string name="create_employee_email">Email *</string>
+    <string name="create_employee_password">Mật khẩu</string>
+    <string name="create_employee_role_hint">Chọn phân quyền *</string>
+    <string name="create_employee_role_label">Phân quyền</string>
+    <string name="create_employee_role_staff">Nhân viên</string>
+    <string name="create_employee_role_manager">Quản lý chi nhánh</string>
+    <string name="create_employee_branch_hint">Chọn chi nhánh (Tùy chọn)</string>
+    <string name="create_employee_branch_label">Chi nhánh</string>
+    <string name="create_employee_branch_none">Không chọn chi nhánh</string>
+    <string name="create_employee_val_required">Vui lòng nhập Email và Phân quyền</string>
+
+    <!-- Admin Voucher -->
+    <string name="voucher_title">Tạo Mã Giảm Giá</string>
+    <string name="voucher_subtitle">POST /voucher</string>
+    <string name="voucher_section_code">Mã giảm giá</string>
+    <string name="voucher_code_label">Mã nhập vào *</string>
+    <string name="voucher_code_hint">VD: SUMMER2024</string>
+    <string name="voucher_section_type">Loại giảm giá</string>
+    <string name="voucher_type_percent">Theo % (discountPercentage)</string>
+    <string name="voucher_type_amount">Số tiền cố định (discountAmount)</string>
+    <string name="voucher_percent_label">discountPercentage (%) *</string>
+    <string name="voucher_percent_hint">VD: 10</string>
+    <string name="voucher_max_amount_label">maxDiscountAmount (VNĐ)</string>
+    <string name="voucher_max_amount_hint">VD: 100000 — Tùy chọn</string>
+    <string name="voucher_amount_label">discountAmount (VNĐ) *</string>
+    <string name="voucher_amount_hint">VD: 50000</string>
+    <string name="voucher_section_condition">Điều kiện áp dụng</string>
+    <string name="voucher_min_order_label">minOrderValue (VNĐ) *</string>
+    <string name="voucher_min_order_hint">VD: 500000</string>
+    <string name="voucher_quantity_label">quantity (Số lượng mã) *</string>
+    <string name="voucher_quantity_hint">VD: 100</string>
+    <string name="voucher_section_validity">Thời hạn hiệu lực</string>
+    <string name="voucher_valid_from_label">validFrom *</string>
+    <string name="voucher_valid_from_hint">Chọn ngày</string>
+    <string name="voucher_valid_to_label">validTo *</string>
+    <string name="voucher_valid_to_hint">Chọn ngày</string>
+    <string name="voucher_section_extra">Cài đặt thêm</string>
+    <string name="voucher_collectible_label">isCollectible</string>
+    <string name="voucher_collectible_desc">User phải bấm Lưu mới dùng được</string>
+    <string name="voucher_btn_creating">Đang tạo...</string>
+    <string name="voucher_btn_create">Tạo mã giảm giá</string>
+
+    <!-- Admin Menu -->
+    <string name="menu_title">Menu Quản Trị</string>
+    <string name="menu_category_management">Quản trị danh mục</string>
+    <string name="menu_bookings">Quản lý Lịch Đặt Sân</string>
+    <string name="menu_field_types">Quản lý Loại sân</string>
+    <string name="menu_utilities">Quản lý Tiện ích</string>
+    <string name="menu_timeslots">Quản lý Khung Giờ &amp; Giá</string>
+    <string name="menu_reviews">Quản lý Đánh Giá</string>
+    <string name="menu_feedbacks">Quản lý Feedback</string>
+    <string name="menu_no_access">Bạn không có quyền truy cập menu này.</string>
+
+    <!-- Admin Feedback -->
+    <string name="feedback_management">Quản lý Feedback</string>
+    <string name="feedback_empty">Không có Feedback nào.</string>
+    <string name="feedback_no_title">Không có tiêu đề</string>
+    <string name="feedback_by">Bởi: %1$s</string>
+    <string name="feedback_detail_title">Chi tiết Feedback</string>
+    <string name="feedback_category">Phân loại: %1$s</string>
+    <string name="feedback_status">Trạng thái: %1$s</string>
+    <string name="feedback_status_pending">Chờ xử lý</string>
+    <string name="feedback_status_processing">Đang xử lý</string>
+    <string name="feedback_status_resolved">Đã giải quyết</string>
+    <string name="feedback_attached_images">Hình ảnh đính kèm:</string>
+    <string name="feedback_images_count">%1$d hình ảnh</string>
+    <string name="feedback_reply_title">Phản hồi cho User</string>
+    <string name="feedback_reply_hint">Nhập câu trả lời (Sẽ ghi đè nếu đã có)</string>
+    <string name="feedback_reply_btn">Gửi phản hồi</string>
+    <string name="feedback_type_other">KHÁC</string>
+
+    <!-- Admin Review -->
+    <string name="review_management">Quản lý đánh giá</string>
+    <string name="review_success">Thành công</string>
+    <string name="review_back">Quay lại</string>
+    <string name="review_empty">Không có đánh giá nào</string>
+    <string name="review_delete_title">Xóa đánh giá</string>
+    <string name="review_delete_confirm">Bạn có chắc muốn xóa đánh giá này không? Hành động không thể hoàn tác.</string>
+    <string name="review_delete_btn">Xóa</string>
+    <string name="review_cancel_btn">Hủy</string>
+    <string name="review_reply_title">Phản hồi đánh giá</string>
+    <string name="review_reply_hint">Nội dung phản hồi</string>
+    <string name="review_reply_btn">Gửi phản hồi</string>
+    <string name="review_filter_stars">Lọc sao:</string>
+    <string name="review_anonymous">Khách hàng ẩn danh</string>
+    <string name="review_action_reply"> Phản hồi</string>
+    <string name="review_action_edit_reply"> Sửa phản hồi</string>
+
+    <!-- Main Screen -->
+    <string name="main_guest">Khách hàng</string>
+    <string name="main_default_user">Người dùng</string>
+    <string name="main_login">Đăng nhập</string>
+    <string name="main_hero_title">Tìm kiếm sân bóng\nngay trong tích tắc!</string>
+    <string name="main_search_hint_alt">Bạn muốn chơi ở đâu?</string>
+    <string name="main_search_btn">Tìm</string>
+    <string name="main_promo_title">Ưu đãi đặc biệt</string>
+    <string name="main_promo_action">Xem tất cả</string>
+    <string name="main_category_title">Loại sân</string>
+    <string name="main_category_all">Tất cả</string>
+    <string name="main_near_title">Sân bóng gần bạn</string>
+    <string name="main_near_subtitle">Dựa trên vị trí hiện tại</string>
+    <string name="main_loading">Đang tải dữ liệu...</string>
+    <string name="main_promo_card_title">Giảm giá 30%</string>
+    <string name="main_promo_card_desc">Đặt sân hôm nay!</string>
+    <string name="main_promo_card_code">Mã: DATSAN30</string>
+    <string name="main_field_no_address">Không có địa chỉ</string>
+    <string name="main_field_distance">Khoảng cách</string>
+
+    <!-- Booking History Screen -->
+    <string name="history_tab_all">Tất cả</string>
+    <string name="history_tab_pending">Chờ xác nhận</string>
+    <string name="history_tab_confirmed">Đã xác nhận</string>
+    <string name="history_tab_checked_in">Đã nhận sân</string>
+    <string name="history_tab_finished">Đã hoàn thành</string>
+    <string name="history_tab_cancelled">Đã hủy</string>
+    <string name="history_title">Lịch sử đặt sân</string>
+    <string name="history_empty">Không có lịch sử đặt sân.</string>
+    <string name="history_status_unknown">Không xác định</string>
+    <string name="history_item_code">Mã đơn: %1$s</string>
+    <string name="history_item_na">N/A</string>
+    <string name="history_item_field">Sân: %1$s - %2$s</string>
+    <string name="history_item_branch">Chi nhánh: %1$s</string>
+    <string name="history_item_date">Ngày đá: %1$s</string>
+    <string name="history_item_time">Khung giờ: %1$s - %2$s</string>
+    <string name="history_action_cancel">Hủy đơn</string>
+    <string name="history_action_review"> Đánh giá</string>
+    <string name="history_item_total">Tổng: %1$s</string>
+
+    <!-- Detail Screen & Booking Bottom Sheet -->
+    <string name="error_unknown_alt">Lỗi không xác định</string>
+    <string name="booking_select_date">Chọn ngày</string>
+    <string name="booking_duration">Thời lượng (phút)</string>
+    <string name="booking_select_time">Chọn giờ bắt đầu</string>
+    <string name="booking_total_field_price">Tổng tiền sân:</string>
+    <string name="booking_discount">Giảm giá:</string>
+    <string name="booking_final_price">Thành tiền:</string>
+    <string name="booking_confirm_btn">XÁC NHẬN</string>
+    <string name="detail_review_count_format"> (%1$d nhận xét)</string>
+    <string name="error_prefix">Lỗi: %1$s</string>
+
+    <!-- Review Screens (All, My, Write) -->
+    <string name="review_write_action">Viết đánh giá</string>
+    <string name="review_count_text">%1$d đánh giá</string>
+    <string name="review_my_title">Đánh giá của tôi</string>
+    <string name="review_user_you">Bạn</string>
+    <string name="review_my_empty_title">Bạn chưa viết đánh giá nào</string>
+    <string name="review_my_empty_desc">Hãy đặt sân và chia sẻ trải nghiệm nhé!</string>
+    <string name="review_write_success">Đánh giá đã được gửi!</string>
+    <string name="review_write_desc">Chia sẻ trải nghiệm của bạn về sân này</string>
+    <string name="review_write_select_star">Chọn số sao</string>
+    <string name="review_write_star_format">%1$d sao</string>
+    <string name="review_write_hint">Sân thế nào? Cỏ đẹp không? Dịch vụ ra sao?...</string>
+    <string name="review_write_error_star">Vui lòng chọn số sao!</string>
+    <string name="review_write_submit_btn">Gửi đánh giá</string>
+    <string-array name="review_rating_labels">
+        <item>Tệ</item>
+        <item>Không hay</item>
+        <item>Bình thường</item>
+        <item>Hay</item>
+        <item>Tuyệt vời!</item>
+    </string-array>
+
+    <!-- Voucher Screen -->
+    <string name="voucher_tab_new">Voucher mới</string>
+    <string name="voucher_tab_my">Voucher của tôi</string>
+    <string name="voucher_store_title">Kho Voucher</string>
+    <string name="voucher_empty_new">Hiện chưa có voucher mới nào.</string>
+    <string name="voucher_empty_my">Bạn chưa có voucher nào.</string>
+    
+    <!-- Components -->
+    <string name="voucher_sheet_title">Kho Voucher của bạn</string>
+    <string name="voucher_sheet_none">Không sử dụng mã giảm giá</string>
+    <string name="voucher_sheet_empty">Chưa có mã giảm giá nào phù hợp.</string>
+    <string name="voucher_sheet_discount_pct">Giảm %1$s%% (Tối đa %2$sđ)</string>
+    <string name="voucher_sheet_discount_flat">Giảm thẳng %1$sđ</string>
+    <string name="voucher_sheet_min_order">Đơn tối thiểu %1$sđ</string>
+    <string name="voucher_sheet_not_eligible">Chưa đủ điều kiện (Thiếu %1$sđ)</string>
+    <string name="review_admin_reply">Phản hồi từ Ban quản lý</string>
+
+    <!-- Staff Screen -->
+    <string name="scanner_title">Quét mã Check-in</string>
+    <string name="scanner_back">Quay lại</string>
+    <string name="scanner_manual_entry_tooltip">Nhập mã thủ công</string>
+    <string name="scanner_manual_entry_title">Nhập mã thủ công</string>
+    <string name="scanner_camera_permission">Cần quyền truy cập Camera để quét mã</string>
+    <string name="scanner_grant_permission">Cấp quyền</string>
+    <string name="scanner_manual_entry_desc">Nếu không thể quét mã QR, vui lòng nhập mã đặt sân tại đây.</string>
+    <string name="scanner_manual_entry_hint">Mã đặt sân (Ví dụ: DS123456)</string>
+    <string name="scanner_cancel">Hủy</string>
+    <string name="scanner_success_title">Check-in Thành công</string>
+    <string name="scanner_success_customer">Khách hàng: %1$s</string>
+    <string name="scanner_success_field">Sân: %1$s</string>
+    <string name="scanner_success_code">Mã đơn: %1$s</string>
+    <string name="scanner_success_time">Thời gian: %1$s - %2$s</string>
+    <string name="scanner_continue">Tiếp tục</string>
+    <string name="scanner_error_title">Lỗi Check-in</string>
+    <string name="scanner_retry">Thử lại</string>
+    <string name="scanner_instruction">Đưa mã QR vào khung để quét</string>
+
+    <!-- Navigation -->
+    <string name="nav_default_field_name">Sân</string>
 </resources>
