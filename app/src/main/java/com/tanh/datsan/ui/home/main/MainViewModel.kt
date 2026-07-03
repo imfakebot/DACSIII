@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

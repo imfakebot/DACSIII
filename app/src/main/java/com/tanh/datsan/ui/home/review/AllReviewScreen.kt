@@ -109,7 +109,7 @@ fun AllReviewScreen(
                 ExtendedFloatingActionButton(
                     onClick = onWriteReviewClick,
                     icon = { Icon(Icons.Default.Edit, contentDescription = null) },
-                    text = { Text("Viết đánh giá") },
+                    text = { Text(stringResource(id = R.string.review_write_action)) },
                     containerColor = Color(0xFF3B82F6),
                     contentColor = Color.White
                 )
@@ -128,7 +128,6 @@ fun AllReviewScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Average rating header
                     reviewMeta?.averageRating?.let { avg ->
                         item {
                             AverageRatingHeader(
@@ -141,7 +140,7 @@ fun AllReviewScreen(
                     items(reviews) { review ->
                         Log.d("Allreview","avtar url ${review.user?.avatarUrl.toFullImageUrl()} ")
                         ReviewItem(
-                            userName = review.user?.fullName ?: "Khách hàng ẩn danh",
+                            userName = review.user?.fullName ?: stringResource(id = R.string.review_anonymous),
                             rating = review.rating,
                             date = formatReviewTime(review.createdAt),
                             comment = review.comment ?: "",
@@ -150,7 +149,7 @@ fun AllReviewScreen(
                         )
                     }
 
-                    item { Spacer(Modifier.height(80.dp)) } // FAB clearance
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
             }
 
@@ -191,7 +190,7 @@ fun AverageRatingHeader(averageRating: Float, totalCount: Int) {
                 }
             }
             Text(
-                text = "$totalCount đánh giá",
+                text = stringResource(id = R.string.review_count_text, totalCount),
                 fontSize = 12.sp,
                 color = Color(0xFF94A3B8),
                 modifier = Modifier.padding(top = 4.dp)
@@ -212,7 +211,7 @@ fun EmptyReviewsPlaceholder() {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                text = "Chưa có đánh giá nào",
+                text = stringResource(id = R.string.review_empty_msg),
                 color = Color(0xFF64748B),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium

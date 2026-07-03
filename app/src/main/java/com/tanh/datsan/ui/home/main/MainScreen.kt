@@ -172,7 +172,7 @@ fun MainScreen(
                                         )
                                         Text(
                                             text = if (isLoggedIn) (userName
-                                                ?: "Người dùng") else "Khách hàng",
+                                                ?: stringResource(id = R.string.main_default_user)) else stringResource(id = R.string.main_guest),
                                             color = Color.White,
                                             fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold,
@@ -223,7 +223,7 @@ fun MainScreen(
                                             modifier = Modifier.height(44.dp)
                                         ) {
                                             Text(
-                                                "Đăng nhập",
+                                                stringResource(id = R.string.main_login),
                                                 modifier = Modifier.padding(
                                                     horizontal = 12.dp,
                                                     vertical = 10.dp
@@ -257,7 +257,7 @@ fun MainScreen(
                             Spacer(modifier = Modifier.height(32.dp))
 
                             Text(
-                                text = "Tìm kiếm sân bóng\nngay trong tích tắc!",
+                                text = stringResource(id = R.string.main_hero_title),
                                 color = Color.White,
                                 fontSize = 34.sp,
                                 fontWeight = FontWeight.ExtraBold,
@@ -266,8 +266,6 @@ fun MainScreen(
                             )
                         }
                     }
-
-                    // --- FLOATING SEARCH BOX ---
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -297,7 +295,7 @@ fun MainScreen(
                                 onValueChange = { locationName = it },
                                 placeholder = {
                                     Text(
-                                        "Bạn muốn chơi ở đâu?",
+                                        stringResource(id = R.string.main_search_hint),
                                         color = Color(0xFF94A3B8)
                                     )
                                 },
@@ -323,24 +321,20 @@ fun MainScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0F172A)),
                                 modifier = Modifier.height(48.dp)
                             ) {
-                                Text("Tìm", fontWeight = FontWeight.Bold)
+                                Text(stringResource(id = R.string.main_search_btn), fontWeight = FontWeight.Bold)
                             }
                         }
                     }
-
-                    // --- SPECIAL OFFERS PAGER ---
-                    SectionHeader(title = "Ưu đãi đặc biệt", action = "Xem tất cả")
+                    SectionHeader(title = stringResource(id = R.string.main_promo_title), action = stringResource(id = R.string.main_promo_action))
                     PromotionPager()
-
-                    // --- SPORT CATEGORIES ---
-                    SectionHeader(title = "Loại sân")
+                    SectionHeader(title = stringResource(id = R.string.main_category_title))
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
                         item {
                             PremiumCategoryChip(
-                                label = "Tất cả",
+                                label = stringResource(id = R.string.main_category_all),
                                 isSelected = selectedType == null,
                                 onClick = { onSelectType(null) },
                                 icon = Icons.Default.AutoAwesome
@@ -355,8 +349,6 @@ fun MainScreen(
                             )
                         }
                     }
-
-                    // --- SUGGESTION MESSAGE ---
                     if (!suggestionMessage.isNullOrBlank()) {
                         Surface(
                             modifier = Modifier
@@ -386,9 +378,7 @@ fun MainScreen(
                             }
                         }
                     }
-
-                    // --- NEAR YOU SECTION ---
-                    SectionHeader(title = "Sân bóng gần bạn", subtitle = "Dựa trên vị trí hiện tại")
+                    SectionHeader(title = stringResource(id = R.string.main_near_title), subtitle = stringResource(id = R.string.main_near_subtitle))
 
                     LazyRow(
                         contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp),
@@ -414,7 +404,7 @@ fun MainScreen(
                         CircularProgressIndicator(color = Color(0xFF0F172A), strokeWidth = 4.dp)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "Đang tải dữ liệu...",
+                            stringResource(id = R.string.main_loading),
                             color = Color(0xFF1E293B),
                             fontWeight = FontWeight.Medium
                         )
@@ -525,12 +515,12 @@ fun PromotionPager() {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "Giảm giá 30%",
+                        stringResource(id = R.string.main_promo_card_title),
                         color = Color.White.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "Đặt sân hôm nay!",
+                        stringResource(id = R.string.main_promo_card_desc),
                         color = Color.White,
                         fontSize = 22.sp,
                         fontWeight = FontWeight.ExtraBold
@@ -538,7 +528,7 @@ fun PromotionPager() {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(color = Color.White, shape = RoundedCornerShape(8.dp)) {
                         Text(
-                            "Mã: DATSAN30",
+                            stringResource(id = R.string.main_promo_card_code),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             color = Color.Black,
                             fontSize = 12.sp,
@@ -686,7 +676,7 @@ fun HighEndFieldCard(field: FieldModel, onClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = field.address ?: "Không có địa chỉ",
+                        text = field.address ?: stringResource(id = R.string.main_field_no_address),
                         color = Color(0xFF64748B),
                         fontSize = 13.sp,
                         maxLines = 2,
@@ -703,7 +693,7 @@ fun HighEndFieldCard(field: FieldModel, onClick: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Khoảng cách", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        Text(stringResource(id = R.string.main_field_distance), color = Color(0xFF94A3B8), fontSize = 11.sp)
                         Text(
                             "${String.format(Locale.US, "%.1f", field.distance ?: 0.0)} km",
                             color = Color(0xFF10B981),

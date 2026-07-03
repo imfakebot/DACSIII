@@ -16,6 +16,8 @@ import androidx.compose.ui.unit.sp
 import com.tanh.datsan.data.model.Voucher
 import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.ui.component.VoucherItem
+import androidx.compose.ui.res.stringResource
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +30,7 @@ fun VoucherScreen(
     onCollectVoucher: (String) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Voucher mới", "Voucher của tôi")
+    val tabs = listOf(stringResource(id = R.string.voucher_tab_new), stringResource(id = R.string.voucher_tab_my))
 
     LaunchedEffect(Unit) {
         onFetchCollectibleVouchers()
@@ -38,7 +40,7 @@ fun VoucherScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Kho Voucher", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.voucher_store_title), fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -71,7 +73,7 @@ fun VoucherScreen(
                     val currentList = if (selectedTab == 0) collectibleVouchers else myVouchers
 
                     if (currentList.isEmpty() && !isLoading) {
-                        EmptyVoucherState(if (selectedTab == 0) "Hiện chưa có voucher mới nào." else "Bạn chưa có voucher nào.")
+                        EmptyVoucherState(if (selectedTab == 0) stringResource(id = R.string.voucher_empty_new) else stringResource(id = R.string.voucher_empty_my))
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),

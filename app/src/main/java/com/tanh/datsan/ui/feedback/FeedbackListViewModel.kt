@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.feedback
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,11 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class FeedbackListUiState(
-    val feedbacks: List<FeedbackResponse> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
+import com.tanh.datsan.ui.state.FeedbackListUiState
 
 @HiltViewModel
 class FeedbackListViewModel @Inject constructor(

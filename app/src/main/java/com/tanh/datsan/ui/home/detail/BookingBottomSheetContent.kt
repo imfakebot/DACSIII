@@ -99,7 +99,7 @@ fun BookingBottomSheetContent(
                 fontWeight = FontWeight.Bold
             )
 
-            Text("Chọn ngày", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.booking_select_date), Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(quickDates) { date ->
                     FilterChip(
@@ -112,7 +112,7 @@ fun BookingBottomSheetContent(
                 }
             }
 
-            Text("Thời lượng (phút)", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.booking_duration), Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 durations.forEach { dur ->
                     FilterChip(
@@ -125,7 +125,7 @@ fun BookingBottomSheetContent(
                 }
             }
 
-            Text("Chọn giờ bắt đầu", Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.booking_select_time), Modifier.padding(top = 16.dp), fontWeight = FontWeight.Bold)
             val sdf = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
             val todayString = sdf.format(Date())
             val isToday = selectedDate.second == todayString
@@ -172,7 +172,7 @@ fun BookingBottomSheetContent(
                         .padding(top = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("Tổng tiền sân:", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.booking_total_field_price), fontWeight = FontWeight.Bold)
                     Text(
                         String.format("%,.0f %s", price.pricing.totalPrice, price.pricing.currency),
                         fontWeight = FontWeight.Bold,
@@ -187,7 +187,7 @@ fun BookingBottomSheetContent(
                             .padding(top = 4.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Giảm giá:", color = Color.Red)
+                        Text(stringResource(id = R.string.booking_discount), color = Color.Red)
                         Text(
                             String.format("-%,.0f %s", discountAmount, price.pricing.currency),
                             color = Color.Red
@@ -200,7 +200,7 @@ fun BookingBottomSheetContent(
                             .padding(top = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Thành tiền:", fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(id = R.string.booking_final_price), fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         val finalAmount = price.pricing.totalPrice - discountAmount
                         Text(
                             String.format("%,.0f %s", if (finalAmount > 0) finalAmount else 0.0, price.pricing.currency),
@@ -229,7 +229,7 @@ fun BookingBottomSheetContent(
                     .height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
             ) {
-                Text("XÁC NHẬN", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.booking_confirm_btn), fontWeight = FontWeight.Bold)
             }
         }
 

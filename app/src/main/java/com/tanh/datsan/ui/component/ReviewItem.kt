@@ -30,10 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import coil.compose.AsyncImage
 import com.tanh.datsan.utils.toFullImageUrl
 
@@ -152,7 +156,7 @@ fun ReviewItem(
                         )
                         Column {
                             Text(
-                                text = "Phản hồi từ Ban quản lý",
+                                text = stringResource(id = R.string.review_admin_reply),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color(0xFF3B82F6)

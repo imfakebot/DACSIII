@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.review
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -12,44 +12,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
 import javax.inject.Inject
-
-// ── UiState ──────────────────────────────────────────────────────────────────
-sealed class ReviewUiState {
-    object Idle : ReviewUiState()
-    object Loading : ReviewUiState()
-    data class Success(val message: String = "") : ReviewUiState()
-    data class Error(val message: String) : ReviewUiState()
-}
 
 @HiltViewModel
 class ReviewViewModel @Inject constructor(
     private val repository: ReviewRepository
 ) : ViewModel() {
-
-    // ── Field reviews (AllReviewScreen) ──────────────────────────────────────
     private val _reviews = MutableStateFlow<List<Review>>(emptyList())
     val reviews: StateFlow<List<Review>> = _reviews.asStateFlow()
 
     private val _reviewMeta = MutableStateFlow<ReviewMeta?>(null)
     val reviewMeta: StateFlow<ReviewMeta?> = _reviewMeta.asStateFlow()
 
-    // ── My reviews ───────────────────────────────────────────────────────────
     private val _myReviews = MutableStateFlow<List<Review>>(emptyList())
     val myReviews: StateFlow<List<Review>> = _myReviews.asStateFlow()
 
-    // ── Shared state ─────────────────────────────────────────────────────────
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private val _uiState = MutableStateFlow<ReviewUiState>(ReviewUiState.Idle)
     val uiState: StateFlow<ReviewUiState> = _uiState.asStateFlow()
 
-    // Kept for backward-compat with existing AllReviewScreen usage
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    // ── Fetch field reviews ───────────────────────────────────────────────────
     fun fetchReview(fieldId: String, page: Int = 1, limit: Int = 20) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -66,7 +53,6 @@ class ReviewViewModel @Inject constructor(
         }
     }
 
-    // ── Fetch my reviews ──────────────────────────────────────────────────────
     fun fetchMyReviews(page: Int = 1, limit: Int = 20) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -82,7 +68,6 @@ class ReviewViewModel @Inject constructor(
         }
     }
 
-    // ── Create review ─────────────────────────────────────────────────────────
     fun createReview(
         bookingId: String,
         rating: Int,
@@ -99,7 +84,7 @@ class ReviewViewModel @Inject constructor(
                     )
                 )
                 _uiState.value = ReviewUiState.Success("Đánh giá của bạn đã được gửi!")
-            } catch (e: Exception) {
+            } catch (e: HttpException) {
                 Log.e("ReviewViewModel", "createReview error: ${e.message}")
                 val msg = when {
                     e.message?.contains("403") == true || e.message?.contains("400") == true ->
@@ -107,10 +92,12 @@ class ReviewViewModel @Inject constructor(
                     else -> e.message ?: "Không thể gửi đánh giá"
                 }
                 _uiState.value = ReviewUiState.Error(msg)
+            }catch(e: Exception){
+                Log.d("ReviewViewModel", "createReview error: ${e.message}")
+                _uiState.value = ReviewUiState.Error(e.message ?: "Không thể gửi đánh giá")
             }
         }
     }
-
     fun clearError() {
         _errorMessage.value = null
     }

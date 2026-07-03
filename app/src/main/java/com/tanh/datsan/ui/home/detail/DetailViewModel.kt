@@ -1,8 +1,9 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.detail
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tanh.datsan.core.UiEvent
 import com.tanh.datsan.data.model.CheckPriceResponseDto
 import com.tanh.datsan.data.model.CreateBookingDto
 import com.tanh.datsan.data.repository.BookingRepository

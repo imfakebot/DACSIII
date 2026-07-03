@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,12 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class BookingHistoryUiState {
-    object Loading : BookingHistoryUiState()
-    data class Success(val message: String? = null) : BookingHistoryUiState()
-    data class Error(val message: String) : BookingHistoryUiState()
-    object Idle : BookingHistoryUiState()
-}
+import com.tanh.datsan.ui.state.BookingHistoryUiState
 
 @HiltViewModel
 class BookingHistoryViewModel @Inject constructor(

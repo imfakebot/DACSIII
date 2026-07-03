@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.notification
 
 import android.util.Log
 import androidx.lifecycle.ViewModel

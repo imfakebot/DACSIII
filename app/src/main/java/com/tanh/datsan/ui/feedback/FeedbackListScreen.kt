@@ -53,7 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.data.model.FeedbackResponse
-import com.tanh.datsan.viewmodel.FeedbackListViewModel
+import com.tanh.datsan.ui.feedback.FeedbackListViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -145,6 +145,8 @@ fun FeedbackListScreen(
 
 @Composable
 fun FeedbackItem(feedback: FeedbackResponse) {
+    var expanded by remember { mutableStateOf(false) }
+
     // Format thời gian
     val timeString = remember(feedback.createdAt) {
         try {
@@ -160,7 +162,8 @@ fun FeedbackItem(feedback: FeedbackResponse) {
 
     Surface(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable { expanded = !expanded },
         shape = RoundedCornerShape(12.dp),
         color = Color.White,
         shadowElevation = 2.dp
@@ -190,14 +193,21 @@ fun FeedbackItem(feedback: FeedbackResponse) {
                 text = feedback.content ?: "",
                 fontSize = 14.sp,
                 color = Color.DarkGray,
-                maxLines = 4,
+                maxLines = if (expanded) Int.MAX_VALUE else 3,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = if (expanded) "Thu gọn" else "Xem thêm",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
+                
                 val statusColor = when(feedback.status.uppercase()) {
                     "PENDING" -> Color(0xFFF57C00)
                     "RESOLVED" -> Color(0xFF388E3C)
@@ -212,7 +222,7 @@ fun FeedbackItem(feedback: FeedbackResponse) {
                 )
             }
             
-            if (!feedback.adminReply.isNullOrEmpty()) {
+            if (!feedback.adminReply.isNullOrEmpty() && expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Box(
                     modifier = Modifier

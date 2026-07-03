@@ -39,8 +39,10 @@ import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.ui.component.ReviewItem
 import com.tanh.datsan.utils.DateUtil.formatReviewTime
-import com.tanh.datsan.viewmodel.ReviewUiState
+import com.tanh.datsan.ui.home.review.ReviewUiState
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,14 +75,14 @@ fun MyReviewsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Đánh giá của tôi",
+                        stringResource(id = R.string.review_my_title),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.review_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -141,7 +143,7 @@ fun MyReviewCard(review: Review) {
             )
         }
         ReviewItem(
-            userName = "Bạn",
+            userName = stringResource(id = R.string.review_user_you),
             rating = review.rating,
             date = formatReviewTime(review.createdAt),
             comment = review.comment ?: "",
@@ -164,13 +166,13 @@ fun EmptyMyReviewsPlaceholder(modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.height(16.dp))
         Text(
-            text = "Bạn chưa viết đánh giá nào",
+            text = stringResource(id = R.string.review_my_empty_title),
             color = Color(0xFF64748B),
             fontSize = 16.sp,
             fontWeight = FontWeight.Medium
         )
         Text(
-            text = "Hãy đặt sân và chia sẻ trải nghiệm nhé!",
+            text = stringResource(id = R.string.review_my_empty_desc),
             color = Color(0xFF94A3B8),
             fontSize = 13.sp,
             modifier = Modifier.padding(top = 4.dp)

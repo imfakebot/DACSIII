@@ -30,8 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Voucher
 import java.text.DecimalFormat
 
@@ -58,7 +62,7 @@ fun VoucherSelectionSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Kho Voucher của bạn",
+                text = stringResource(id = R.string.voucher_sheet_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 16.dp)
@@ -72,14 +76,14 @@ fun VoucherSelectionSheet(
                         onClick = { onSelect(null) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Không sử dụng mã giảm giá")
+                        Text(stringResource(id = R.string.voucher_sheet_none))
                     }
                 }
 
                 if (vouchers.isEmpty()) {
                     item {
                         Text(
-                            text = "Chưa có mã giảm giá nào phù hợp.",
+                            text = stringResource(id = R.string.voucher_sheet_empty),
                             color = Color.Gray,
                             modifier = Modifier.padding(vertical = 24.dp)
                         )
@@ -111,9 +115,9 @@ fun VoucherItem(
     val isEnabled = currentOrderValue >= (voucher.minOrderValue ?: 0.0)
 
     val discountTitle = if (voucher.discountPercentage != null) {
-        "Giảm ${voucher.discountPercentage}% (Tối đa ${formatter.format(voucher.maxDiscountAmount ?: 0)}đ)"
+        stringResource(id = R.string.voucher_sheet_discount_pct, voucher.discountPercentage.toString(), formatter.format(voucher.maxDiscountAmount ?: 0))
     } else {
-        "Giảm thẳng ${formatter.format(voucher.discountAmount ?: 0)}đ"
+        stringResource(id = R.string.voucher_sheet_discount_flat, formatter.format(voucher.discountAmount ?: 0))
     }
     Card(
         modifier = Modifier
@@ -167,16 +171,9 @@ fun VoucherItem(
 
                 Text(
                     text = if (isEnabled) {
-                        "Đơn tối thiểu ${formatter.format(voucher.minOrderValue)}đ"
+                        stringResource(id = R.string.voucher_sheet_min_order, formatter.format(voucher.minOrderValue))
                     } else {
-
-                        "Chưa đủ điều kiện (Thiếu ${
-                            formatter.format(
-                                voucher.minOrderValue?.minus(
-                                    currentOrderValue
-                                ) ?: 0
-                            )
-                        }đ)"
+                        stringResource(id = R.string.voucher_sheet_not_eligible, formatter.format((voucher.minOrderValue ?: 0.0) - currentOrderValue))
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isEnabled) Color.Gray else MaterialTheme.colorScheme.error

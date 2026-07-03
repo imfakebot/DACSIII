@@ -43,24 +43,6 @@ fun SectionDivider() = HorizontalDivider(
     Modifier.padding(vertical = 24.dp), color = Color(0xFFE2E8F0), thickness = 1.dp
 )
 
-@Composable
-fun LoadingState() = Box(
-    Modifier
-        .fillMaxSize()
-        .background(Color.White),
-    Alignment.Center
-) {
-    CircularProgressIndicator(
-        color = Color(0xFF1E293B),
-        strokeWidth = 4.dp
-    )
-}
-
-@Composable
-fun ErrorState(msg: String?) =
-    Box(Modifier.fillMaxSize(), Alignment.Center) {
-        Text("Lỗi: $msg", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
-    }
 
 @Composable
 fun BookingBottomBar(onClick: () -> Unit) {
@@ -139,7 +121,7 @@ fun ReviewHeader(
                         color = Color(0xFF1E293B)
                     )
                     Text(
-                        text = " ($reviewCount nhận xét)",
+                        text = stringResource(id = R.string.detail_review_count_format, reviewCount),
                         fontSize = 14.sp,
                         color = Color(0xFF64748B),
                         modifier = Modifier.padding(start = 4.dp)
@@ -184,7 +166,7 @@ fun ReviewList(reviews: List<Review>?) {
         ) {
             reviews.take(3).forEach { review ->
                 ReviewItem(
-                    userName = review.user?.fullName ?: "Khách hàng",
+                    userName = review.user?.fullName ?: stringResource(id = R.string.main_guest),
                     rating = review.rating,
                     date = formatReviewTime(review.createdAt),
                     comment = review.comment ?: "",

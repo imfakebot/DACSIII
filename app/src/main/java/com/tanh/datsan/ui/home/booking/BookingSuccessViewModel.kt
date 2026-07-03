@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.booking
 
 import android.content.Context
 import android.widget.Toast

@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.home.detail
 
 sealed class BookingUiState {
     object Idle : BookingUiState()

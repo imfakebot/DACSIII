@@ -72,9 +72,12 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tanh.datsan.R
+import com.tanh.datsan.ui.component.ErrorStateScreen
+import com.tanh.datsan.ui.component.LoadingStateScreen
 import com.tanh.datsan.ui.theme.PrimaryGreen
 import com.tanh.datsan.utils.NotificationHelper
-import com.tanh.datsan.viewmodel.BookingReceiptUiState
+import com.tanh.datsan.utils.DateUtil.formatDateDash
+import com.tanh.datsan.ui.home.booking.BookingReceiptUiState
 
 @SuppressLint("LocalContextGetResourceValueCall")
 @Composable
@@ -115,8 +118,8 @@ fun BookingSuccessScreen(
                 .padding(paddingValue)
         ) {
             when (uiState) {
-                is BookingReceiptUiState.Loading -> LoadingState()
-                is BookingReceiptUiState.Error -> ErrorState(uiState.message, onNavigateHome)
+                is BookingReceiptUiState.Loading -> LoadingStateScreen()
+                is BookingReceiptUiState.Error -> ErrorStateScreen(uiState.message, onNavigateHome)
                 is BookingReceiptUiState.Success -> {
                     val data = uiState.booking
                     Column(
@@ -143,7 +146,7 @@ fun BookingSuccessScreen(
                                 TicketDetailSection(
                                     fieldName = data.field?.name
                                         ?: stringResource(R.string.updating),
-                                    time = "${data.startTime} - ${data.endTime}",
+                                    time = "${formatDateDash(data.startTime ?: "")} - ${formatDateDash(data.endTime ?: "")}",
                                     customer = data.customerName
                                         ?: stringResource(R.string.customer)
                                 )
@@ -483,43 +486,6 @@ fun AttentionCard() {
     }
 }
 
-@Composable
-fun LoadingState() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator(color = PrimaryGreen)
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(stringResource(R.string.ticket_loading), color = Color(0xFF64748B))
-        }
-    }
-}
-
-@Composable
-fun ErrorState(message: String, onHome: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(32.dp)
-        ) {
-            Icon(
-                Icons.Default.ErrorOutline,
-                null,
-                tint = Color.Red,
-                modifier = Modifier.size(48.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Đã có lỗi xảy ra", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-            Text(message, textAlign = TextAlign.Center, color = Color.Gray)
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onHome,
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
-            ) {
-                Text(stringResource(R.string.home))
-            }
-        }
-    }
-}
 
 class TicketShape(private val cornerRadius: Dp, private val holeRadius: Dp) : Shape {
     override fun createOutline(

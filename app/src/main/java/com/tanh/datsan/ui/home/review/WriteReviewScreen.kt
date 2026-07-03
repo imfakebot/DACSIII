@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,10 +48,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.tanh.datsan.viewmodel.ReviewUiState
+import com.tanh.datsan.ui.home.review.ReviewUiState
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringArrayResource
+import com.tanh.datsan.R
 
-private val ratingLabels = listOf("Tệ", "Không hay", "Bình thường", "Hay", "Tuyệt vời!")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,13 +70,14 @@ fun WriteReviewScreen(
     var comment by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Handle UiState side-effects
     LaunchedEffect(uiState) {
         when (uiState) {
             is ReviewUiState.Success -> {
                 snackbarHostState.showSnackbar(
-                    uiState.message.ifBlank { "Đánh giá đã được gửi!" }
+                    uiState.message.ifBlank { context.getString(R.string.review_write_success) }
                 )
                 onResetUiState()
                 onSuccess()
@@ -94,11 +98,11 @@ fun WriteReviewScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Viết đánh giá", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(stringResource(id = R.string.review_write_action), fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.review_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -126,7 +130,7 @@ fun WriteReviewScreen(
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Chia sẻ trải nghiệm của bạn về sân này",
+                text = stringResource(id = R.string.review_write_desc),
                 fontSize = 14.sp,
                 color = Color(0xFF94A3B8),
                 textAlign = TextAlign.Center,
@@ -134,8 +138,9 @@ fun WriteReviewScreen(
             )
 
             // Rating label
+            val ratingLabels = stringArrayResource(id = R.array.review_rating_labels)
             Text(
-                text = if (selectedRating > 0) ratingLabels[selectedRating - 1] else "Chọn số sao",
+                text = if (selectedRating > 0) ratingLabels[selectedRating - 1] else stringResource(id = R.string.review_write_select_star),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = if (selectedRating > 0) Color(0xFFFFD700) else Color(0xFF94A3B8),
@@ -155,7 +160,7 @@ fun WriteReviewScreen(
                     )
                     Icon(
                         imageVector = Icons.Rounded.Star,
-                        contentDescription = "$star sao",
+                        contentDescription = stringResource(id = R.string.review_write_star_format, star),
                         tint = starColor,
                         modifier = Modifier
                             .size(52.dp)
@@ -173,7 +178,7 @@ fun WriteReviewScreen(
                     .height(160.dp),
                 placeholder = {
                     Text(
-                        "Sân thế nào? Cỏ đẹp không? Dịch vụ ra sao?...",
+                        stringResource(id = R.string.review_write_hint),
                         color = Color(0xFFCBD5E1)
                     )
                 },
@@ -188,7 +193,7 @@ fun WriteReviewScreen(
             Button(
                 onClick = {
                     if (selectedRating == 0) {
-                        scope.launch { snackbarHostState.showSnackbar("Vui lòng chọn số sao!") }
+                        scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.review_write_error_star)) }
                         return@Button
                     }
                     onSubmit(bookingId, selectedRating, comment.ifBlank { null })
@@ -206,7 +211,7 @@ fun WriteReviewScreen(
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
                 } else {
-                    Text("Gửi đánh giá", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text(stringResource(id = R.string.review_write_submit_btn), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
             }
         }
