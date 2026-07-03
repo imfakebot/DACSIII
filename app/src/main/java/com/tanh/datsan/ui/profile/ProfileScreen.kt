@@ -1,29 +1,91 @@
 package com.tanh.datsan.ui.profile
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.*
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.automirrored.rounded.ListAlt
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.rounded.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.*
-import androidx.compose.ui.draw.*
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.rounded.AccountCircle
+import androidx.compose.material.icons.rounded.Badge
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.Explore
+import androidx.compose.material.icons.rounded.Feedback
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.LockReset
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Translate
+import androidx.compose.material.icons.rounded.Wc
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -32,37 +94,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.tanh.datsan.R
 import com.tanh.datsan.utils.compressImage
 import com.tanh.datsan.utils.toFile
 import com.tanh.datsan.utils.toFullImageUrl
-import com.tanh.datsan.viewmodel.ProfileViewModel
-import com.tanh.datsan.viewmodel.MainViewModel
-import com.tanh.datsan.viewmodel.AuthViewModel
-import com.tanh.datsan.viewmodel.AuthUiEvent
-import kotlinx.coroutines.flow.collectLatest
+import com.tanh.datsan.ui.home.main.MainViewModel
+import com.tanh.datsan.ui.profile.ProfileViewModel
 import java.io.File
-import java.util.*
 import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.tanh.datsan.ui.profile.components.*
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onBackClick: () -> Unit,
     onLogoutClick: () -> Unit,
-    onNavigateToResetPassword: (String) -> Unit,
     onNavigateToFeedbacks: () -> Unit = {},
     showBackButton: Boolean = true,
     viewModel: ProfileViewModel = hiltViewModel(),
-    mainViewModel: MainViewModel = hiltViewModel(),
-    authViewModel: AuthViewModel = hiltViewModel()
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val authIsLoading by authViewModel.isLoading.collectAsState()
 
     val currentTheme by mainViewModel.theme.collectAsState()
     val currentLanguage by mainViewModel.language.collectAsState()
@@ -82,21 +142,6 @@ fun ProfileScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        authViewModel.uiEvent.collectLatest { event ->
-            when (event) {
-                is AuthUiEvent.NavigateToResetPassword -> onNavigateToResetPassword(event.email)
-                is AuthUiEvent.ShowToast -> Toast.makeText(
-                    context,
-                    event.message,
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                else -> {}
-            }
-        }
-    }
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -106,7 +151,7 @@ fun ProfileScreen(
                 pendingAvatarFile = file
                 showAvatarConfirmDialog = true
             } else {
-                Toast.makeText(context, "Không thể lấy được đường dẫn ảnh!", Toast.LENGTH_SHORT)
+                Toast.makeText(context, context.getString(R.string.error_unknown), Toast.LENGTH_SHORT)
                     .show()
             }
         }
@@ -186,7 +231,6 @@ fun ProfileScreen(
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
             ) {
-                // --- AVATAR & NAME SECTION ---
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -218,7 +262,7 @@ fun ProfileScreen(
                                     placeholder = painterResource(id = R.drawable.ic_default_avatar),
                                     error = painterResource(id = R.drawable.ic_default_avatar)
                                 )
-                                if (uiState.isLoading || authIsLoading) {
+                                if (uiState.isLoading) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
@@ -403,8 +447,8 @@ fun ProfileScreen(
                             PremiumDivider()
                             PremiumSettingsItem(
                                 icon = Icons.Rounded.Feedback,
-                                label = "Góp ý & Báo lỗi",
-                                value = "Gửi phản hồi cho chúng tôi",
+                                label = stringResource(R.string.profile_label_feedback),
+                                value = stringResource(R.string.profile_desc_feedback),
                                 color = Color(0xFF3B82F6),
                                 onClick = onNavigateToFeedbacks
                             )
@@ -497,7 +541,7 @@ fun ProfileScreen(
                                     val compressedFile = it.compressImage(context)
                                     viewModel.uploadAvatar(imageFile=compressedFile)
                                 }catch (e:Exception){
-                                    Toast.makeText(context, "Lỗi khi tải ảnh lên: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.error_upload_image, e.message), Toast.LENGTH_SHORT).show()
                                 }
                             }
                             pendingAvatarFile = null
@@ -534,7 +578,8 @@ fun ProfileScreen(
                 text = { Text(stringResource(R.string.profile_logout_confirm_msg)) },
                 confirmButton = {
                     Button(onClick = {
-                        showLogoutDialog = false; authViewModel.logout(); onLogoutClick()
+                        showLogoutDialog = false
+                        onLogoutClick()
                     }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))) {
                         Text(
                             stringResource(R.string.profile_btn_agree),
@@ -556,80 +601,12 @@ fun ProfileScreen(
         }
 
         if (showChangePasswordDialog) {
-            var oldPassword by remember { mutableStateOf("") }
-            var newPassword by remember { mutableStateOf("") }
-            var confirmPassword by remember { mutableStateOf("") }
-            var oldPasswordVisible by remember { mutableStateOf(false) }
-            var newPasswordVisible by remember { mutableStateOf(false) }
-
-            AlertDialog(
-                onDismissRequest = { showChangePasswordDialog = false },
-                title = { Text("Đổi mật khẩu", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column {
-                        OutlinedTextField(
-                            value = oldPassword,
-                            onValueChange = { oldPassword = it },
-                            label = { Text("Mật khẩu hiện tại") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            visualTransformation = if (oldPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { oldPasswordVisible = !oldPasswordVisible }) {
-                                    Icon(if (oldPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
-                                }
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = newPassword,
-                            onValueChange = { newPassword = it },
-                            label = { Text("Mật khẩu mới (tối thiểu 8 ký tự)") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            visualTransformation = if (newPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
-                                    Icon(if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, contentDescription = null)
-                                }
-                            }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = confirmPassword,
-                            onValueChange = { confirmPassword = it },
-                            label = { Text("Xác nhận mật khẩu mới") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true,
-                            visualTransformation = if (newPasswordVisible) androidx.compose.ui.text.input.VisualTransformation.None else androidx.compose.ui.text.input.PasswordVisualTransformation()
-                        )
-                    }
+            ChangePasswordDialog(
+                onConfirm = { old, new, confirm ->
+                    viewModel.changePassword(old, new, confirm)
+                    showChangePasswordDialog = false
                 },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (newPassword.length < 8) {
-                                Toast.makeText(context, "Mật khẩu mới phải từ 8 ký tự trở lên", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            if (newPassword != confirmPassword) {
-                                Toast.makeText(context, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-                            viewModel.changePassword(oldPassword, newPassword)
-                            showChangePasswordDialog = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
-                    ) {
-                        Text("Xác nhận", color = Color.White)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showChangePasswordDialog = false }) {
-                        Text("Hủy", color = Color.Gray)
-                    }
-                },
-                shape = RoundedCornerShape(16.dp)
+                onDismiss = { showChangePasswordDialog = false }
             )
         }
 
@@ -659,431 +636,25 @@ fun ProfileScreen(
         }
 
         if (showCitySheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showCitySheet = false },
-                sheetState = rememberModalBottomSheetState(),
-                containerColor = Color.White
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.profile_label_city),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (uiState.isLoadingCities) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .padding(16.dp)
-                        )
-                    }
-                    LazyColumn {
-                        items(uiState.cities.size) { index ->
-                            val city = uiState.cities[index]
-                            ListItem(
-                                headlineContent = {
-                                    Text(
-                                        city.name,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                },
-                                modifier = Modifier.clickable {
-                                    viewModel.onCitySelected(city.id)
-                                    showCitySheet = false
-                                },
-                                trailingContent = {
-                                    if (uiState.selectedCityId == city.id) {
-                                        Icon(Icons.Default.Check, null, tint = Color(0xFF3B82F6))
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+            LocationPickerSheet(
+                title = stringResource(R.string.profile_label_city),
+                items = uiState.cities.map { it.id to it.name },
+                selectedId = uiState.selectedCityId,
+                isLoading = uiState.isLoadingCities,
+                onSelect = { viewModel.onCitySelected(it) },
+                onDismiss = { showCitySheet = false }
+            )
         }
 
         if (showWardSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showWardSheet = false },
-                sheetState = rememberModalBottomSheetState(),
-                containerColor = Color.White
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 32.dp)
-                ) {
-                    Text(
-                        stringResource(R.string.profile_label_ward),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (uiState.isLoadingWards) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .align(Alignment.CenterHorizontally)
-                                .padding(16.dp)
-                        )
-                    }
-                    LazyColumn {
-                        items(uiState.wards.size) { index ->
-                            val ward = uiState.wards[index]
-                            ListItem(
-                                headlineContent = {
-                                    Text(
-                                        ward.name,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                },
-                                modifier = Modifier.clickable {
-                                    viewModel.onWardSelected(ward.id)
-                                    showWardSheet = false
-                                },
-                                trailingContent = {
-                                    if (uiState.selectedWardId == ward.id) {
-                                        Icon(Icons.Default.Check, null, tint = Color(0xFF3B82F6))
-                                    }
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun PremiumHeaderBackground() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(350.dp)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0F172A), Color(0xFF1E293B))
-                )
-            )
-    ) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF3B82F6).copy(alpha = 0.15f), Color.Transparent),
-                    center = Offset(size.width * 0.1f, size.height * 0.2f),
-                    radius = size.width * 0.8f
-                ),
-                radius = size.width * 0.8f,
-                center = Offset(size.width * 0.1f, size.height * 0.2f)
-            )
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(Color(0xFF8B5CF6).copy(alpha = 0.1f), Color.Transparent),
-                    center = Offset(size.width * 0.9f, size.height * 0.8f),
-                    radius = size.width * 0.6f
-                ),
-                radius = size.width * 0.6f,
-                center = Offset(size.width * 0.9f, size.height * 0.8f)
+            LocationPickerSheet(
+                title = stringResource(R.string.profile_label_ward),
+                items = uiState.wards.map { it.id to it.name },
+                selectedId = uiState.selectedWardId,
+                isLoading = uiState.isLoadingWards,
+                onSelect = { viewModel.onWardSelected(it) },
+                onDismiss = { showWardSheet = false }
             )
         }
-    }
-}
-
-@Composable
-fun PremiumSectionTitle(title: String, icon: ImageVector) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
-    ) {
-        Icon(icon, null, modifier = Modifier.size(16.dp), tint = Color(0xFF64748B))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            text = title,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF64748B),
-            letterSpacing = 1.2.sp
-        )
-    }
-}
-
-@Composable
-fun PremiumProfileCard(content: @Composable ColumnScope.() -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        color = Color.White,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, Color(0xFFF1F5F9))
-    ) {
-        Column(content = content)
-    }
-}
-
-@Composable
-fun PremiumDivider() {
-    HorizontalDivider(
-        modifier = Modifier.padding(start = 64.dp),
-        thickness = 1.dp,
-        color = Color(0xFFF1F5F9)
-    )
-}
-
-@Composable
-fun EditablePremiumItem(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    isEditing: Boolean,
-    onValueChange: (String) -> Unit,
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(Color(0xFFF1F5F9), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, modifier = Modifier.size(22.dp), tint = Color(0xFF1E293B))
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
-            if (isEditing) {
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    ),
-                    keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp)
-                )
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(1.5.dp)
-                        .background(Color(0xFF3B82F6))
-                )
-            } else {
-                Text(
-                    text = value.ifBlank { stringResource(R.string.profile_not_updated) },
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (value.isBlank()) Color(0xFFCBD5E1) else Color(0xFF0F172A)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun PremiumGenderSelector(gender: String, isEditing: Boolean, onGenderSelected: (String) -> Unit) {
-    val options = mapOf(
-        "male" to stringResource(R.string.profile_gender_male),
-        "female" to stringResource(R.string.profile_gender_female),
-        "other" to stringResource(R.string.profile_gender_other)
-    )
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(Color(0xFFF1F5F9), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Rounded.Wc, null, modifier = Modifier.size(22.dp), tint = Color(0xFF1E293B))
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.reg_gender),
-                fontSize = 12.sp,
-                color = Color(0xFF94A3B8),
-                fontWeight = FontWeight.Bold
-            )
-            if (isEditing) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    options.forEach { (key, label) ->
-                        val selected = gender == key
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onGenderSelected(key) },
-                            shape = RoundedCornerShape(14.dp),
-                            color = if (selected) Color(0xFF0F172A) else Color(0xFFF1F5F9),
-                        ) {
-                            Text(
-                                label,
-                                modifier = Modifier.padding(vertical = 10.dp),
-                                textAlign = TextAlign.Center,
-                                fontWeight = FontWeight.Bold,
-                                color = if (selected) Color.White else Color(0xFF64748B),
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            } else {
-                Text(
-                    options[gender] ?: stringResource(R.string.profile_gender_not_selected),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun PremiumDatePickerItem(dob: String, isEditing: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp)
-            .clickable(enabled = isEditing) { onClick() },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(Color(0xFFF1F5F9), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Rounded.CalendarToday,
-                null,
-                modifier = Modifier.size(20.dp),
-                tint = Color(0xFF1E293B)
-            )
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                stringResource(R.string.profile_label_dob),
-                fontSize = 12.sp,
-                color = Color(0xFF94A3B8),
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                dob.ifBlank { stringResource(R.string.profile_not_updated) },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF0F172A)
-            )
-        }
-        if (isEditing) Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            null,
-            tint = Color(0xFFCBD5E1)
-        )
-    }
-}
-
-@Composable
-fun PremiumLocationSelector(
-    label: String,
-    value: String,
-    isEditing: Boolean,
-    enabled: Boolean = true,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp)
-            .clickable(enabled = isEditing && enabled) { onClick() },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(if (enabled) Color(0xFFF1F5F9) else Color(0xFFF8FAFC), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Rounded.LocationOn,
-                null,
-                modifier = Modifier.size(22.dp),
-                tint = if (enabled) Color(0xFF1E293B) else Color(0xFFCBD5E1)
-            )
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, fontSize = 12.sp, color = Color(0xFF94A3B8), fontWeight = FontWeight.Bold)
-            Text(
-                value.ifBlank { stringResource(R.string.profile_gender_not_selected) },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (enabled) Color(0xFF0F172A) else Color(0xFFCBD5E1)
-            )
-        }
-        if (isEditing && enabled) Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            null,
-            tint = Color(0xFFCBD5E1)
-        )
-    }
-}
-
-@Composable
-fun PremiumSettingsItem(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    color: Color,
-    onClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(20.dp)
-            .clickable { onClick() },
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .background(color.copy(alpha = 0.1f), CircleShape),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, null, modifier = Modifier.size(20.dp), tint = color)
-        }
-        Spacer(Modifier.width(20.dp))
-        Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF0F172A)
-            )
-            Text(value, fontSize = 12.sp, color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
-        }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Color(0xFFCBD5E1))
     }
 }

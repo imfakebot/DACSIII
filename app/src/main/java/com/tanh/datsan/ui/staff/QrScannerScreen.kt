@@ -23,12 +23,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
+import com.tanh.datsan.R
+import com.tanh.datsan.utils.DateUtil.formatDateDash
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import com.tanh.datsan.viewmodel.CheckInUiState
-import com.tanh.datsan.viewmodel.QrScannerViewModel
+import com.tanh.datsan.ui.staff.CheckInUiState
+import com.tanh.datsan.ui.staff.QrScannerViewModel
 import java.util.concurrent.Executors
 
 import androidx.compose.material.icons.filled.Edit
@@ -78,10 +81,10 @@ fun QrScannerScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Quét mã Check-in") },
+                title = { Text(stringResource(id = R.string.scanner_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.scanner_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -99,7 +102,7 @@ fun QrScannerScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Nhập mã thủ công")
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(id = R.string.scanner_manual_entry_tooltip))
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -127,12 +130,12 @@ fun QrScannerScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Cần quyền truy cập Camera để quét mã",
+                        stringResource(id = R.string.scanner_camera_permission),
                         color = Color.White
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Button(onClick = { launcher.launch(Manifest.permission.CAMERA) }) {
-                        Text("Cấp quyền")
+                        Text(stringResource(id = R.string.scanner_grant_permission))
                     }
                 }
             }
@@ -140,15 +143,15 @@ fun QrScannerScreen(
             if (showManualInputDialog) {
                 AlertDialog(
                     onDismissRequest = { showManualInputDialog = false },
-                    title = { Text("Nhập mã thủ công") },
+                    title = { Text(stringResource(id = R.string.scanner_manual_entry_title)) },
                     text = {
                         Column {
-                            Text("Nếu không thể quét mã QR, vui lòng nhập mã đặt sân tại đây.", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(id = R.string.scanner_manual_entry_desc), style = MaterialTheme.typography.bodySmall)
                             Spacer(modifier = Modifier.height(16.dp))
                             OutlinedTextField(
                                 value = manualBookingCode,
                                 onValueChange = { manualBookingCode = it.uppercase() },
-                                label = { Text("Mã đặt sân (Ví dụ: DS123456)") },
+                                label = { Text(stringResource(id = R.string.scanner_manual_entry_hint)) },
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -169,7 +172,7 @@ fun QrScannerScreen(
                     },
                     dismissButton = {
                         TextButton(onClick = { showManualInputDialog = false }) {
-                            Text("Hủy")
+                            Text(stringResource(id = R.string.scanner_cancel))
                         }
                     }
                 )
@@ -191,19 +194,19 @@ fun QrScannerScreen(
                 is CheckInUiState.Success -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.resetState() },
-                        title = { Text("Check-in Thành công") },
+                        title = { Text(stringResource(id = R.string.scanner_success_title)) },
                         text = {
                             Column {
-                                Text("Khách hàng: ${state.booking.customerName ?: "N/A"}", fontWeight = FontWeight.Bold)
-                                Text("Sân: ${state.booking.field?.name ?: "N/A"}")
-                                Text("Mã đơn: ${state.booking.code}")
+                                Text(stringResource(id = R.string.scanner_success_customer, state.booking.customerName ?: "N/A"), fontWeight = FontWeight.Bold)
+                                Text(stringResource(id = R.string.scanner_success_field, state.booking.field?.name ?: "N/A"))
+                                Text(stringResource(id = R.string.scanner_success_code, state.booking.code ?: "N/A"))
                                 Spacer(modifier = Modifier.height(8.dp))
-                                Text("Thời gian: ${state.booking.startTime} - ${state.booking.endTime}")
+                                Text(stringResource(id = R.string.scanner_success_time, formatDateDash(state.booking.startTime ?: "N/A"), formatDateDash(state.booking.endTime ?: "N/A")))
                             }
                         },
                         confirmButton = {
                             Button(onClick = { viewModel.resetState() }) {
-                                Text("Tiếp tục")
+                                Text(stringResource(id = R.string.scanner_continue))
                             }
                         }
                     )
@@ -212,11 +215,11 @@ fun QrScannerScreen(
                 is CheckInUiState.Error -> {
                     AlertDialog(
                         onDismissRequest = { viewModel.resetState() },
-                        title = { Text("Lỗi Check-in") },
+                        title = { Text(stringResource(id = R.string.scanner_error_title)) },
                         text = { Text(state.message) },
                         confirmButton = {
                             Button(onClick = { viewModel.resetState() }) {
-                                Text("Thử lại")
+                                Text(stringResource(id = R.string.scanner_retry))
                             }
                         }
                     )
@@ -270,7 +273,7 @@ fun QrScannerOverlay(modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "Đưa mã QR vào khung để quét",
+            text = stringResource(id = R.string.scanner_instruction),
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)

@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.staff
 
 import com.tanh.datsan.data.model.BookingResponse
 

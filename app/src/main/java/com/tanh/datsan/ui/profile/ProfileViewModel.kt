@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.profile
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -261,7 +261,15 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun changePassword(oldPass: String, newPass: String) {
+    fun changePassword(oldPass: String, newPass: String, confirmPass: String) {
+        if (newPass.length < 8) {
+            _uiState.update { it.copy(toastMessage = "Mật khẩu mới phải có ít nhất 8 ký tự") }
+            return
+        }
+        if (newPass != confirmPass) {
+            _uiState.update { it.copy(toastMessage = "Mật khẩu xác nhận không khớp") }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {

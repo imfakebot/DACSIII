@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.profile
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -55,16 +55,11 @@ class UserViewModel @Inject constructor(
         )
 
     init {
-        Log.d("UserViewModel", "Initializing UserViewModel")
         viewModelScope.launch {
             isLoggedIn.collect { loggedIn ->
-                Log.d("UserViewModel", "isLoggedIn emission: $loggedIn")
                 if (loggedIn) {
-                    Log.d("UserViewModel", "User is logged in, fetching profile...")
                     fetchUserProfile()
                     fetchInitialUnreadCount()
-                } else {
-                    Log.d("UserViewModel", "User is not logged in")
                 }
             }
         }
@@ -73,28 +68,24 @@ class UserViewModel @Inject constructor(
     private fun fetchInitialUnreadCount() {
         viewModelScope.launch {
             try {
-                Log.d("UserViewModel", "Fetching initial unread count")
                 notificationRepository.fetchIntialUnreadCount()
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Lỗi lấy thông báo: ${e.message}")
+                // Ignore
             }
         }
     }
 
     fun fetchUserProfile() {
-        Log.d("UserViewModel", "fetchUserProfile() called")
         viewModelScope.launch {
             try {
-                Log.d("UserViewModel", "Calling userRepository.getUserProfile()")
                 val account = userRepository.getUserProfile()
-                Log.d("UserViewModel", "Fetched user profile successfully: ${account.userProfile?.fullName}")
                 userManager.setUserInfo(
                     name = account.userProfile?.fullName ?: "",
                     avatarUrl = account.userProfile?.avatarUrl,
                     branchId = account.managedBranchId
                 )
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Error fetching user profile: ${e.message}", e)
+                // Ignore
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.profile
 
 import com.tanh.datsan.data.model.AccountResponse
 import com.tanh.datsan.data.model.CityDto
