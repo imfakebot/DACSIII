@@ -23,9 +23,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tanh.datsan.data.model.FeedbackResponse
-import com.tanh.datsan.viewmodel.AdminFeedbackViewModel
+import com.tanh.datsan.ui.admin.feedback.AdminFeedbackViewModel
+import com.tanh.datsan.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -53,7 +55,7 @@ fun AdminFeedbackScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Quản lý Feedback", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.feedback_management), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -78,7 +80,7 @@ fun AdminFeedbackScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else if (uiState.feedbacks.isEmpty()) {
                 Text(
-                    text = "Không có Feedback nào.",
+                    text = stringResource(id = R.string.feedback_empty),
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.Gray
                 )
@@ -135,7 +137,7 @@ fun AdminFeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = feedback.type?.uppercase() ?: "KHÁC",
+                        text = feedback.type?.uppercase() ?: stringResource(id = R.string.feedback_type_other),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = iconColor
@@ -143,9 +145,9 @@ fun AdminFeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
                 }
 
                 val (statusColor, statusText) = when (feedback.status.lowercase()) {
-                    "pending" -> Color(0xFFF59E0B) to "Chờ xử lý"
-                    "processing" -> Color(0xFF3B82F6) to "Đang xử lý"
-                    "resolved" -> Color(0xFF10B981) to "Đã giải quyết"
+                    "pending" -> Color(0xFFF59E0B) to stringResource(id = R.string.feedback_status_pending)
+                    "processing" -> Color(0xFF3B82F6) to stringResource(id = R.string.feedback_status_processing)
+                    "resolved" -> Color(0xFF10B981) to stringResource(id = R.string.feedback_status_resolved)
                     else -> Color.Gray to feedback.status
                 }
                 Box(
@@ -165,7 +167,7 @@ fun AdminFeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = feedback.title ?: "Không có tiêu đề",
+                text = feedback.title ?: stringResource(id = R.string.feedback_no_title),
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
@@ -185,7 +187,7 @@ fun AdminFeedbackItem(feedback: FeedbackResponse, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Bởi: ${feedback.user?.profile?.fullName ?: feedback.user?.email ?: "Unknown"}",
+                    text = stringResource(id = R.string.feedback_by, feedback.user?.profile?.fullName ?: feedback.user?.email ?: "Unknown"),
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

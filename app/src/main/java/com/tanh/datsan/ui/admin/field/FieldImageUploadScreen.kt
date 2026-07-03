@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.tanh.datsan.viewmodel.AdminFieldUiState
+import com.tanh.datsan.ui.admin.field.AdminUiState
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -30,9 +30,10 @@ import java.io.InputStream
 @Composable
 fun FieldImageUploadScreen(
     fieldId: String,
-    uiState: AdminFieldUiState,
+    uiState: AdminUiState,
     onUploadImages: (String, List<MultipartBody.Part>) -> Unit,
     onBackClick: () -> Unit,
+    onNavigateNext: () -> Unit,
     onResetUiState: () -> Unit
 ) {
     val context = LocalContext.current
@@ -44,14 +45,15 @@ fun FieldImageUploadScreen(
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is AdminFieldUiState.Success -> {
+            is AdminUiState.Success -> {
                 uiState.message?.let {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 }
                 selectedImageUris = emptyList() // clear after success
                 onResetUiState()
+                onNavigateNext()
             }
-            is AdminFieldUiState.Error -> {
+            is AdminUiState.Error -> {
                 Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
@@ -71,7 +73,12 @@ fun FieldImageUploadScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ),
+                actions = {
+                    TextButton(onClick = onNavigateNext) {
+                        Text("Tiếp tục", color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -117,9 +124,9 @@ fun FieldImageUploadScreen(
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = uiState !is AdminFieldUiState.Loading
+                    enabled = uiState !is AdminUiState.Loading
                 ) {
-                    if (uiState is AdminFieldUiState.Loading) {
+                    if (uiState is AdminUiState.Loading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = MaterialTheme.colorScheme.onPrimary

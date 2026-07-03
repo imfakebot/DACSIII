@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.voucher
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,12 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class AdminVoucherUiState(
-    val isCreating: Boolean = false,
-    val createSuccess: Boolean = false,
-    val errorMessage: String? = null,
-    val successMessage: String? = null
-)
+import com.tanh.datsan.ui.state.AdminVoucherUiState
 
 @HiltViewModel
 class AdminVoucherViewModel @Inject constructor(

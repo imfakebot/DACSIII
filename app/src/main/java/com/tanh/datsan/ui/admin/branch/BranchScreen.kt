@@ -29,15 +29,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Branch
-import com.tanh.datsan.viewmodel.BranchUiState
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
+import com.tanh.datsan.ui.state.ActionState
 private val DarkBg      = Color(0xFF0F172A)
 private val DarkBg2     = Color(0xFF1E293B)
 private val AccentBlue  = Color(0xFF3B82F6)
@@ -56,7 +56,7 @@ private val DividerColor= Color(0xFFF1F5F9)
 @Composable
 fun BranchScreen(
     branches: List<Branch>,
-    uiState: BranchUiState,
+    actionState: ActionState,
     onFetchBranches: () -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
@@ -68,14 +68,14 @@ fun BranchScreen(
 
     LaunchedEffect(Unit) { onFetchBranches() }
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is BranchUiState.Success -> {
-                uiState.message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                actionState.message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                 onResetUiState()
             }
-            is BranchUiState.Error -> {
-                Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
             else -> {}
@@ -92,7 +92,7 @@ fun BranchScreen(
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm chi nhánh", modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.branch_add), modifier = Modifier.size(26.dp))
             }
         }
     ) { innerPadding ->
@@ -100,13 +100,10 @@ fun BranchScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // ── Header ──────────────────────────────────────────────────
             item {
                 BranchHeader(branchCount = branches.size)
             }
-
-            // ── Loading ─────────────────────────────────────────────────
-            if (uiState is BranchUiState.Loading) {
+            if (actionState is ActionState.Loading) {
                 items(3) { BranchCardSkeleton() }
             } else if (branches.isEmpty()) {
                 item { BranchEmptyState(onNavigateToCreate) }
@@ -138,7 +135,7 @@ fun BranchScreen(
             },
             title = {
                 Text(
-                    "Xóa chi nhánh",
+                    stringResource(id = R.string.branch_delete_title),
                     fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary,
                     textAlign = TextAlign.Center
@@ -146,7 +143,7 @@ fun BranchScreen(
             },
             text = {
                 Text(
-                    "Bạn có chắc muốn xóa chi nhánh\n\"${branch.name}\" không?\nHành động này không thể hoàn tác.",
+                    stringResource(id = R.string.branch_delete_confirm, branch.name),
                     color = TextSecond,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -158,7 +155,7 @@ fun BranchScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                 ) {
-                    Text("Xóa", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.branch_delete), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -167,14 +164,12 @@ fun BranchScreen(
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, DividerColor)
                 ) {
-                    Text("Hủy", color = TextSecond)
+                    Text(stringResource(id = R.string.branch_cancel), color = TextSecond)
                 }
             }
         )
     }
 }
-
-// ─── Dark header with canvas blobs ───────────────────────────────────────────
 @Composable
 fun BranchHeader(branchCount: Int) {
     Box(
@@ -210,7 +205,7 @@ fun BranchHeader(branchCount: Int) {
             verticalArrangement = Arrangement.Bottom
         ) {
             Text(
-                "Quản lý chi nhánh",
+                stringResource(id = R.string.branch_management),
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -225,7 +220,7 @@ fun BranchHeader(branchCount: Int) {
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        "$branchCount chi nhánh",
+                        stringResource(id = R.string.branch_count, branchCount),
                         color = Color.White.copy(0.9f),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Medium
@@ -235,8 +230,6 @@ fun BranchHeader(branchCount: Int) {
         }
     }
 }
-
-// ─── Branch card ─────────────────────────────────────────────────────────────
 @Composable
 fun BranchCard(
     branch: Branch,
@@ -261,7 +254,6 @@ fun BranchCard(
         border = BorderStroke(1.dp, DividerColor)
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            // ── Top row: icon + name + status badge ──────────────────
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Icon avatar
                 Box(
@@ -307,7 +299,7 @@ fun BranchCard(
                             )
                             Spacer(Modifier.width(5.dp))
                             Text(
-                                if (isActive) "Đang hoạt động" else "Ngưng hoạt động",
+                                if (isActive) stringResource(id = R.string.branch_active) else stringResource(id = R.string.branch_inactive),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isActive) AccentGreen else AccentRed
@@ -316,15 +308,11 @@ fun BranchCard(
                     }
                 }
             }
-
-            // ── Divider ───────────────────────────────────────────────
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 14.dp),
                 color = DividerColor,
                 thickness = 1.dp
             )
-
-            // ── Info rows ─────────────────────────────────────────────
             if (branch.phoneNumber != null) {
                 BranchInfoRow(
                     icon = Icons.Rounded.Phone,
@@ -346,8 +334,6 @@ fun BranchCard(
                 iconTint = AccentAmber,
                 label = "${branch.openTime} – ${branch.closeTime}"
             )
-
-            // ── Action buttons ────────────────────────────────────────
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedButton(
@@ -359,7 +345,7 @@ fun BranchCard(
                 ) {
                     Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Chỉnh sửa", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(stringResource(id = R.string.branch_edit), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
                 OutlinedButton(
                     onClick = onDelete,
@@ -370,7 +356,7 @@ fun BranchCard(
                 ) {
                     Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Xóa", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text(stringResource(id = R.string.branch_delete), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
             }
         }
@@ -404,8 +390,6 @@ private fun BranchInfoRow(
         )
     }
 }
-
-// ─── Empty state ─────────────────────────────────────────────────────────────
 @Composable
 fun BranchEmptyState(onAdd: () -> Unit) {
     Column(
@@ -430,14 +414,14 @@ fun BranchEmptyState(onAdd: () -> Unit) {
         }
         Spacer(Modifier.height(20.dp))
         Text(
-            "Chưa có chi nhánh nào",
+            stringResource(id = R.string.branch_empty_title),
             fontWeight = FontWeight.ExtraBold,
             fontSize = 18.sp,
             color = TextPrimary
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Tạo chi nhánh đầu tiên để bắt đầu\nquản lý sân của bạn",
+            stringResource(id = R.string.branch_empty_desc),
             color = TextSecond,
             fontSize = 14.sp,
             textAlign = TextAlign.Center,
@@ -452,12 +436,10 @@ fun BranchEmptyState(onAdd: () -> Unit) {
         ) {
             Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
-            Text("Thêm chi nhánh", fontWeight = FontWeight.Bold)
+            Text(stringResource(id = R.string.branch_add), fontWeight = FontWeight.Bold)
         }
     }
 }
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
 @Composable
 fun BranchCardSkeleton() {
     val anim = rememberInfiniteTransition(label = "sk")

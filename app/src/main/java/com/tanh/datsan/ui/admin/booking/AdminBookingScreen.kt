@@ -1,7 +1,19 @@
 package com.tanh.datsan.ui.admin.booking
 
+import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,34 +24,54 @@ import androidx.compose.material.icons.rounded.CalendarToday
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Phone
 import androidx.compose.material.icons.rounded.SportsSoccer
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.BookingResponse
-import com.tanh.datsan.viewmodel.AdminBookingUiState
-import com.tanh.datsan.viewmodel.AdminBookingViewModel
+import com.tanh.datsan.ui.admin.field.AdminUiState
+import com.tanh.datsan.utils.DateUtil.formatDateDash
 
 // Colors matching Premium UI
-private val AppBg = Color(0xFFF8FAFC)
-private val CardWhite = Color.White
-private val TextPrimary = Color(0xFF1E293B)
-private val TextSecond = Color(0xFF64748B)
-private val AccentBlue = Color(0xFF3B82F6)
-private val DividerColor = Color(0xFFE2E8F0)
-
-// Status colors
-private val StatusPendingColor = Color(0xFFF59E0B)
-private val StatusApprovedColor = Color(0xFF10B981)
-private val StatusRejectedColor = Color(0xFFEF4444)
+private val DarkBg      = Color(0xFF0F172A)
+private val AccentBlue  = Color(0xFF3B82F6)
+private val AccentGreen = Color(0xFF10B981)
+private val AccentRed   = Color(0xFFEF4444)
+private val AccentAmber = Color(0xFFF59E0B)
+private val AppBg       = Color(0xFFF1F5F9)
+private val CardWhite   = Color.White
+private val TextPrimary = Color(0xFF0F172A)
+private val TextSecond  = Color(0xFF64748B)
+private val DividerColor= Color(0xFFF1F5F9)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +80,7 @@ fun AdminBookingScreen(
     onNavigateToCreateBooking: () -> Unit,
     viewModel: AdminBookingViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val bookings by viewModel.bookings.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
@@ -66,16 +99,14 @@ fun AdminBookingScreen(
             }
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-
     LaunchedEffect(uiState) {
         when (uiState) {
-            is AdminBookingUiState.Success -> {
-                snackbarHostState.showSnackbar((uiState as AdminBookingUiState.Success).message ?: "Thành công")
+            is AdminUiState.Success -> {
+                Toast.makeText(context, (uiState as AdminUiState.Success).message ?: context.getString(R.string.success_default), Toast.LENGTH_SHORT).show()
                 viewModel.resetUiState()
             }
-            is AdminBookingUiState.Error -> {
-                snackbarHostState.showSnackbar((uiState as AdminBookingUiState.Error).message)
+            is AdminUiState.Error -> {
+                Toast.makeText(context, (uiState as AdminUiState.Error).message, Toast.LENGTH_SHORT).show()
                 viewModel.resetUiState()
             }
             else -> {}
@@ -83,14 +114,13 @@ fun AdminBookingScreen(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = AppBg,
         topBar = {
             TopAppBar(
-                title = { Text("Đơn đặt sân", fontWeight = FontWeight.ExtraBold) },
+                title = { Text(stringResource(id = R.string.admin_booking_title), fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Trở về")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.cd_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -108,18 +138,18 @@ fun AdminBookingScreen(
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Tạo đơn", modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.admin_booking_create), modifier = Modifier.size(26.dp))
             }
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            if (uiState is AdminBookingUiState.Loading && bookings.isEmpty()) {
+            if (uiState is AdminUiState.Loading && bookings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = AccentBlue)
                 }
             } else if (bookings.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Chưa có đơn đặt sân nào", color = TextSecond)
+                    Text(stringResource(id = R.string.admin_booking_empty), color = TextSecond, fontSize = 16.sp)
                 }
             } else {
                 LazyColumn(
@@ -166,7 +196,7 @@ fun BookingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Mã: ${booking.code ?: "N/A"}",
+                    text = stringResource(id = R.string.booking_code_prefix, booking.code ?: "N/A"),
                     fontWeight = FontWeight.Bold,
                     color = AccentBlue,
                     fontSize = 14.sp
@@ -175,8 +205,8 @@ fun BookingCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
             
-            val customerName = booking.customerName ?: booking.userProfile?.fullName ?: "Khách vãng lai"
-            val customerPhone = booking.customerPhone ?: "Không có SDT"
+            val customerName = booking.customerName ?: booking.userProfile?.fullName ?: stringResource(id = R.string.customer_guest)
+            val customerPhone = booking.customerPhone ?: stringResource(id = R.string.customer_no_phone)
             
             BookingInfoRow(icon = Icons.Rounded.Person, text = customerName)
             Spacer(modifier = Modifier.height(4.dp))
@@ -186,7 +216,7 @@ fun BookingCard(
             Spacer(modifier = Modifier.height(4.dp))
             BookingInfoRow(
                 icon = Icons.Rounded.CalendarToday, 
-                text = "${booking.bookingDate ?: ""} | ${booking.startTime ?: ""} - ${booking.endTime ?: ""}"
+                text = "${booking.bookingDate ?: ""} | ${formatDateDash(booking.startTime ?: "")} - ${formatDateDash(booking.endTime ?: "")}"
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -201,16 +231,15 @@ fun BookingCard(
                 if (status == "pending" || status == "approved" || status == "confirmed") {
                     TextButton(
                         onClick = onCancelBooking,
-                        colors = ButtonDefaults.textButtonColors(contentColor = StatusRejectedColor)
+                        colors = ButtonDefaults.textButtonColors(contentColor = AccentRed)
                     ) {
-                        Text("Hủy đơn", fontWeight = FontWeight.Bold)
-                    }
+                        Text(stringResource(id = R.string.admin_btn_cancel), fontWeight = FontWeight.Bold, color = AccentRed)                  }
                 } else {
                     Spacer(modifier = Modifier.width(1.dp))
                 }
 
                 Text(
-                    text = "${booking.totalPrice ?: 0} VND",
+                        text = stringResource(id = R.string.admin_booking_total, "${booking.totalPrice?.toInt()}đ"),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
                     color = TextPrimary
@@ -231,12 +260,12 @@ fun BookingInfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: 
 
 @Composable
 fun BookingStatusBadge(status: String?) {
-    val (bgColor, textColor, text) = when (status?.lowercase()) {
-        "pending" -> Triple(StatusPendingColor.copy(alpha = 0.1f), StatusPendingColor, "Chờ duyệt")
-        "approved" -> Triple(StatusApprovedColor.copy(alpha = 0.1f), StatusApprovedColor, "Đã duyệt")
-        "rejected" -> Triple(StatusRejectedColor.copy(alpha = 0.1f), StatusRejectedColor, "Từ chối")
-        "completed" -> Triple(AccentBlue.copy(alpha = 0.1f), AccentBlue, "Hoàn thành")
-        else -> Triple(DividerColor, TextSecond, status ?: "Unknown")
+    val (bgColor, textColor, textRes) = when (status?.lowercase()) {
+        "pending" -> Triple(AccentAmber.copy(alpha = 0.1f), AccentAmber, R.string.status_pending)
+        "approved" -> Triple(AccentGreen.copy(alpha = 0.1f), AccentGreen, R.string.status_approved)
+        "rejected" -> Triple(AccentRed.copy(alpha = 0.1f), AccentRed, R.string.status_rejected)
+        "completed" -> Triple(AccentBlue.copy(alpha = 0.1f), AccentBlue, R.string.status_completed)
+        else -> Triple(DividerColor, TextSecond, R.string.status_unknown)
     }
 
     Box(
@@ -245,6 +274,11 @@ fun BookingStatusBadge(status: String?) {
             .background(bgColor)
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
-        Text(text, color = textColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        val displayStr = if (status?.lowercase() in listOf("pending", "approved", "rejected", "completed")) {
+            stringResource(id = textRes)
+        } else {
+            status ?: stringResource(id = R.string.status_unknown)
+        }
+        Text(displayStr, color = textColor, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }

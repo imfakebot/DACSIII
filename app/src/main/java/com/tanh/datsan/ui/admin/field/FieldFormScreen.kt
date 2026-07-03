@@ -20,16 +20,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Branch
 import com.tanh.datsan.data.model.CreateFieldDto
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.FieldType
 import com.tanh.datsan.data.model.UpdateFieldDto
-import com.tanh.datsan.viewmodel.AdminFieldUiState
+import com.tanh.datsan.ui.admin.field.AdminUiState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.FlowRow
@@ -38,8 +40,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Notes
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
 private val DarkBg      = Color(0xFF0F172A)
 private val AccentBlue  = Color(0xFF3B82F6)
 private val AccentGreen = Color(0xFF10B981)
@@ -57,7 +57,7 @@ private val DividerColor= Color(0xFFF1F5F9)
 fun FieldFormScreen(
     fieldId: String?,
     userRole: String,
-    uiState: AdminFieldUiState,
+    uiState: AdminUiState,
     selectedField: FieldResponse?,
     branches: List<Branch>,
     fieldTypes: List<FieldType>,
@@ -66,6 +66,8 @@ fun FieldFormScreen(
     onCreateField: (CreateFieldDto) -> Unit,
     onUpdateField: (String, UpdateFieldDto) -> Unit,
     onBackClick: () -> Unit,
+    onNavigateToUploadImages: (String) -> Unit,
+    onNavigateToTimeSlot: (String) -> Unit,
     onResetUiState: () -> Unit,
     onClearSelectedField: () -> Unit
 ) {
@@ -106,14 +108,20 @@ fun FieldFormScreen(
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is AdminFieldUiState.Success -> {
+            is AdminUiState.Success -> {
                 uiState.message?.let {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 }
                 onResetUiState()
-                onBackClick()
+                if (isEditing) {
+                    onBackClick()
+                } else {
+                    if (uiState.data is String) {
+                        onNavigateToUploadImages(uiState.data as String)
+                    }
+                }
             }
-            is AdminFieldUiState.Error -> {
+            is AdminUiState.Error -> {
                 Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
@@ -127,9 +135,9 @@ fun FieldFormScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        if (!canEdit) "Chi tiết Sân Bóng" 
-                        else if (isEditing) "Sửa Sân Bóng" 
-                        else "Thêm Sân Bóng",
+                        if (!canEdit) stringResource(id = R.string.field_form_detail_title) 
+                        else if (isEditing) stringResource(id = R.string.field_form_edit_title) 
+                        else stringResource(id = R.string.field_form_add_title),
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White
                     )
@@ -155,7 +163,7 @@ fun FieldFormScreen(
                         Button(
                             onClick = {
                                 if (name.isBlank() || selectedBranchId.isBlank() || selectedFieldTypeId.isBlank()) {
-                                    Toast.makeText(context, "Vui lòng nhập các trường bắt buộc (*)", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, context.getString(R.string.field_form_val_required), Toast.LENGTH_SHORT).show()
                                     return@Button
                                 }
                                 val reqDto = UpdateFieldDto(
@@ -184,12 +192,12 @@ fun FieldFormScreen(
                             modifier = Modifier.fillMaxWidth().height(54.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = DarkBg),
-                            enabled = uiState !is AdminFieldUiState.Loading
+                            enabled = uiState !is AdminUiState.Loading
                         ) {
-                            if (uiState is AdminFieldUiState.Loading) {
+                            if (uiState is AdminUiState.Loading) {
                                 CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 3.dp)
                             } else {
-                                Text(if (isEditing) "CẬP NHẬT" else "TẠO MỚI", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                Text(if (isEditing) stringResource(id = R.string.field_form_btn_update) else stringResource(id = R.string.field_form_btn_create), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                             }
                         }
                     }
@@ -204,23 +212,22 @@ fun FieldFormScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 20.dp)
         ) {
-            // ── Section: Thông tin cơ bản ─────────────────────────────────
-            FormSectionTitle("Thông tin cơ bản", Icons.Rounded.Info)
+            FormSectionTitle(stringResource(id = R.string.field_form_basic_info), Icons.Rounded.Info)
             FormCard {
                 FormField(
-                    label = "Tên sân bóng *",
+                    label = stringResource(id = R.string.field_form_name_label),
                     value = name,
                     onValueChange = { if (canEdit) name = it },
                     icon = Icons.Rounded.SportsSoccer,
-                    placeholder = "VD: Sân 5 người số 1",
+                    placeholder = stringResource(id = R.string.field_form_name_hint),
                     enabled = canEdit
                 )
                 FormDivider()
                 FormSelectorRow(
                     icon = Icons.Rounded.Category,
                     iconTint = AccentPurple,
-                    label = "Loại sân *",
-                    value = fieldTypes.find { it.id == selectedFieldTypeId }?.name ?: "Chọn loại sân",
+                    label = stringResource(id = R.string.field_form_type_label),
+                    value = fieldTypes.find { it.id == selectedFieldTypeId }?.name ?: stringResource(id = R.string.field_form_type_hint),
                     placeholder = selectedFieldTypeId.isBlank(),
                     enabled = canEdit,
                     onClick = { if (canEdit) showTypeSheet = true }
@@ -229,8 +236,8 @@ fun FieldFormScreen(
                 FormSelectorRow(
                     icon = Icons.Rounded.LocationCity,
                     iconTint = AccentBlue,
-                    label = "Chi nhánh *",
-                    value = branches.find { it.id == selectedBranchId }?.name ?: "Chọn chi nhánh",
+                    label = stringResource(id = R.string.field_form_branch_label),
+                    value = branches.find { it.id == selectedBranchId }?.name ?: stringResource(id = R.string.field_form_branch_hint),
                     placeholder = selectedBranchId.isBlank(),
                     enabled = canEdit,
                     onClick = { if (canEdit) showBranchSheet = true }
@@ -238,11 +245,9 @@ fun FieldFormScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // ── Section: Tiện ích ─────────────────────────────────
             @OptIn(ExperimentalLayoutApi::class)
             if (utilities.isNotEmpty()) {
-                FormSectionTitle("Tiện ích", Icons.Rounded.Star)
+                FormSectionTitle(stringResource(id = R.string.field_form_utility_section), Icons.Rounded.Star)
                 FormCard {
                     Column(modifier = Modifier.padding(16.dp)) {
                         FlowRow(
@@ -282,16 +287,14 @@ fun FieldFormScreen(
                 }
                 Spacer(Modifier.height(16.dp))
             }
-
-            // ── Section: Thông tin bổ sung ─────────────────────────────────
-            FormSectionTitle("Mô tả & Trạng thái", Icons.Rounded.Description)
+            FormSectionTitle(stringResource(id = R.string.field_form_desc_status_section), Icons.Rounded.Description)
             FormCard {
                 FormField(
-                    label = "Mô tả",
+                    label = stringResource(id = R.string.field_type_desc_label),
                     value = description,
                     onValueChange = { if (canEdit) description = it },
                     icon = Icons.AutoMirrored.Rounded.Notes,
-                    placeholder = "Nhập mô tả thêm về sân bóng",
+                    placeholder = stringResource(id = R.string.field_form_desc_hint),
                     enabled = canEdit
                 )
                 FormDivider()
@@ -309,7 +312,7 @@ fun FieldFormScreen(
                         }
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            if (status) "Đang hoạt động" else "Ngưng hoạt động",
+                            if (status) stringResource(id = R.string.field_active) else stringResource(id = R.string.field_inactive),
                             color = if (status) AccentGreen else TextSecond,
                             fontWeight = FontWeight.Bold
                         )
@@ -342,7 +345,7 @@ fun FieldFormScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
                 Text(
-                    "Chọn Chi nhánh",
+                    stringResource(id = R.string.field_form_branch_hint),
                     modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 8.dp),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
@@ -391,7 +394,7 @@ fun FieldFormScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
                 Text(
-                    "Chọn Loại sân",
+                    stringResource(id = R.string.field_form_type_hint),
                     modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 8.dp),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
@@ -430,8 +433,6 @@ fun FieldFormScreen(
         }
     }
 }
-
-// ─── Shared form components ───────────────────────────────────────────────────
 @Composable
 private fun FormSectionTitle(title: String, icon: ImageVector) {
     Row(

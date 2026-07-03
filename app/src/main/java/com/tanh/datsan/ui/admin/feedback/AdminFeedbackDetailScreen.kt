@@ -20,8 +20,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.tanh.datsan.viewmodel.AdminFeedbackViewModel
+import com.tanh.datsan.ui.admin.feedback.AdminFeedbackViewModel
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +53,7 @@ fun AdminFeedbackDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chi tiết Feedback", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.feedback_detail_title), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -89,7 +91,7 @@ fun AdminFeedbackDetailScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = feedback.title ?: "Không có tiêu đề",
+                            text = feedback.title ?: stringResource(id = R.string.feedback_no_title),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -99,18 +101,18 @@ fun AdminFeedbackDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Phân loại: ${feedback.type?.uppercase() ?: "KHÁC"}",
+                                text = stringResource(id = R.string.feedback_category, feedback.type?.uppercase() ?: stringResource(id = R.string.feedback_type_other)),
                                 fontSize = 14.sp,
                                 color = Color.Gray
                             )
                             val statusText = when (feedback.status.lowercase()) {
-                                "pending" -> "Chờ xử lý"
-                                "processing" -> "Đang xử lý"
-                                "resolved" -> "Đã giải quyết"
+                                "pending" -> stringResource(id = R.string.feedback_status_pending)
+                                "processing" -> stringResource(id = R.string.feedback_status_processing)
+                                "resolved" -> stringResource(id = R.string.feedback_status_resolved)
                                 else -> feedback.status
                             }
                             Text(
-                                text = "Trạng thái: $statusText",
+                                text = stringResource(id = R.string.feedback_status, statusText),
                                 fontSize = 14.sp,
                                 color = Color.Gray,
                                 fontWeight = FontWeight.Bold
@@ -126,10 +128,10 @@ fun AdminFeedbackDetailScreen(
                         // Hình ảnh đính kèm (nếu có)
                         if (!feedback.images.isNullOrEmpty()) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text(text = "Hình ảnh đính kèm:", fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(id = R.string.feedback_attached_images), fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
                             // TODO: Add Image loading row/grid here
-                            Text(text = "${feedback.images.size} hình ảnh", color = Color.Blue)
+                            Text(text = stringResource(id = R.string.feedback_images_count, feedback.images.size), color = Color.Blue)
                         }
                     }
                 }
@@ -145,7 +147,7 @@ fun AdminFeedbackDetailScreen(
                     colors = CardDefaults.cardColors(containerColor = Color.White)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Phản hồi cho User", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(stringResource(id = R.string.feedback_reply_title), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         Spacer(modifier = Modifier.height(8.dp))
                         
                         if (!feedback.adminReply.isNullOrEmpty()) {
@@ -168,7 +170,7 @@ fun AdminFeedbackDetailScreen(
                         OutlinedTextField(
                             value = replyText,
                             onValueChange = { replyText = it },
-                            placeholder = { Text("Nhập câu trả lời (Sẽ ghi đè nếu đã có)") },
+                            placeholder = { Text(stringResource(id = R.string.feedback_reply_hint)) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(100.dp),
@@ -185,7 +187,7 @@ fun AdminFeedbackDetailScreen(
                         ) {
                             Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Gửi phản hồi")
+                            Text(stringResource(id = R.string.feedback_reply_btn))
                         }
                     }
                 }

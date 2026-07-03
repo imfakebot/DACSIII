@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.review
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -13,12 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-sealed class AdminReviewUiState {
-    object Idle : AdminReviewUiState()
-    object Loading : AdminReviewUiState()
-    data class Success(val message: String = "") : AdminReviewUiState()
-    data class Error(val message: String) : AdminReviewUiState()
-}
+
 
 @HiltViewModel
 class AdminReviewViewModel @Inject constructor(

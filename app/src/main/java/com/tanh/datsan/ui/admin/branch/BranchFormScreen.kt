@@ -77,20 +77,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.CityDto
 import com.tanh.datsan.data.model.CreateBranchDto
 import com.tanh.datsan.data.model.UpdateBranchDto
 import com.tanh.datsan.data.model.WardDto
-import com.tanh.datsan.viewmodel.BranchUiState
+import com.tanh.datsan.ui.state.ActionState
 import androidx.core.net.toUri
 import com.tanh.datsan.utils.Constants
-
-// ─── Design tokens (shared with BranchScreen) ─────────────────────────────────
 private val DarkBg      = Color(0xFF0F172A)
 private val DarkBg2     = Color(0xFF1E293B)
 private val AccentBlue  = Color(0xFF3B82F6)
@@ -109,7 +109,7 @@ private val DividerColor= Color(0xFFF1F5F9)
 @Composable
 fun BranchFormScreen(
     branchId: String?,
-    uiState: BranchUiState,
+    actionState: ActionState,
     selectedBranch: com.tanh.datsan.data.model.Branch?,
     onFetchBranch: (String) -> Unit,
     onCreateBranch: (CreateBranchDto) -> Unit,
@@ -194,15 +194,15 @@ fun BranchFormScreen(
         }
     }
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is BranchUiState.Success -> {
-                uiState.message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                actionState.message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                 onResetUiState()
                 onBackClick()
             }
-            is BranchUiState.Error -> {
-                Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
             else -> {}
@@ -211,7 +211,7 @@ fun BranchFormScreen(
 
     fun submit() {
         if (name.isBlank() || openTime.isBlank() || closeTime.isBlank()) {
-            Toast.makeText(context, "Vui lòng nhập tên, giờ mở và đóng cửa", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.branch_form_val_required), Toast.LENGTH_SHORT).show()
             return
         }
         val lat = latitude.toDoubleOrNull()
@@ -271,13 +271,13 @@ fun BranchFormScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, null, tint = Color.White)
                     }
                     Text(
-                        if (isEditing) "Chỉnh sửa chi nhánh" else "Thêm chi nhánh mới",
+                        if (isEditing) stringResource(id = R.string.branch_form_edit_title) else stringResource(id = R.string.branch_form_create_title),
                         color = Color.White,
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 18.sp,
                         modifier = Modifier.weight(1f)
                     )
-                    if (uiState is BranchUiState.Loading) {
+                    if (actionState is ActionState.Loading) {
                         CircularProgressIndicator(
                             color = Color.White,
                             modifier = Modifier.size(24.dp).padding(end = 12.dp),
@@ -296,33 +296,31 @@ fun BranchFormScreen(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             Spacer(Modifier.height(12.dp))
-
-            // ── Section: Thông tin cơ bản ────────────────────────────────
-            FormSectionTitle("Thông tin cơ bản", Icons.Rounded.Business)
+            FormSectionTitle(stringResource(id = R.string.branch_form_basic_info), Icons.Rounded.Business)
             FormCard {
                 FormField(
-                    label = "Tên chi nhánh *",
+                    label = stringResource(id = R.string.branch_form_name),
                     value = name,
                     onValueChange = { name = it },
                     icon = Icons.Rounded.Store,
-                    placeholder = "VD: Chi nhánh Quận 1"
+                    placeholder = stringResource(id = R.string.branch_form_name_hint)
                 )
                 FormDivider()
                 FormField(
-                    label = "Số điện thoại",
+                    label = stringResource(id = R.string.branch_form_phone),
                     value = phoneNumber,
                     onValueChange = { phoneNumber = it },
                     icon = Icons.Rounded.Phone,
-                    placeholder = "VD: 0909 123 456",
+                    placeholder = stringResource(id = R.string.branch_form_phone_hint),
                     keyboardType = KeyboardType.Phone
                 )
                 FormDivider()
                 FormField(
-                    label = "Mô tả",
+                    label = stringResource(id = R.string.branch_form_desc),
                     value = description,
                     onValueChange = { description = it },
                     icon = Icons.Rounded.Description,
-                    placeholder = "Mô tả chi nhánh...",
+                    placeholder = stringResource(id = R.string.branch_form_desc_hint),
                     singleLine = false,
                     minLines = 2
                 )
@@ -350,9 +348,9 @@ fun BranchFormScreen(
                     }
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Trạng thái hoạt động", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.branch_form_status), fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                         Text(
-                            if (status) "Đang hoạt động" else "Ngưng hoạt động",
+                            if (status) stringResource(id = R.string.branch_active) else stringResource(id = R.string.branch_inactive),
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (status) AccentGreen else AccentRed
@@ -371,16 +369,14 @@ fun BranchFormScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // ── Section: Giờ hoạt động ───────────────────────────────────
-            FormSectionTitle("Giờ hoạt động", Icons.Rounded.Schedule)
+            FormSectionTitle(stringResource(id = R.string.branch_form_hours), Icons.Rounded.Schedule)
             FormCard {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Giờ mở cửa *", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.branch_form_open_time), fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp))
                         OutlinedTextField(
                             value = openTime,
@@ -399,7 +395,7 @@ fun BranchFormScreen(
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Giờ đóng cửa *", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.branch_form_close_time), fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp))
                         OutlinedTextField(
                             value = closeTime,
@@ -422,14 +418,14 @@ fun BranchFormScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            FormSectionTitle("Địa chỉ & Vị trí", Icons.Rounded.LocationOn)
+            FormSectionTitle(stringResource(id = R.string.branch_form_location), Icons.Rounded.LocationOn)
             FormCard {
                 // City selector
                 FormSelectorRow(
                     icon = Icons.Rounded.LocationCity,
                     iconTint = AccentBlue,
-                    label = "Tỉnh / Thành phố",
-                    value = selectedCityName.ifBlank { "Chọn tỉnh/thành phố" },
+                    label = stringResource(id = R.string.branch_form_city),
+                    value = selectedCityName.ifBlank { stringResource(id = R.string.branch_form_city_hint) },
                     placeholder = selectedCityName.isBlank(),
                     onClick = { showCitySheet = true }
                 )
@@ -438,8 +434,8 @@ fun BranchFormScreen(
                 FormSelectorRow(
                     icon = Icons.Rounded.Map,
                     iconTint = AccentGreen,
-                    label = "Phường / Xã",
-                    value = selectedWardName.ifBlank { if (selectedCityId == null) "Chọn tỉnh trước" else "Chọn phường/xã" },
+                    label = stringResource(id = R.string.branch_form_ward),
+                    value = selectedWardName.ifBlank { if (selectedCityId == null) stringResource(id = R.string.branch_form_ward_hint_no_city) else stringResource(id = R.string.branch_form_ward_hint) },
                     placeholder = selectedWardName.isBlank(),
                     enabled = selectedCityId != null,
                     onClick = { if (selectedCityId != null) showWardSheet = true }
@@ -447,25 +443,23 @@ fun BranchFormScreen(
                 FormDivider()
                 // Street
                 FormField(
-                    label = "Số nhà / Tên đường",
+                    label = stringResource(id = R.string.branch_form_street),
                     value = street,
                     onValueChange = { street = it },
                     icon = Icons.Rounded.Home,
-                    placeholder = "VD: 123 Nguyễn Văn Linh"
+                    placeholder = stringResource(id = R.string.branch_form_street_hint)
                 )
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // ── Section: Toạ độ ──────────────────────────────────────────
-            FormSectionTitle("Toạ độ GPS", Icons.Rounded.MyLocation)
+            FormSectionTitle(stringResource(id = R.string.branch_form_gps), Icons.Rounded.MyLocation)
             FormCard {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Vĩ độ (Latitude)", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.branch_form_lat), fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp))
                         OutlinedTextField(
                             value = latitude,
@@ -484,7 +478,7 @@ fun BranchFormScreen(
                         )
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Kinh độ (Longitude)", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.branch_form_lng), fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                         Spacer(Modifier.height(6.dp))
                         OutlinedTextField(
                             value = longitude,
@@ -537,7 +531,7 @@ fun BranchFormScreen(
                         Icon(Icons.Rounded.Map, null, tint = Color(0xFF1A73E8), modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Mở Google Maps để lấy toạ độ",
+                            stringResource(id = R.string.branch_form_open_maps),
                             color = Color(0xFF1A73E8),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
@@ -547,7 +541,7 @@ fun BranchFormScreen(
 
                 // Hint
                 Text(
-                    "💡 Trong Google Maps: nhấn giữ vào vị trí → toạ độ hiện ở thanh tìm kiếm (lat, lng)",
+                    stringResource(id = R.string.branch_form_maps_hint),
                     modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 14.dp),
                     fontSize = 11.sp,
                     color = TextTertiary,
@@ -556,25 +550,21 @@ fun BranchFormScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // ── Section: Quản lý ─────────────────────────────────────────
-            FormSectionTitle("Quản lý chi nhánh", Icons.Rounded.ManageAccounts)
+            FormSectionTitle(stringResource(id = R.string.branch_management), Icons.Rounded.ManageAccounts)
             FormCard {
                 FormSelectorRow(
                     icon = Icons.Rounded.Person,
                     iconTint = AccentPurple,
-                    label = "Quản lý phụ trách",
+                    label = stringResource(id = R.string.branch_form_manager_section),
                     value = availableManagers.find { it.id == selectedManagerId }
                         ?.let { "${it.userProfile?.fullName ?: "N/A"} · ${it.email}" }
-                        ?: "Chưa chọn quản lý",
+                        ?: stringResource(id = R.string.branch_form_manager_hint),
                     placeholder = selectedManagerId == null,
                     onClick = { showManagerSheet = true }
                 )
             }
 
             Spacer(Modifier.height(24.dp))
-
-            // ── Submit button ────────────────────────────────────────────
             Button(
                 onClick = ::submit,
                 modifier = Modifier
@@ -583,10 +573,10 @@ fun BranchFormScreen(
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = DarkBg),
-                enabled = uiState !is BranchUiState.Loading,
+                enabled = actionState !is ActionState.Loading,
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
             ) {
-                if (uiState is BranchUiState.Loading) {
+                if (actionState is ActionState.Loading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(
@@ -595,7 +585,7 @@ fun BranchFormScreen(
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        if (isEditing) "Lưu thay đổi" else "Tạo chi nhánh",
+                        if (isEditing) stringResource(id = R.string.branch_form_save) else stringResource(id = R.string.branch_form_create_btn),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 16.sp
                     )
@@ -605,8 +595,6 @@ fun BranchFormScreen(
             Spacer(Modifier.height(40.dp))
         }
     }
-
-    // ── City bottom sheet ────────────────────────────────────────────────────
     if (showCitySheet) {
         ModalBottomSheet(
             onDismissRequest = { showCitySheet = false },
@@ -615,7 +603,7 @@ fun BranchFormScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
                 Text(
-                    "Chọn Tỉnh / Thành phố",
+                    stringResource(id = R.string.branch_form_select_city),
                     modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 8.dp),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
@@ -659,8 +647,6 @@ fun BranchFormScreen(
             }
         }
     }
-
-    // ── Ward bottom sheet ────────────────────────────────────────────────────
     if (showWardSheet) {
         ModalBottomSheet(
             onDismissRequest = { showWardSheet = false },
@@ -669,7 +655,7 @@ fun BranchFormScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
                 Text(
-                    "Chọn Phường / Xã",
+                    stringResource(id = R.string.branch_form_select_ward),
                     modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 8.dp),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
@@ -710,8 +696,6 @@ fun BranchFormScreen(
             }
         }
     }
-
-    // ── Manager bottom sheet ─────────────────────────────────────────────────
     if (showManagerSheet) {
         ModalBottomSheet(
             onDismissRequest = { showManagerSheet = false },
@@ -720,7 +704,7 @@ fun BranchFormScreen(
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
                 Text(
-                    "Chọn Quản lý",
+                    stringResource(id = R.string.branch_form_select_manager),
                     modifier = Modifier.padding(start = 20.dp, top = 4.dp, bottom = 8.dp),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 18.sp,
@@ -730,7 +714,7 @@ fun BranchFormScreen(
                 LazyColumn {
                     item {
                         ListItem(
-                            headlineContent = { Text("Không chọn quản lý", color = AccentRed) },
+                            headlineContent = { Text(stringResource(id = R.string.branch_form_no_manager), color = AccentRed) },
                             leadingContent = {
                                 Box(
                                     modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
@@ -749,7 +733,7 @@ fun BranchFormScreen(
                         ListItem(
                             headlineContent = {
                                 Text(
-                                    mgr.userProfile?.fullName ?: "Không tên",
+                                    mgr.userProfile?.fullName ?: stringResource(id = R.string.branch_form_no_name),
                                     fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isSel) AccentPurple else TextPrimary
                                 )
@@ -778,8 +762,6 @@ fun BranchFormScreen(
         }
     }
 }
-
-// ─── Shared form components ───────────────────────────────────────────────────
 @Composable
 private fun FormSectionTitle(title: String, icon: ImageVector) {
     Row(

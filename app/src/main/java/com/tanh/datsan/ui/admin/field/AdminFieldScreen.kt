@@ -29,17 +29,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.Branch
 import com.tanh.datsan.data.model.FieldResponse
-import com.tanh.datsan.viewmodel.AdminFieldUiState
+import com.tanh.datsan.ui.admin.field.AdminUiState
 import androidx.compose.foundation.lazy.LazyRow
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
 private val DarkBg      = Color(0xFF0F172A)
 private val DarkBg2     = Color(0xFF1E293B)
 private val AccentBlue  = Color(0xFF3B82F6)
@@ -59,11 +59,12 @@ fun AdminFieldScreen(
     userRole: String,
     fields: List<FieldResponse>,
     branches: List<Branch>,
-    uiState: AdminFieldUiState,
+    uiState: AdminUiState,
     onFetchData: () -> Unit,
     onNavigateToCreate: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
     onNavigateToUploadImages: (String) -> Unit,
+    onNavigateToTimeSlot: (String) -> Unit,
     onDeleteField: (String) -> Unit,
     onResetUiState: () -> Unit,
     isLoadingMore: Boolean = false,
@@ -83,11 +84,11 @@ fun AdminFieldScreen(
 
     LaunchedEffect(uiState) {
         when (uiState) {
-            is AdminFieldUiState.Success -> {
+            is AdminUiState.Success -> {
                 uiState.message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
                 onResetUiState()
             }
-            is AdminFieldUiState.Error -> {
+            is AdminUiState.Error -> {
                 Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
@@ -117,7 +118,7 @@ fun AdminFieldScreen(
                     contentColor = Color.White,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 8.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Thêm sân bóng", modifier = Modifier.size(26.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.field_add_new), modifier = Modifier.size(26.dp))
                 }
             }
         }
@@ -127,16 +128,13 @@ fun AdminFieldScreen(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
             contentPadding = PaddingValues(bottom = 100.dp)
         ) {
-            // ── Header ──────────────────────────────────────────────────
             item {
                 FieldHeader(fieldCount = filteredFields.size)
             }
-
-            // ── Filters ─────────────────────────────────────────────────
             item {
                 var expanded by remember { mutableStateOf(false) }
-                val selectedName = if (selectedBranchFilterId == null) "Tất cả chi nhánh" 
-                                   else branches.find { it.id == selectedBranchFilterId }?.name ?: "Tất cả chi nhánh"
+                val selectedName = if (selectedBranchFilterId == null) stringResource(id = R.string.field_filter_all_branch) 
+                                   else branches.find { it.id == selectedBranchFilterId }?.name ?: stringResource(id = R.string.field_filter_all_branch)
                 
                 Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
                     ExposedDropdownMenuBox(
@@ -166,7 +164,7 @@ fun AdminFieldScreen(
                         ) {
                             DropdownMenuItem(
                                 text = { 
-                                    Text("Tất cả chi nhánh", 
+                                    Text(stringResource(id = R.string.field_filter_all_branch), 
                                         fontWeight = if (selectedBranchFilterId == null) FontWeight.Bold else FontWeight.Normal,
                                         color = if (selectedBranchFilterId == null) AccentBlue else TextPrimary
                                     ) 
@@ -194,9 +192,7 @@ fun AdminFieldScreen(
                     }
                 }
             }
-
-            // ── Loading ─────────────────────────────────────────────────
-            if (uiState is AdminFieldUiState.Loading) {
+            if (uiState is AdminUiState.Loading) {
                 items(3) { FieldCardSkeleton() }
             } else if (filteredFields.isEmpty()) {
                 item { FieldEmptyState(onNavigateToCreate, canEdit) }
@@ -207,6 +203,7 @@ fun AdminFieldScreen(
                         canEdit = canEdit,
                         onClick = { onNavigateToEdit(field.id) },
                         onUploadImages = { onNavigateToUploadImages(field.id) },
+                        onTimeSlot = { onNavigateToTimeSlot(field.id) },
                         onDelete = { showDeleteDialog = field }
                     )
                 }
@@ -238,7 +235,7 @@ fun AdminFieldScreen(
             },
             title = {
                 Text(
-                    "Xóa sân bóng",
+                    stringResource(id = R.string.field_delete_title),
                     fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary,
                     textAlign = TextAlign.Center
@@ -246,7 +243,7 @@ fun AdminFieldScreen(
             },
             text = {
                 Text(
-                    "Bạn có chắc muốn xóa sân\n\"${field.name}\" không?\nHành động này không thể hoàn tác.",
+                    stringResource(id = R.string.field_delete_confirm, field.name),
                     color = TextSecond,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -258,7 +255,7 @@ fun AdminFieldScreen(
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed)
                 ) {
-                    Text("Xóa", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.field_delete), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -267,14 +264,12 @@ fun AdminFieldScreen(
                     shape = RoundedCornerShape(14.dp),
                     border = BorderStroke(1.dp, DividerColor)
                 ) {
-                    Text("Hủy", color = TextSecond)
+                    Text(stringResource(id = R.string.field_cancel), color = TextSecond)
                 }
             }
         )
     }
 }
-
-// ─── Dark header with canvas blobs ───────────────────────────────────────────
 @Composable
 fun FieldHeader(fieldCount: Int) {
     Box(
@@ -302,9 +297,9 @@ fun FieldHeader(fieldCount: Int) {
                 .padding(32.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Quản lý", color = TextTertiary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            Text(stringResource(id = R.string.field_management), color = TextTertiary, fontSize = 16.sp, fontWeight = FontWeight.Medium)
             Spacer(Modifier.height(4.dp))
-            Text("Sân Bóng", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black)
+            Text(stringResource(id = R.string.field_soccer), color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Black)
             Spacer(Modifier.height(16.dp))
             Row(
                 modifier = Modifier
@@ -315,20 +310,19 @@ fun FieldHeader(fieldCount: Int) {
             ) {
                 Icon(Icons.Rounded.SportsSoccer, contentDescription = null, tint = AccentGreen, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Tổng cộng: $fieldCount sân", color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text(stringResource(id = R.string.field_total_count, fieldCount), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
     }
     Spacer(modifier = Modifier.height(16.dp))
 }
-
-// ─── Premium Card UI ──────────────────────────────────────────────────────────
 @Composable
 fun FieldCard(
     field: FieldResponse,
     canEdit: Boolean,
     onClick: () -> Unit,
     onUploadImages: () -> Unit,
+    onTimeSlot: () -> Unit,
     onDelete: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -353,7 +347,7 @@ fun FieldCard(
                 
                 if (canEdit) {
                     IconButton(onClick = { expanded = !expanded }, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Rounded.MoreVert, contentDescription = "Tùy chọn", tint = TextSecond)
+                        Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(id = R.string.field_options), tint = TextSecond)
                     }
                 }
             }
@@ -390,7 +384,7 @@ fun FieldCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.PhotoLibrary, null, tint = TextTertiary, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("${field.images?.size ?: 0} hình ảnh", color = TextSecond, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(id = R.string.field_image_count, field.images?.size ?: 0), color = TextSecond, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
                 
                 if (canEdit) {
@@ -399,7 +393,7 @@ fun FieldCard(
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Cập nhật ảnh", color = AccentBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.field_update_images), color = AccentBlue, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -421,8 +415,21 @@ fun FieldCard(
                         ) {
                             Icon(Icons.Rounded.Edit, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Sửa")
+                            Text(stringResource(id = R.string.field_edit))
                         }
+                        
+                        OutlinedButton(
+                            onClick = { expanded = false; onTimeSlot() },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, DividerColor),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = AccentPurple)
+                        ) {
+                            Icon(Icons.Rounded.Schedule, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Khung giờ")
+                        }
+
                         Button(
                             onClick = { expanded = false; onDelete() },
                             modifier = Modifier.weight(1f),
@@ -432,7 +439,7 @@ fun FieldCard(
                         ) {
                             Icon(Icons.Rounded.DeleteOutline, null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text("Xóa")
+                            Text(stringResource(id = R.string.field_delete))
                         }
                     }
                 }
@@ -458,7 +465,7 @@ private fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text:
 @Composable
 private fun StatusBadge(status: Boolean) {
     val color = if (status) AccentGreen else TextTertiary
-    val text = if (status) "Hoạt động" else "Ngưng hoạt động"
+    val text = if (status) stringResource(id = R.string.field_active) else stringResource(id = R.string.field_inactive)
     
     // Pulsing animation for active status
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
@@ -489,8 +496,6 @@ private fun StatusBadge(status: Boolean) {
         Text(text, color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
     }
 }
-
-// ─── Skeletons & Empty State ──────────────────────────────────────────────────
 @Composable
 fun FieldCardSkeleton() {
     Card(
@@ -527,9 +532,9 @@ fun FieldEmptyState(onNavigateToCreate: () -> Unit, canEdit: Boolean) {
             Icon(Icons.Rounded.SportsSoccer, null, modifier = Modifier.size(50.dp), tint = DividerColor)
         }
         Spacer(Modifier.height(24.dp))
-        Text("Chưa có sân bóng nào", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
+        Text(stringResource(id = R.string.field_empty_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = TextPrimary)
         Spacer(Modifier.height(8.dp))
-        Text("Hệ thống hiện chưa có dữ liệu.", color = TextSecond, fontSize = 14.sp, textAlign = TextAlign.Center)
+        Text(stringResource(id = R.string.field_empty_desc), color = TextSecond, fontSize = 14.sp, textAlign = TextAlign.Center)
         
         if (canEdit) {
             Spacer(Modifier.height(24.dp))
@@ -540,7 +545,7 @@ fun FieldEmptyState(onNavigateToCreate: () -> Unit, canEdit: Boolean) {
             ) {
                 Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Thêm ngay", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.field_add_now), fontWeight = FontWeight.Bold)
             }
         }
     }

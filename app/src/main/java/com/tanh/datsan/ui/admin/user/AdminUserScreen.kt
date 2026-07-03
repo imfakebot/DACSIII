@@ -16,14 +16,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.tanh.datsan.data.model.AccountResponseDto
-import com.tanh.datsan.viewmodel.AdminUserUiState
+import com.tanh.datsan.ui.state.ActionState
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminUserScreen(
     users: List<AccountResponseDto>,
-    uiState: AdminUserUiState,
+    actionState: ActionState,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
@@ -39,16 +41,16 @@ fun AdminUserScreen(
         onFetchUsers()
     }
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is AdminUserUiState.Success -> {
-                uiState.message?.let {
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                actionState.message?.let {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 }
                 onResetUiState()
             }
-            is AdminUserUiState.Error -> {
-                Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
             else -> {}
@@ -58,7 +60,7 @@ fun AdminUserScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Quản lý người dùng") },
+                title = { Text(stringResource(id = R.string.user_management)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -67,7 +69,7 @@ fun AdminUserScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToCreateEmployee) {
-                Icon(Icons.Filled.Add, contentDescription = "Tạo nhân viên")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(id = R.string.user_create_employee))
             }
         }
     ) { innerPadding ->
@@ -83,21 +85,21 @@ fun AdminUserScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    placeholder = { Text("Tìm kiếm theo tên...") },
+                    placeholder = { Text(stringResource(id = R.string.user_search_hint)) },
                     singleLine = true,
                     trailingIcon = {
                         IconButton(onClick = onSearch) {
-                            Icon(Icons.Filled.Search, contentDescription = "Tìm kiếm")
+                            Icon(Icons.Filled.Search, contentDescription = stringResource(id = R.string.user_search_btn))
                         }
                     }
                 )
 
                 Box(modifier = Modifier.fillMaxSize().weight(1f)) {
-                    if (uiState is AdminUserUiState.Loading) {
+                    if (actionState is ActionState.Loading) {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     } else if (users.isEmpty()) {
                         Text(
-                            text = "Không có người dùng nào.",
+                            text = stringResource(id = R.string.user_empty),
                             modifier = Modifier.align(Alignment.Center)
                         )
                     } else {
@@ -124,8 +126,8 @@ fun AdminUserScreen(
     showConfirmDialog?.let { (userId, isBan) ->
         AlertDialog(
             onDismissRequest = { showConfirmDialog = null },
-            title = { Text(if (isBan) "Khóa tài khoản" else "Mở khóa tài khoản") },
-            text = { Text(if (isBan) "Bạn có chắc chắn muốn khóa tài khoản này không?" else "Bạn có chắc chắn muốn mở khóa tài khoản này không?") },
+            title = { Text(if (isBan) stringResource(id = R.string.user_ban_title) else stringResource(id = R.string.user_unban_title)) },
+            text = { Text(if (isBan) stringResource(id = R.string.user_ban_confirm) else stringResource(id = R.string.user_unban_confirm)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -133,12 +135,12 @@ fun AdminUserScreen(
                         showConfirmDialog = null
                     }
                 ) {
-                    Text(if (isBan) "Khóa" else "Mở khóa", color = if (isBan) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+                    Text(if (isBan) stringResource(id = R.string.user_ban_btn) else stringResource(id = R.string.user_unban_btn), color = if (isBan) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmDialog = null }) {
-                    Text("Hủy")
+                    Text(stringResource(id = R.string.user_cancel))
                 }
             }
         )
@@ -172,18 +174,18 @@ fun UserItem(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Email: ${user.email}",
+                    text = stringResource(id = R.string.user_email_label, user.email),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 val roleName = user.role?.name ?: user.role?.roleName ?: user.role?.code ?: "N/A"
                 Text(
-                    text = "Role: $roleName",
+                    text = stringResource(id = R.string.user_role_label, roleName),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.secondary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Trạng thái: ${if (isActive) "Hoạt động" else "Bị khóa"}",
+                    text = stringResource(id = R.string.user_status_label, if (isActive) stringResource(id = R.string.user_status_active) else stringResource(id = R.string.user_status_banned)),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
@@ -191,7 +193,7 @@ fun UserItem(
             IconButton(onClick = { onToggleBanStatus(isActive) }) { // If active, click to ban
                 Icon(
                     imageVector = if (isActive) Icons.Filled.Lock else Icons.Filled.LockOpen,
-                    contentDescription = if (isActive) "Khóa User" else "Mở khóa User",
+                    contentDescription = if (isActive) stringResource(id = R.string.user_ban_icon_desc) else stringResource(id = R.string.user_unban_icon_desc),
                     tint = if (isActive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             }

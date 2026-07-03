@@ -50,15 +50,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import com.tanh.datsan.data.model.Review
 import com.tanh.datsan.ui.component.CustomRefreshLayout
 import com.tanh.datsan.ui.component.ReviewItem
 import com.tanh.datsan.utils.DateUtil.formatReviewTime
-import com.tanh.datsan.viewmodel.AdminReviewUiState
+import com.tanh.datsan.ui.admin.review.AdminReviewUiState
+import com.tanh.datsan.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,6 +78,7 @@ fun AdminReviewScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Dialog states
     var reviewToDelete by remember { mutableStateOf<Review?>(null) }
@@ -87,7 +91,7 @@ fun AdminReviewScreen(
         when (uiState) {
             is AdminReviewUiState.Success -> {
                 scope.launch {
-                    snackbarHostState.showSnackbar(uiState.message.ifBlank { "Thành công" })
+                    snackbarHostState.showSnackbar(uiState.message.ifBlank { context.getString(R.string.review_success) })
                     onResetUiState()
                 }
             }
@@ -108,14 +112,14 @@ fun AdminReviewScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Quản lý đánh giá",
+                        stringResource(id = R.string.review_management),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Quay lại")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(id = R.string.review_back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -159,7 +163,7 @@ fun AdminReviewScreen(
                                 )
                                 Spacer(Modifier.height(16.dp))
                                 Text(
-                                    "Không có đánh giá nào",
+                                    stringResource(id = R.string.review_empty),
                                     color = Color(0xFF64748B),
                                     fontWeight = FontWeight.Medium,
                                     fontSize = 16.sp
@@ -191,16 +195,12 @@ fun AdminReviewScreen(
             }
         }
     }
-
-    // ── Delete confirmation dialog ─────────────────────────────────────────────
     reviewToDelete?.let { review ->
         AlertDialog(
             onDismissRequest = { reviewToDelete = null },
-            title = { Text("Xóa đánh giá", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(id = R.string.review_delete_title), fontWeight = FontWeight.Bold) },
             text = {
-                Text(
-                    "Bạn có chắc muốn xóa đánh giá này không? Hành động không thể hoàn tác."
-                )
+                Text(stringResource(id = R.string.review_delete_confirm))
             },
             confirmButton = {
                 TextButton(
@@ -210,21 +210,19 @@ fun AdminReviewScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))
                 ) {
-                    Text("Xóa", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.review_delete_btn), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { reviewToDelete = null }) { Text("Hủy") }
+                TextButton(onClick = { reviewToDelete = null }) { Text(stringResource(id = R.string.review_cancel_btn)) }
             }
         )
     }
-
-    // ── Reply dialog ──────────────────────────────────────────────────────────
     reviewToReply?.let { review ->
         AlertDialog(
             onDismissRequest = { reviewToReply = null },
             title = {
-                Text("Phản hồi đánh giá", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.review_reply_title), fontWeight = FontWeight.Bold)
             },
             text = {
                 Column {
@@ -239,7 +237,7 @@ fun AdminReviewScreen(
                     OutlinedTextField(
                         value = replyText,
                         onValueChange = { replyText = it },
-                        label = { Text("Nội dung phản hồi") },
+                        label = { Text(stringResource(id = R.string.review_reply_hint)) },
                         shape = RoundedCornerShape(10.dp),
                         maxLines = 5,
                         modifier = Modifier
@@ -259,14 +257,14 @@ fun AdminReviewScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFF3B82F6))
                 ) {
-                    Text("Gửi phản hồi", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.review_reply_btn), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     reviewToReply = null
                     replyText = ""
-                }) { Text("Hủy") }
+                }) { Text(stringResource(id = R.string.review_cancel_btn)) }
             }
         )
     }
@@ -291,7 +289,7 @@ fun RatingFilterRow(
             tint = Color(0xFF64748B),
             modifier = Modifier.size(18.dp)
         )
-        Text("Lọc sao:", fontSize = 13.sp, color = Color(0xFF64748B))
+        Text(stringResource(id = R.string.review_filter_stars), fontSize = 13.sp, color = Color(0xFF64748B))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             items((1..5).toList()) { star ->
                 FilterChip(
@@ -345,7 +343,7 @@ fun AdminReviewCard(
             }
 
             ReviewItem(
-                userName = review.user?.fullName ?: "Khách hàng ẩn danh",
+                userName = review.user?.fullName ?: stringResource(id = R.string.review_anonymous),
                 rating = review.rating,
                 date = formatReviewTime(review.createdAt),
                 comment = review.comment ?: "",
@@ -371,7 +369,7 @@ fun AdminReviewCard(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = if (review.adminReply.isNullOrBlank()) " Phản hồi" else " Sửa phản hồi",
+                        text = if (review.adminReply.isNullOrBlank()) stringResource(id = R.string.review_action_reply) else stringResource(id = R.string.review_action_edit_reply),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -381,7 +379,7 @@ fun AdminReviewCard(
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFEF4444))
                 ) {
                     Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
-                    Text(" Xóa", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(" " + stringResource(id = R.string.review_delete_btn), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

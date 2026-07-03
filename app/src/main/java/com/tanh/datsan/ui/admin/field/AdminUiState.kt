@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.field
 
 sealed class AdminUiState {
     object Loading : AdminUiState()

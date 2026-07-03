@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,11 +22,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.data.model.CreateVoucherDto
-import com.tanh.datsan.viewmodel.AdminVoucherViewModel
+import com.tanh.datsan.ui.admin.voucher.AdminVoucherViewModel
+import com.tanh.datsan.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -116,8 +119,8 @@ fun AdminVoucherScreen(
                     Icon(Icons.Rounded.LocalOffer, null, tint = Color(0xFF60A5FA), modifier = Modifier.size(22.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("Tạo Mã Giảm Giá", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                        Text("POST /voucher", color = Color(0xFF94A3B8), fontSize = 11.sp)
+                        Text(stringResource(id = R.string.voucher_title), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                        Text(stringResource(id = R.string.voucher_subtitle), color = Color(0xFF94A3B8), fontSize = 11.sp)
                     }
                 }
             }
@@ -131,12 +134,12 @@ fun AdminVoucherScreen(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Mã voucher
-                FormSection(title = "Mã giảm giá") {
+                FormSection(title = stringResource(id = R.string.voucher_section_code)) {
                     OutlinedTextField(
                         value = code,
                         onValueChange = { code = it.uppercase() },
-                        label = { Text("Mã nhập vào *") },
-                        placeholder = { Text("VD: SUMMER2024") },
+                        label = { Text(stringResource(id = R.string.voucher_code_label)) },
+                        placeholder = { Text(stringResource(id = R.string.voucher_code_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         leadingIcon = { Icon(Icons.Rounded.Tag, null, tint = Color(0xFF3B82F6)) },
@@ -145,18 +148,18 @@ fun AdminVoucherScreen(
                 }
 
                 // Loại giảm
-                FormSection(title = "Loại giảm giá") {
+                FormSection(title = stringResource(id = R.string.voucher_section_type)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(
                             selected = discountType == "percent",
                             onClick = { discountType = "percent" },
-                            label = { Text("Theo % (discountPercentage)") },
+                            label = { Text(stringResource(id = R.string.voucher_type_percent)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
                             selected = discountType == "amount",
                             onClick = { discountType = "amount" },
-                            label = { Text("Số tiền cố định (discountAmount)") },
+                            label = { Text(stringResource(id = R.string.voucher_type_amount)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -166,8 +169,8 @@ fun AdminVoucherScreen(
                             OutlinedTextField(
                                 value = discountPercentage,
                                 onValueChange = { discountPercentage = it },
-                                label = { Text("discountPercentage (%) *") },
-                                placeholder = { Text("VD: 10") },
+                                label = { Text(stringResource(id = R.string.voucher_percent_label)) },
+                                placeholder = { Text(stringResource(id = R.string.voucher_percent_hint)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -176,8 +179,8 @@ fun AdminVoucherScreen(
                             OutlinedTextField(
                                 value = maxDiscountAmount,
                                 onValueChange = { maxDiscountAmount = it },
-                                label = { Text("maxDiscountAmount (VNĐ)") },
-                                placeholder = { Text("VD: 100000 — Tùy chọn") },
+                                label = { Text(stringResource(id = R.string.voucher_max_amount_label)) },
+                                placeholder = { Text(stringResource(id = R.string.voucher_max_amount_hint)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -190,8 +193,8 @@ fun AdminVoucherScreen(
                         OutlinedTextField(
                             value = discountAmount,
                             onValueChange = { discountAmount = it },
-                            label = { Text("discountAmount (VNĐ) *") },
-                            placeholder = { Text("VD: 50000") },
+                            label = { Text(stringResource(id = R.string.voucher_amount_label)) },
+                            placeholder = { Text(stringResource(id = R.string.voucher_amount_hint)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -201,12 +204,12 @@ fun AdminVoucherScreen(
                 }
 
                 // Điều kiện
-                FormSection(title = "Điều kiện áp dụng") {
+                FormSection(title = stringResource(id = R.string.voucher_section_condition)) {
                     OutlinedTextField(
                         value = minOrderValue,
                         onValueChange = { minOrderValue = it },
-                        label = { Text("minOrderValue (VNĐ) *") },
-                        placeholder = { Text("VD: 500000") },
+                        label = { Text(stringResource(id = R.string.voucher_min_order_label)) },
+                        placeholder = { Text(stringResource(id = R.string.voucher_min_order_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -216,8 +219,8 @@ fun AdminVoucherScreen(
                     OutlinedTextField(
                         value = quantity,
                         onValueChange = { quantity = it },
-                        label = { Text("quantity (Số lượng mã) *") },
-                        placeholder = { Text("VD: 100") },
+                        label = { Text(stringResource(id = R.string.voucher_quantity_label)) },
+                        placeholder = { Text(stringResource(id = R.string.voucher_quantity_hint)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -227,13 +230,13 @@ fun AdminVoucherScreen(
                 }
 
                 // Thời hạn
-                FormSection(title = "Thời hạn hiệu lực") {
+                FormSection(title = stringResource(id = R.string.voucher_section_validity)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         OutlinedTextField(
                             value = validFrom,
                             onValueChange = {},
-                            label = { Text("validFrom *") },
-                            placeholder = { Text("Chọn ngày") },
+                            label = { Text(stringResource(id = R.string.voucher_valid_from_label)) },
+                            placeholder = { Text(stringResource(id = R.string.voucher_valid_from_hint)) },
                             modifier = Modifier.weight(1f),
                             readOnly = true,
                             singleLine = true,
@@ -247,8 +250,8 @@ fun AdminVoucherScreen(
                         OutlinedTextField(
                             value = validTo,
                             onValueChange = {},
-                            label = { Text("validTo *") },
-                            placeholder = { Text("Chọn ngày") },
+                            label = { Text(stringResource(id = R.string.voucher_valid_to_label)) },
+                            placeholder = { Text(stringResource(id = R.string.voucher_valid_to_hint)) },
                             modifier = Modifier.weight(1f),
                             readOnly = true,
                             singleLine = true,
@@ -263,15 +266,15 @@ fun AdminVoucherScreen(
                 }
 
                 // Cài đặt thêm
-                FormSection(title = "Cài đặt thêm") {
+                FormSection(title = stringResource(id = R.string.voucher_section_extra)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
-                            Text("isCollectible", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Text("User phải bấm Lưu mới dùng được", fontSize = 12.sp, color = Color(0xFF64748B))
+                            Text(stringResource(id = R.string.voucher_collectible_label), fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text(stringResource(id = R.string.voucher_collectible_desc), fontSize = 12.sp, color = Color(0xFF64748B))
                         }
                         Switch(checked = isCollectible, onCheckedChange = { isCollectible = it })
                     }
@@ -307,11 +310,11 @@ fun AdminVoucherScreen(
                             strokeWidth = 2.dp
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Đang tạo...", fontWeight = FontWeight.Bold)
+                        Text(stringResource(id = R.string.voucher_btn_creating), fontWeight = FontWeight.Bold)
                     } else {
                         Icon(Icons.Rounded.Add, null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Tạo mã giảm giá", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(stringResource(id = R.string.voucher_btn_create), fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     }
                 }
 

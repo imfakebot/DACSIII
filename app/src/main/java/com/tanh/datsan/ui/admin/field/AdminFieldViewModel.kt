@@ -1,5 +1,7 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.field
 
+import android.util.Log
+import androidx.compose.material3.SnackbarHost
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.Branch
@@ -16,14 +18,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MultipartBody
 import javax.inject.Inject
-
-sealed class AdminFieldUiState {
-    object Loading : AdminFieldUiState()
-    data class Success(val message: String? = null) : AdminFieldUiState()
-    data class Error(val message: String) : AdminFieldUiState()
-    object Idle : AdminFieldUiState()
-}
-
 @HiltViewModel
 class AdminFieldViewModel @Inject constructor(
     private val fieldRepository: FieldRepository,
@@ -42,8 +36,8 @@ class AdminFieldViewModel @Inject constructor(
     private val _utilities = MutableStateFlow<List<com.tanh.datsan.data.model.Utility>>(emptyList())
     val utilities: StateFlow<List<com.tanh.datsan.data.model.Utility>> = _utilities.asStateFlow()
 
-    private val _uiState = MutableStateFlow<AdminFieldUiState>(AdminFieldUiState.Idle)
-    val uiState: StateFlow<AdminFieldUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow< AdminUiState>(AdminUiState.Idle)
+    val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
 
     private val _selectedField = MutableStateFlow<FieldResponse?>(null)
     val selectedField: StateFlow<FieldResponse?> = _selectedField.asStateFlow()
@@ -59,7 +53,7 @@ class AdminFieldViewModel @Inject constructor(
 
     fun fetchInitialData() {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 val types = fieldRepository.getAllFieldTypes()
                 _fieldTypes.value = types
@@ -72,7 +66,7 @@ class AdminFieldViewModel @Inject constructor(
 
                 fetchFields()
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi tải dữ liệu")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi tải dữ liệu")
             }
         }
     }
@@ -84,22 +78,22 @@ class AdminFieldViewModel @Inject constructor(
             _fields.value = emptyList()
         }
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 val response = fieldRepository.getAllField(
                     lat = null, lon = null, page = currentPage, limit = limit
                 )
                 _fields.value = response.data
                 isLastPage = response.data.size < limit
-                _uiState.value = AdminFieldUiState.Idle
+                _uiState.value = AdminUiState.Idle
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi tải danh sách sân")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi tải danh sách sân")
             }
         }
     }
 
     fun loadMoreFields() {
-        if (isLastPage || _isLoadingMore.value || _uiState.value == AdminFieldUiState.Loading) return
+        if (isLastPage || _isLoadingMore.value || _uiState.value == AdminUiState.Loading) return
         
         viewModelScope.launch {
             _isLoadingMore.value = true
@@ -115,8 +109,8 @@ class AdminFieldViewModel @Inject constructor(
                 }
                 isLastPage = response.data.size < limit
             } catch (e: Exception) {
-                // handle error silently or show a toast
-                currentPage-- // Revert page on failure
+               Log.d("AdminFieldViewModel", "Error loading more fields: ${e.message}")
+                currentPage--
             } finally {
                 _isLoadingMore.value = false
             }
@@ -141,71 +135,71 @@ class AdminFieldViewModel @Inject constructor(
 
     fun getFieldById(id: String) {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 val field = fieldRepository.getFieldDetail(id, null, null)
                 _selectedField.value = field
-                _uiState.value = AdminFieldUiState.Idle
+                _uiState.value = AdminUiState.Idle
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi tải chi tiết sân")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi tải chi tiết sân")
             }
         }
     }
 
     fun createField(dto: CreateFieldDto) {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
-                fieldRepository.createField(dto)
+                val response = fieldRepository.createField(dto)
                 fetchFieldsSilently()
-                _uiState.value = AdminFieldUiState.Success("Tạo sân thành công")
+                _uiState.value = AdminUiState.Success("Tạo sân thành công", response.id)
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi tạo sân")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi tạo sân")
             }
         }
     }
 
     fun updateField(id: String, dto: UpdateFieldDto) {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 fieldRepository.updateField(id, dto)
                 fetchFieldsSilently()
-                _uiState.value = AdminFieldUiState.Success("Cập nhật sân thành công")
+                _uiState.value = AdminUiState.Success("Cập nhật sân thành công")
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi cập nhật sân")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi cập nhật sân")
             }
         }
     }
 
     fun deleteField(id: String) {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 fieldRepository.deleteField(id)
                 fetchFieldsSilently()
-                _uiState.value = AdminFieldUiState.Success("Xóa sân thành công")
+                _uiState.value = AdminUiState.Success("Xóa sân thành công")
             } catch (e: Exception) {
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi xóa sân")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi xóa sân")
             }
         }
     }
 
     fun uploadImages(id: String, images: List<MultipartBody.Part>) {
         viewModelScope.launch {
-            _uiState.value = AdminFieldUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 fieldRepository.uploadImages(id, images)
-                _uiState.value = AdminFieldUiState.Success("Tải ảnh lên thành công")
+                _uiState.value = AdminUiState.Success("Tải ảnh lên thành công")
             } catch (e: Exception) {
                 android.util.Log.e("AdminFieldViewModel", "Lỗi khi tải ảnh lên", e)
-                _uiState.value = AdminFieldUiState.Error(e.message ?: "Lỗi khi tải ảnh lên")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi khi tải ảnh lên")
             }
         }
     }
 
     fun resetUiState() {
-        _uiState.value = AdminFieldUiState.Idle
+        _uiState.value = AdminUiState.Idle
     }
 
     fun clearSelectedField() {

@@ -25,14 +25,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import com.tanh.datsan.data.model.BookingTimeSlot
 import com.tanh.datsan.data.model.Branch
 import com.tanh.datsan.data.model.FieldResponse
 import com.tanh.datsan.data.model.CheckPriceResponseDto
-import com.tanh.datsan.viewmodel.AdminCreateBookingUiState
+import com.tanh.datsan.ui.admin.booking.AdminCreateBookingUiState
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -100,7 +102,7 @@ fun AdminCreateBookingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tạo Đơn Tại Quầy", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.admin_create_booking_title), color = Color.White, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
@@ -130,12 +132,12 @@ fun AdminCreateBookingScreen(
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text("1. Chọn Sân & Thời Gian", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                        Text(stringResource(id = R.string.admin_create_step1), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
 
                         // Branch Selection
                         Box {
                             OutlinedTextField(
-                                value = selectedBranch?.name ?: "Chọn Chi Nhánh",
+                                value = selectedBranch?.name ?: stringResource(id = R.string.admin_select_branch),
                                 onValueChange = {},
                                 readOnly = true,
                                 modifier = Modifier.fillMaxWidth(),
@@ -171,7 +173,7 @@ fun AdminCreateBookingScreen(
                         if (selectedBranch != null) {
                             Box {
                                 OutlinedTextField(
-                                    value = selectedField?.name ?: "Chọn Sân",
+                                    value = selectedField?.name ?: stringResource(id = R.string.admin_select_field),
                                     onValueChange = {},
                                     readOnly = true,
                                     modifier = Modifier.fillMaxWidth(),
@@ -224,11 +226,11 @@ fun AdminCreateBookingScreen(
 
                 // Slots Grid
                 if (selectedField != null) {
-                    Text("2. Khung Giờ Trống", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                    Text(stringResource(id = R.string.admin_create_step2), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
                     if (availableSlots.isEmpty() && uiState !is AdminCreateBookingUiState.Loading) {
-                     Text("Không có khung giờ nào trong ngày này.", color = Color.Gray, modifier = Modifier.padding(start = 8.dp))
+                     Text(stringResource(id = R.string.admin_no_slots), color = Color.Gray, modifier = Modifier.padding(start = 8.dp))
                  } else {
-                     Text("Thời lượng đá", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
+                     Text(stringResource(id = R.string.admin_play_duration), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF1E293B))
                      Row(
                          modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                          horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -238,7 +240,7 @@ fun AdminCreateBookingScreen(
                              FilterChip(
                                  selected = isSelected,
                                  onClick = { onSelectDuration(duration) },
-                                 label = { Text("$duration phút") },
+                                 label = { Text(stringResource(id = R.string.admin_minutes, duration.toString())) },
                                  colors = FilterChipDefaults.filterChipColors(
                                      selectedContainerColor = MaterialTheme.colorScheme.primary,
                                      selectedLabelColor = Color.White
@@ -301,12 +303,12 @@ fun AdminCreateBookingScreen(
                         shape = RoundedCornerShape(24.dp)
                     ) {
                         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Text("3. Thông Tin Khách Hàng", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
+                            Text(stringResource(id = R.string.admin_create_step3), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF1E293B))
 
                             OutlinedTextField(
                                 value = customerName,
                                 onValueChange = { customerName = it },
-                                label = { Text("Tên khách hàng") },
+                                label = { Text(stringResource(id = R.string.admin_customer_name)) },
                                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
@@ -319,7 +321,7 @@ fun AdminCreateBookingScreen(
                             OutlinedTextField(
                                 value = customerPhone,
                                 onValueChange = { customerPhone = it },
-                                label = { Text("Số điện thoại") },
+                                label = { Text(stringResource(id = R.string.admin_customer_phone)) },
                                 leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
@@ -338,7 +340,7 @@ fun AdminCreateBookingScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Tổng tiền:", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Gray)
+                                    Text(stringResource(id = R.string.admin_total_price), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Gray)
                                     Text(
                                         text = String.format("%,.0f %s", price, currency),
                                         fontWeight = FontWeight.Bold,
@@ -358,7 +360,7 @@ fun AdminCreateBookingScreen(
                                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
                                 enabled = customerName.isNotBlank() && customerPhone.isNotBlank() && uiState !is AdminCreateBookingUiState.Loading
                             ) {
-                                Text("Tạo Đơn", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(stringResource(id = R.string.admin_btn_create_booking), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -377,14 +379,14 @@ fun AdminCreateBookingScreen(
             if (uiState is AdminCreateBookingUiState.Success) {
                 AlertDialog(
                     onDismissRequest = { onResetUiState() },
-                    title = { Text("Thành công", fontWeight = FontWeight.Bold) },
+                    title = { Text(stringResource(id = R.string.success_default), fontWeight = FontWeight.Bold) },
                     text = { Text(uiState.message) },
                     confirmButton = {
                         TextButton(onClick = { 
                             onResetUiState() 
                             onBackClick()
                         }) {
-                            Text("OK")
+                            Text(stringResource(id = R.string.admin_dialog_ok))
                         }
                     }
                 )
@@ -393,11 +395,11 @@ fun AdminCreateBookingScreen(
             if (uiState is AdminCreateBookingUiState.Error) {
                 AlertDialog(
                     onDismissRequest = { onResetUiState() },
-                    title = { Text("Lỗi", fontWeight = FontWeight.Bold) },
+                    title = { Text(stringResource(id = R.string.error), fontWeight = FontWeight.Bold) },
                     text = { Text(uiState.message) },
                     confirmButton = {
                         TextButton(onClick = { onResetUiState() }) {
-                            Text("Đóng")
+                            Text(stringResource(id = R.string.admin_dialog_close))
                         }
                     }
                 )

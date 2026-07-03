@@ -1,25 +1,29 @@
 package com.tanh.datsan.ui.admin.user
 
+import android.annotation.SuppressLint
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.tanh.datsan.data.model.Branch
 import com.tanh.datsan.data.model.CreateEmployeeDto
-import com.tanh.datsan.viewmodel.AdminUserUiState
+import com.tanh.datsan.ui.state.ActionState
+import com.tanh.datsan.R
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateEmployeeScreen(
-    uiState: AdminUserUiState,
+    actionState: ActionState,
     branches: List<Branch>,
     onCreateEmployee: (CreateEmployeeDto) -> Unit,
     onBackClick: () -> Unit,
@@ -36,21 +40,21 @@ fun CreateEmployeeScreen(
     var expandedBranch by remember { mutableStateOf(false) }
 
     val roles = listOf(
-        Pair("staff", "Nhân viên"),
-        Pair("branch_manager", "Quản lý chi nhánh")
+        Pair("staff", stringResource(id = R.string.create_employee_role_staff)),
+        Pair("branch_manager", stringResource(id = R.string.create_employee_role_manager))
     )
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is AdminUserUiState.Success -> {
-                uiState.message?.let {
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                actionState.message?.let {
                     Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
                 }
                 onResetUiState()
                 onBackClick()
             }
-            is AdminUserUiState.Error -> {
-                Toast.makeText(context, uiState.message, Toast.LENGTH_SHORT).show()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
                 onResetUiState()
             }
             else -> {}
@@ -60,10 +64,10 @@ fun CreateEmployeeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tạo tài khoản nhân viên") },
+                title = { Text(stringResource(id = R.string.create_employee_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -84,14 +88,14 @@ fun CreateEmployeeScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email *") },
+                label = { Text(stringResource(id = R.string.create_employee_email)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Mật khẩu") },
+                label = { Text(stringResource(id = R.string.create_employee_password)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -101,12 +105,12 @@ fun CreateEmployeeScreen(
             ) {
                 OutlinedTextField(
                     readOnly = true,
-                    value = roles.find { it.first == selectedRole }?.second ?: "Chọn phân quyền *",
+                    value = roles.find { it.first == selectedRole }?.second ?: stringResource(id = R.string.create_employee_role_hint),
                     onValueChange = { },
-                    label = { Text("Phân quyền") },
+                    label = { Text(stringResource(id = R.string.create_employee_role_label)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRole) },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedRole,
@@ -130,19 +134,19 @@ fun CreateEmployeeScreen(
             ) {
                 OutlinedTextField(
                     readOnly = true,
-                    value = branches.find { it.id == selectedBranchId }?.name ?: "Chọn chi nhánh (Tùy chọn)",
+                    value = branches.find { it.id == selectedBranchId }?.name ?: stringResource(id = R.string.create_employee_branch_hint),
                     onValueChange = { },
-                    label = { Text("Chi nhánh") },
+                    label = { Text(stringResource(id = R.string.create_employee_branch_label)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBranch) },
                     colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).fillMaxWidth()
                 )
                 ExposedDropdownMenu(
                     expanded = expandedBranch,
                     onDismissRequest = { expandedBranch = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text(text = "Không chọn chi nhánh") },
+                        text = { Text(text = stringResource(id = R.string.create_employee_branch_none)) },
                         onClick = {
                             selectedBranchId = ""
                             expandedBranch = false
@@ -165,7 +169,7 @@ fun CreateEmployeeScreen(
             Button(
                 onClick = {
                     if (email.isBlank() || selectedRole.isBlank()) {
-                        Toast.makeText(context, "Vui lòng nhập Email và Phân quyền", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.create_employee_val_required), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
                     onCreateEmployee(
@@ -178,15 +182,15 @@ fun CreateEmployeeScreen(
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is AdminUserUiState.Loading
+                enabled = actionState !is ActionState.Loading
             ) {
-                if (uiState is AdminUserUiState.Loading) {
+                if (actionState is ActionState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Tạo nhân viên")
+                    Text(stringResource(id = R.string.user_create_employee))
                 }
             }
         }

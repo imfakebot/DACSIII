@@ -20,15 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tanh.datsan.data.model.Utility
-import com.tanh.datsan.viewmodel.AdminUtilityUiState
-import com.tanh.datsan.viewmodel.AdminUtilityViewModel
+import com.tanh.datsan.ui.state.ActionState
+import com.tanh.datsan.ui.admin.category.AdminUtilityViewModel
 
 private val DarkBg = Color(0xFF0F172A)
 private val AccentGreen = Color(0xFF10B981)
@@ -46,7 +48,8 @@ fun AdminUtilityScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val utilities by viewModel.utilities.collectAsState()
+    val actionState = uiState.actionState
+    val utilities = uiState.utilities
 
     var showFormDialog by remember { mutableStateOf(false) }
     var editingUtility by remember { mutableStateOf<Utility?>(null) }
@@ -56,17 +59,17 @@ fun AdminUtilityScreen(
         viewModel.fetchUtilities()
     }
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is AdminUtilityUiState.Success -> {
-                Toast.makeText(context, (uiState as AdminUtilityUiState.Success).message, Toast.LENGTH_SHORT).show()
-                viewModel.resetUiState()
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetActionState()
                 showFormDialog = false
                 showDeleteDialog = null
             }
-            is AdminUtilityUiState.Error -> {
-                Toast.makeText(context, (uiState as AdminUtilityUiState.Error).message, Toast.LENGTH_SHORT).show()
-                viewModel.resetUiState()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetActionState()
             }
             else -> {}
         }
@@ -76,7 +79,7 @@ fun AdminUtilityScreen(
         containerColor = AppBg,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Quản lý Tiện Ích", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.utility_management), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -98,11 +101,11 @@ fun AdminUtilityScreen(
                 contentColor = Color.White,
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm mới")
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.utility_add_new))
             }
         }
     ) { padding ->
-        if (uiState is AdminUtilityUiState.Loading && utilities.isEmpty()) {
+        if (actionState is ActionState.Loading && utilities.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = AccentGreen)
             }
@@ -151,7 +154,7 @@ fun AdminUtilityScreen(
             containerColor = CardWhite,
             title = {
                 Text(
-                    "Xóa Tiện Ích",
+                    stringResource(id = R.string.utility_delete_title),
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                     textAlign = TextAlign.Center,
@@ -160,7 +163,7 @@ fun AdminUtilityScreen(
             },
             text = {
                 Text(
-                    "Bạn có chắc muốn xóa tiện ích '${util.name}' không?",
+                    stringResource(id = R.string.utility_delete_confirm, util.name),
                     color = TextSecond,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -172,7 +175,7 @@ fun AdminUtilityScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Xóa", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.utility_delete), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -180,7 +183,7 @@ fun AdminUtilityScreen(
                     onClick = { showDeleteDialog = null },
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Hủy", color = TextSecond)
+                    Text(stringResource(id = R.string.utility_cancel), color = TextSecond)
                 }
             }
         )
@@ -219,7 +222,7 @@ fun UtilityItemCard(utility: Utility, onEdit: () -> Unit, onDelete: () -> Unit) 
                     color = TextPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                val priceText = if (utility.price != null && utility.price > 0) "${utility.price.toInt()}đ" else "Miễn phí"
+                val priceText = if (utility.price != null && utility.price > 0) "${utility.price.toInt()}đ" else stringResource(id = R.string.utility_free)
                 Text(
                     text = priceText,
                     fontSize = 14.sp,
@@ -253,7 +256,7 @@ fun UtilityFormDialog(
         containerColor = CardWhite,
         title = {
             Text(
-                if (initialUtility == null) "Thêm Tiện Ích" else "Chỉnh Sửa Tiện Ích",
+                if (initialUtility == null) stringResource(id = R.string.utility_add_title) else stringResource(id = R.string.utility_edit_title),
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
                 textAlign = TextAlign.Center,
@@ -265,7 +268,7 @@ fun UtilityFormDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Tên tiện ích") },
+                    label = { Text(stringResource(id = R.string.utility_name_label)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentGreen,
@@ -277,7 +280,7 @@ fun UtilityFormDialog(
                 OutlinedTextField(
                     value = priceStr,
                     onValueChange = { priceStr = it },
-                    label = { Text("Giá (để trống nếu miễn phí)") },
+                    label = { Text(stringResource(id = R.string.utility_price_label)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentGreen,
@@ -299,7 +302,7 @@ fun UtilityFormDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = AccentGreen),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Lưu", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.utility_save), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -307,7 +310,7 @@ fun UtilityFormDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Hủy", color = TextSecond)
+                Text(stringResource(id = R.string.utility_cancel), color = TextSecond)
             }
         }
     )

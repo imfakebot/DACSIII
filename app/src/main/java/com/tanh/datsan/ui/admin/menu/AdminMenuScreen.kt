@@ -23,8 +23,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.tanh.datsan.viewmodel.ProfileViewModel
+import com.tanh.datsan.ui.profile.ProfileViewModel
+import com.tanh.datsan.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +44,7 @@ fun AdminMenuScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Menu Quản Trị", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.menu_title), color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A))
             )
         },
@@ -61,7 +63,7 @@ fun AdminMenuScreen(
                 val userRole = uiState.profile?.role?.name
                 if (userRole == "super_admin" || userRole == "branch_manager") {
                     Text(
-                        text = "Quản trị danh mục",
+                        text = stringResource(id = R.string.menu_category_management),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A),
@@ -77,42 +79,36 @@ fun AdminMenuScreen(
                         Column {
                             MenuItem(
                                 icon = Icons.AutoMirrored.Rounded.ListAlt,
-                                label = "Quản lý Lịch Đặt Sân",
+                                label = stringResource(id = R.string.menu_bookings),
                                 color = Color(0xFFF59E0B),
                                 onClick = onNavigateToBookings
                             )
                             MenuDivider()
                             MenuItem(
                                 icon = Icons.Rounded.SportsSoccer,
-                                label = "Quản lý Loại sân",
+                                label = stringResource(id = R.string.menu_field_types),
                                 color = Color(0xFF3B82F6),
                                 onClick = onNavigateToFieldTypes
                             )
                             MenuDivider()
                             MenuItem(
                                 icon = Icons.Rounded.Star,
-                                label = "Quản lý Tiện ích",
+                                label = stringResource(id = R.string.menu_utilities),
                                 color = Color(0xFF10B981),
                                 onClick = onNavigateToUtilities
                             )
-                            MenuDivider()
-                            MenuItem(
-                                icon = Icons.Rounded.Schedule,
-                                label = "Quản lý Khung Giờ & Giá",
-                                color = Color(0xFF8B5CF6),
-                                onClick = onNavigateToTimeSlots
-                            )
+
                             MenuDivider()
                             MenuItem(
                                 icon = Icons.Rounded.ChatBubble,
-                                label = "Quản lý Đánh Giá",
+                                label = stringResource(id = R.string.menu_reviews),
                                 color = Color(0xFFEC4899),
                                 onClick = onNavigateToReviews
                             )
                             MenuDivider()
                             MenuItem(
                                 icon = Icons.Rounded.Feedback,
-                                label = "Quản lý Feedback",
+                                label = stringResource(id = R.string.menu_feedbacks),
                                 color = Color(0xFFEF4444),
                                 onClick = onNavigateToFeedbacks
                             )
@@ -120,7 +116,7 @@ fun AdminMenuScreen(
                     }
                 } else {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(text = "Bạn không có quyền truy cập menu này.", color = Color.Gray)
+                        Text(text = stringResource(id = R.string.menu_no_access), color = Color.Gray)
                     }
                 }
             }

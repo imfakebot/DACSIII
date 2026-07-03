@@ -1,8 +1,9 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.feedback
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.FeedbackResponse
+import com.tanh.datsan.data.model.AdminFeedbackUiState
 import com.tanh.datsan.data.repository.FeedbackRepository
 import com.tanh.datsan.utils.ResponseHelper.parseError
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -13,19 +14,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class AdminFeedbackUiState(
-    val feedbacks: List<FeedbackResponse> = emptyList(),
-    val currentFeedback: FeedbackResponse? = null,
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val toastMessage: String? = null,
-    
-    // Pagination and Filter
-    val currentPage: Int = 1,
-    val totalRecords: Int = 0,
-    val currentStatusFilter: String? = null, // null for all
-    val currentTypeFilter: String? = null    // null for all
-)
 
 @HiltViewModel
 class AdminFeedbackViewModel @Inject constructor(

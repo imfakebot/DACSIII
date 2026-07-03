@@ -1,4 +1,4 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -18,14 +18,7 @@ import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
 
-data class StatisticsUiState(
-    val overview: OverviewStatisticsResponse? = null,
-    val chartData: List<RevenueChartItem> = emptyList(),
-    val recentBookings: List<BookingResponse> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val isForbidden: Boolean = false // Xử lý lỗi 403 (Không đủ quyền)
-)
+import com.tanh.datsan.ui.state.StatisticsUiState
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(

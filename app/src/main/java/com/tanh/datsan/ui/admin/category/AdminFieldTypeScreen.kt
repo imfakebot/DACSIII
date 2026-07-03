@@ -19,14 +19,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.tanh.datsan.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.tanh.datsan.data.model.FieldType
-import com.tanh.datsan.viewmodel.AdminFieldTypeUiState
-import com.tanh.datsan.viewmodel.AdminFieldTypeViewModel
+import com.tanh.datsan.ui.state.ActionState
+import com.tanh.datsan.ui.admin.category.AdminFieldTypeViewModel
 
 private val DarkBg = Color(0xFF0F172A)
 private val AccentBlue = Color(0xFF3B82F6)
@@ -44,7 +46,8 @@ fun AdminFieldTypeScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val fieldTypes by viewModel.fieldTypes.collectAsState()
+    val actionState = uiState.actionState
+    val fieldTypes = uiState.fieldTypes
 
     var showFormDialog by remember { mutableStateOf(false) }
     var editingType by remember { mutableStateOf<FieldType?>(null) }
@@ -54,17 +57,17 @@ fun AdminFieldTypeScreen(
         viewModel.fetchFieldTypes()
     }
 
-    LaunchedEffect(uiState) {
-        when (uiState) {
-            is AdminFieldTypeUiState.Success -> {
-                Toast.makeText(context, (uiState as AdminFieldTypeUiState.Success).message, Toast.LENGTH_SHORT).show()
-                viewModel.resetUiState()
+    LaunchedEffect(actionState) {
+        when (actionState) {
+            is ActionState.Success -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetActionState()
                 showFormDialog = false
                 showDeleteDialog = null
             }
-            is AdminFieldTypeUiState.Error -> {
-                Toast.makeText(context, (uiState as AdminFieldTypeUiState.Error).message, Toast.LENGTH_SHORT).show()
-                viewModel.resetUiState()
+            is ActionState.Error -> {
+                Toast.makeText(context, actionState.message, Toast.LENGTH_SHORT).show()
+                viewModel.resetActionState()
             }
             else -> {}
         }
@@ -74,7 +77,7 @@ fun AdminFieldTypeScreen(
         containerColor = AppBg,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Quản lý Loại Sân", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(id = R.string.field_type_management), fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -96,11 +99,11 @@ fun AdminFieldTypeScreen(
                 contentColor = Color.White,
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Thêm mới")
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.field_type_add_new))
             }
         }
     ) { padding ->
-        if (uiState is AdminFieldTypeUiState.Loading && fieldTypes.isEmpty()) {
+        if (actionState is ActionState.Loading && fieldTypes.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = AccentBlue)
             }
@@ -149,7 +152,7 @@ fun AdminFieldTypeScreen(
             containerColor = CardWhite,
             title = {
                 Text(
-                    "Xóa Loại Sân",
+                    stringResource(id = R.string.field_type_delete_title),
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                     textAlign = TextAlign.Center,
@@ -158,7 +161,7 @@ fun AdminFieldTypeScreen(
             },
             text = {
                 Text(
-                    "Bạn có chắc muốn xóa loại sân '${type.name}' không?",
+                    stringResource(id = R.string.field_type_delete_confirm, type.name),
                     color = TextSecond,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -170,7 +173,7 @@ fun AdminFieldTypeScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = AccentRed),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Xóa", fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.field_type_delete), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -178,7 +181,7 @@ fun AdminFieldTypeScreen(
                     onClick = { showDeleteDialog = null },
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Hủy", color = TextSecond)
+                    Text(stringResource(id = R.string.field_type_cancel), color = TextSecond)
                 }
             }
         )
@@ -257,7 +260,7 @@ fun FieldTypeFormDialog(
         containerColor = CardWhite,
         title = {
             Text(
-                if (initialType == null) "Thêm Loại Sân" else "Chỉnh Sửa Loại Sân",
+                if (initialType == null) stringResource(id = R.string.field_type_add_title) else stringResource(id = R.string.field_type_edit_title),
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary,
                 textAlign = TextAlign.Center,
@@ -269,7 +272,7 @@ fun FieldTypeFormDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Tên loại sân") },
+                    label = { Text(stringResource(id = R.string.field_type_name_label)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
@@ -281,7 +284,7 @@ fun FieldTypeFormDialog(
                 OutlinedTextField(
                     value = desc,
                     onValueChange = { desc = it },
-                    label = { Text("Mô tả") },
+                    label = { Text(stringResource(id = R.string.field_type_desc_label)) },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
@@ -299,7 +302,7 @@ fun FieldTypeFormDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Lưu", fontWeight = FontWeight.Bold)
+                Text(stringResource(id = R.string.field_type_save), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -307,7 +310,7 @@ fun FieldTypeFormDialog(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(14.dp)
             ) {
-                Text("Hủy", color = TextSecond)
+                Text(stringResource(id = R.string.field_type_cancel), color = TextSecond)
             }
         }
     )

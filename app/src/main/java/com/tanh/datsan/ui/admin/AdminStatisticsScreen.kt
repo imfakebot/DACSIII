@@ -34,13 +34,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.model.OverviewStatisticsResponse
 import com.tanh.datsan.data.model.RevenueChartItem
-import com.tanh.datsan.viewmodel.StatisticsViewModel
+import com.tanh.datsan.ui.admin.StatisticsViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.platform.LocalLocale
-
-// ─── Design tokens — aligned with ProfileScreen / DetailScreen ──────────────
+import androidx.compose.ui.res.stringResource
+import com.tanh.datsan.R
 private val DarkBg      = Color(0xFF0F172A)
 private val DarkBg2     = Color(0xFF1E293B)
 private val AccentBlue  = Color(0xFF3B82F6)
@@ -54,15 +54,14 @@ private val TextPrimary = Color(0xFF0F172A)
 private val TextSecond  = Color(0xFF64748B)
 private val TextTertiary= Color(0xFF94A3B8)
 private val Divider     = Color(0xFFF1F5F9)
-
-// ─── Date filter ─────────────────────────────────────────────────────────────
-enum class DateFilter(val label: String) {
-    TODAY("Hôm nay"),
-    THIS_WEEK("7 ngày"),
-    THIS_MONTH("Tháng này"),
-    LAST_MONTH("Tháng trước"),
-    THIS_YEAR("Năm nay"),
-    CUSTOM("Tùy chỉnh");
+// Since we cannot easily pass Composable to enum, we'll keep the logic but map labels in composable.
+enum class DateFilter(val stringResId: Int) {
+    TODAY(R.string.stat_filter_today),
+    THIS_WEEK(R.string.stat_filter_7_days),
+    THIS_MONTH(R.string.stat_filter_this_month),
+    LAST_MONTH(R.string.stat_filter_last_month),
+    THIS_YEAR(R.string.stat_filter_this_year),
+    CUSTOM(R.string.stat_filter_custom);
 
     fun toDateRange(): Pair<Date?, Date?> {
         val cal = Calendar.getInstance()
@@ -106,8 +105,6 @@ enum class DateFilter(val label: String) {
         }
     }
 }
-
-// ─── Main screen ─────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminStatisticsScreen(
@@ -165,7 +162,6 @@ fun AdminStatisticsScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 40.dp)
                     ) {
-                        // ── Dark header with canvas blobs ──────────────────
                         item {
                             StatHeader(
                                 selectedFilter   = selectedFilter,
@@ -177,14 +173,10 @@ fun AdminStatisticsScreen(
                                 onCustomClick    = { showDatePicker = true }
                             )
                         }
-
-                        // ── Metric cards floating up from header ───────────
                         item {
                             if (uiState.isLoading) StatSkeleton()
                             else uiState.overview?.let { StatOverviewCards(it) }
                         }
-
-                        // ── Bar chart card ────────────────────────────────
                         if (!uiState.isLoading) {
                             item {
                                 StatBarChart(
@@ -196,8 +188,6 @@ fun AdminStatisticsScreen(
                                     }
                                 )
                             }
-
-                            // ── Recent bookings ───────────────────────────
                             item {
                                 Row(
                                     modifier = Modifier
@@ -212,7 +202,7 @@ fun AdminStatisticsScreen(
                                     )
                                     Spacer(Modifier.width(10.dp))
                                     Text(
-                                        "Giao dịch gần đây",
+                                        stringResource(id = R.string.stat_recent_transactions),
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 17.sp,
                                         color = TextPrimary
@@ -232,8 +222,6 @@ fun AdminStatisticsScreen(
         }
     }
 }
-
-// ─── Header ──────────────────────────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatHeader(
@@ -282,14 +270,14 @@ fun StatHeader(
             // Title
             Column {
                 Text(
-                    "Dashboard",
+                    stringResource(id = R.string.stat_dashboard_title),
                     color = Color.White,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    "Tổng quan hoạt động kinh doanh",
+                    stringResource(id = R.string.stat_dashboard_desc),
                     color = Color.White.copy(alpha = 0.6f),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(top = 2.dp)
@@ -309,7 +297,7 @@ fun StatHeader(
                 ) {
                     Surface(
                         modifier = Modifier
-                            .menuAnchor()
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(14.dp)),
                         color = Color.White.copy(alpha = 0.12f),
@@ -328,7 +316,7 @@ fun StatHeader(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = if (selectedFilter == DateFilter.CUSTOM && dateLabel.isNotEmpty())
-                                    dateLabel else selectedFilter.label,
+                                    dateLabel else stringResource(id = selectedFilter.stringResId),
                                 color = Color.White,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 13.sp,
@@ -362,7 +350,7 @@ fun StatHeader(
                                             Spacer(Modifier.width(24.dp))
                                         }
                                         Text(
-                                            filter.label,
+                                            stringResource(id = filter.stringResId),
                                             fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
                                             color = if (isSel) AccentBlue else TextPrimary,
                                             fontSize = 14.sp
@@ -399,7 +387,7 @@ fun StatHeader(
                         )
                         Spacer(Modifier.width(5.dp))
                         Text(
-                            "Tùy chỉnh",
+                            stringResource(id = R.string.stat_filter_custom),
                             color = if (isCustom) AccentBlue else Color.White,
                             fontWeight = if (isCustom) FontWeight.Bold else FontWeight.Normal,
                             fontSize = 13.sp
@@ -410,11 +398,9 @@ fun StatHeader(
         }
     }
 }
-
-// ─── Overview cards — floated with offset like DetailScreen ─────────────────
 @Composable
 fun StatOverviewCards(overview: OverviewStatisticsResponse) {
-    val vnd = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val vnd = remember { NumberFormat.getCurrencyInstance(java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build()) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -424,9 +410,9 @@ fun StatOverviewCards(overview: OverviewStatisticsResponse) {
     ) {
         // Revenue — full width, prominent
         StatMetricCard(
-            title = "Tổng Doanh Thu",
+            title = stringResource(id = R.string.stat_revenue_total),
             value = vnd.format(overview.revenue),
-            subLabel = "Trong khoảng thời gian đã chọn",
+            subLabel = stringResource(id = R.string.stat_revenue_desc),
             icon = Icons.Default.MonetizationOn,
             iconBg = AccentGreen.copy(alpha = 0.12f),
             iconTint = AccentGreen,
@@ -436,9 +422,9 @@ fun StatOverviewCards(overview: OverviewStatisticsResponse) {
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatMetricCard(
-                title = "Thành công",
+                title = stringResource(id = R.string.stat_completed),
                 value = "${overview.transactions.completed}",
-                subLabel = "đơn",
+                subLabel = stringResource(id = R.string.stat_unit_order),
                 icon = Icons.Default.CheckCircle,
                 iconBg = AccentBlue.copy(alpha = 0.1f),
                 iconTint = AccentBlue,
@@ -446,9 +432,9 @@ fun StatOverviewCards(overview: OverviewStatisticsResponse) {
                 modifier = Modifier.weight(1f)
             )
             StatMetricCard(
-                title = "Đã hủy",
+                title = stringResource(id = R.string.stat_cancelled),
                 value = "${overview.transactions.failed}",
-                subLabel = "đơn",
+                subLabel = stringResource(id = R.string.stat_unit_order),
                 icon = Icons.Default.Cancel,
                 iconBg = AccentRed.copy(alpha = 0.1f),
                 iconTint = AccentRed,
@@ -458,9 +444,9 @@ fun StatOverviewCards(overview: OverviewStatisticsResponse) {
         }
 
         StatMetricCard(
-            title = "Chờ xử lý",
+            title = stringResource(id = R.string.stat_pending),
             value = "${overview.transactions.pending}",
-            subLabel = "đơn đang chờ",
+            subLabel = stringResource(id = R.string.stat_pending_desc),
             icon = Icons.Default.HourglassTop,
             iconBg = AccentAmber.copy(alpha = 0.1f),
             iconTint = AccentAmber,
@@ -523,8 +509,6 @@ fun StatMetricCard(
         }
     }
 }
-
-// ─── Bar chart card ───────────────────────────────────────────────────────────
 @Composable
 fun StatBarChart(
     chartData: List<RevenueChartItem>,
@@ -554,14 +538,14 @@ fun StatBarChart(
             ) {
                 Column {
                     Text(
-                        "Doanh thu theo tháng",
+                        stringResource(id = R.string.stat_chart_title),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 15.sp,
                         color = TextPrimary
                     )
-                    val vnd = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+                    val vnd = remember { NumberFormat.getCurrencyInstance(java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build()) }
                     Text(
-                        "Tổng: ${vnd.format(filled.sum())}",
+                        stringResource(id = R.string.stat_chart_total, vnd.format(filled.sum())),
                         color = AccentGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
@@ -657,9 +641,9 @@ fun StatBarChart(
             HorizontalDivider(color = Divider)
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                LegendDot(AccentGreen, "Cao nhất")
-                LegendDot(AccentBlue, "Có doanh thu")
-                LegendDot(Color(0xFFCBD5E1), "Chưa có")
+                LegendDot(AccentGreen, stringResource(id = R.string.stat_chart_legend_highest))
+                LegendDot(AccentBlue, stringResource(id = R.string.stat_chart_legend_has_revenue))
+                LegendDot(Color(0xFFCBD5E1), stringResource(id = R.string.stat_chart_legend_no_revenue))
             }
         }
     }
@@ -673,17 +657,19 @@ private fun LegendDot(color: Color, label: String) {
         Text(label, fontSize = 10.sp, color = TextTertiary)
     }
 }
-
-// ─── Recent booking card ──────────────────────────────────────────────────────
 @Composable
 fun StatBookingCard(booking: BookingResponse) {
-    val vnd = NumberFormat.getCurrencyInstance(Locale("vi", "VN"))
+    val vnd = remember { NumberFormat.getCurrencyInstance(java.util.Locale.Builder().setLanguage("vi").setRegion("VN").build()) }
     val status = booking.status ?: ""
+    val successText = stringResource(id = R.string.stat_completed)
+    val cancelledText = stringResource(id = R.string.stat_cancelled)
+    val pendingText = stringResource(id = R.string.stat_pending)
+    val confirmedText = stringResource(id = R.string.stat_confirmed)
     val (statusColor, statusBg, statusText) = when (status.lowercase()) {
-        "completed","finished","success" -> Triple(Color(0xFF047857), Color(0xFFD1FAE5), "Thành công")
-        "cancelled","canceled"          -> Triple(Color(0xFFB91C1C), Color(0xFFFEE2E2), "Đã hủy")
-        "pending"                       -> Triple(Color(0xFFB45309), Color(0xFFFEF3C7), "Chờ xử lý")
-        "confirmed"                     -> Triple(AccentBlue, Color(0xFFDBEAFE), "Đã xác nhận")
+        "completed","finished","success" -> Triple(Color(0xFF047857), Color(0xFFD1FAE5), successText)
+        "cancelled","canceled"          -> Triple(Color(0xFFB91C1C), Color(0xFFFEE2E2), cancelledText)
+        "pending"                       -> Triple(Color(0xFFB45309), Color(0xFFFEF3C7), pendingText)
+        "confirmed"                     -> Triple(AccentBlue, Color(0xFFDBEAFE), confirmedText)
         else -> Triple(TextSecond, AppBg, status.uppercase())
     }
 
@@ -712,13 +698,13 @@ fun StatBookingCard(booking: BookingResponse) {
             Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "Mã: ${(booking.code ?: booking.id ?: "").take(8).uppercase()}",
+                    stringResource(id = R.string.stat_booking_code, (booking.code ?: booking.id ?: "").take(8).uppercase()),
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp,
                     color = TextPrimary
                 )
                 Text(
-                    formatDateDash(booking.createdAt ?: ""),
+                    com.tanh.datsan.utils.DateUtil.formatDateDash(booking.createdAt ?: ""),
                     fontSize = 11.sp,
                     color = TextTertiary,
                     modifier = Modifier.padding(top = 2.dp)
@@ -744,8 +730,6 @@ fun StatBookingCard(booking: BookingResponse) {
         }
     }
 }
-
-// ─── DateRangePicker dialog ───────────────────────────────────────────────────
 @SuppressLint("NonObservableLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -766,7 +750,7 @@ fun DateRangePickerDialog(
                     state = state,
                     title = {
                         Text(
-                            "Chọn khoảng thời gian",
+                            stringResource(id = R.string.stat_picker_title),
                             modifier = Modifier.padding(start = 20.dp, top = 16.dp),
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 16.sp,
@@ -780,7 +764,7 @@ fun DateRangePickerDialog(
                         val txt = when {
                             s != null && e != null -> "${fmt.format(Date(s))}  →  ${fmt.format(Date(e))}"
                             s != null -> "${fmt.format(Date(s))}  →  ?"
-                            else -> "Chọn ngày bắt đầu"
+                            else -> stringResource(id = R.string.stat_picker_start)
                         }
                         Text(
                             txt,
@@ -798,7 +782,7 @@ fun DateRangePickerDialog(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Hủy", color = TextSecond) }
+                    TextButton(onClick = onDismiss) { Text(stringResource(id = R.string.stat_picker_cancel), color = TextSecond) }
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = {
@@ -817,14 +801,12 @@ fun DateRangePickerDialog(
                         enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
-                    ) { Text("Áp dụng", fontWeight = FontWeight.Bold) }
+                    ) { Text(stringResource(id = R.string.stat_picker_apply), fontWeight = FontWeight.Bold) }
                 }
             }
         }
     }
 }
-
-// ─── Empty / Error / Forbidden / Skeleton ────────────────────────────────────
 @Composable
 fun StatEmptyBookings() {
     Column(
@@ -838,8 +820,8 @@ fun StatEmptyBookings() {
             Icon(Icons.Default.Inbox, null, tint = Color(0xFFCBD5E1), modifier = Modifier.size(36.dp))
         }
         Spacer(Modifier.height(12.dp))
-        Text("Chưa có giao dịch", fontWeight = FontWeight.Bold, color = TextSecond)
-        Text("trong khoảng thời gian này", color = TextTertiary, fontSize = 13.sp)
+        Text(stringResource(id = R.string.stat_empty_title), fontWeight = FontWeight.Bold, color = TextSecond)
+        Text(stringResource(id = R.string.stat_empty_desc), color = TextTertiary, fontSize = 13.sp)
     }
 }
 
@@ -857,15 +839,15 @@ fun StatAccessDenied(onBack: () -> Unit) {
             Icon(Icons.Default.Lock, null, tint = AccentRed, modifier = Modifier.size(44.dp))
         }
         Spacer(Modifier.height(20.dp))
-        Text("Không có quyền truy cập", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+        Text(stringResource(id = R.string.stat_denied_title), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
         Spacer(Modifier.height(8.dp))
-        Text("Chỉ Admin/Quản lý mới xem được.", textAlign = TextAlign.Center, color = TextSecond, fontSize = 14.sp)
+        Text(stringResource(id = R.string.stat_denied_desc), textAlign = TextAlign.Center, color = TextSecond, fontSize = 14.sp)
         Spacer(Modifier.height(28.dp))
         Button(
             onClick = onBack,
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = DarkBg)
-        ) { Text("Quay lại", fontWeight = FontWeight.Bold) }
+        ) { Text(stringResource(id = R.string.stat_btn_back), fontWeight = FontWeight.Bold) }
     }
 }
 
@@ -889,7 +871,7 @@ fun StatError(msg: String, onRetry: () -> Unit) {
             onClick = onRetry,
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
-        ) { Text("Thử lại", fontWeight = FontWeight.Bold) }
+        ) { Text(stringResource(id = R.string.stat_btn_retry), fontWeight = FontWeight.Bold) }
     }
 }
 
@@ -916,15 +898,4 @@ fun StatSkeleton() {
         Box(modifier = Modifier.fillMaxWidth().height(84.dp).clip(RoundedCornerShape(24.dp)).background(skColor))
         Box(modifier = Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(24.dp)).background(skColor))
     }
-}
-
-// ─── Utils ────────────────────────────────────────────────────────────────────
-fun formatDateDash(isoDate: String): String {
-    return try {
-        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-        }
-        val date = parser.parse(isoDate) ?: return isoDate
-        SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(date)
-    } catch (e: Exception) { isoDate }
 }

@@ -1,22 +1,19 @@
-package com.tanh.datsan.viewmodel
+package com.tanh.datsan.ui.admin.booking
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tanh.datsan.data.model.BookingResponse
 import com.tanh.datsan.data.repository.BookingRepository
+import com.tanh.datsan.ui.admin.field.AdminUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
-sealed class AdminBookingUiState {
-    object Loading : AdminBookingUiState()
-    data class Success(val message: String? = null) : AdminBookingUiState()
-    data class Error(val message: String) : AdminBookingUiState()
-    object Idle : AdminBookingUiState()
-}
 
 @HiltViewModel
 class AdminBookingViewModel @Inject constructor(
@@ -26,10 +23,8 @@ class AdminBookingViewModel @Inject constructor(
     private val _bookings = MutableStateFlow<List<BookingResponse>>(emptyList())
     val bookings: StateFlow<List<BookingResponse>> = _bookings.asStateFlow()
 
-    private val _uiState = MutableStateFlow<AdminBookingUiState>(AdminBookingUiState.Idle)
-    val uiState: StateFlow<AdminBookingUiState> = _uiState.asStateFlow()
-
-    // Pagination State
+    private val _uiState = MutableStateFlow<AdminUiState>(AdminUiState.Idle)
+    val uiState: StateFlow<AdminUiState> = _uiState.asStateFlow()
     private var currentPage = 1
     private val limit = 10
     var isLastPage = false
@@ -41,14 +36,18 @@ class AdminBookingViewModel @Inject constructor(
     private var currentBranchId: String? = null
     private var currentStatus: String? = null
 
-    fun fetchAdminBookings(branchId: String? = null, status: String? = null, refresh: Boolean = false) {
+    fun fetchAdminBookings(
+        branchId: String? = null,
+        status: String? = null,
+        refresh: Boolean = false
+    ) {
         if (refresh) {
             currentPage = 1
             isLastPage = false
             _bookings.value = emptyList()
-            _uiState.value = AdminBookingUiState.Loading
+            _uiState.value = AdminUiState.Loading
         } else {
-            _uiState.value = AdminBookingUiState.Loading
+            _uiState.value = AdminUiState.Loading
         }
 
         currentBranchId = branchId
@@ -62,23 +61,23 @@ class AdminBookingViewModel @Inject constructor(
                     page = currentPage,
                     limit = limit
                 )
-                
+
                 if (refresh) {
                     _bookings.value = response.data
                 } else {
-                    _bookings.value = _bookings.value + response.data
+                    _bookings.value += response.data
                 }
-                
+
                 isLastPage = currentPage >= (response.meta?.lastPage ?: 1)
-                _uiState.value = AdminBookingUiState.Idle
+                _uiState.value = AdminUiState.Idle
             } catch (e: Exception) {
-                _uiState.value = AdminBookingUiState.Error(e.message ?: "Lỗi tải danh sách Booking")
+                _uiState.value = AdminUiState.Error(e.message ?: "Lỗi tải danh sách Booking")
             }
         }
     }
 
     fun loadMoreBookings() {
-        if (isLastPage || _isLoadingMore.value || _uiState.value is AdminBookingUiState.Loading) return
+        if (isLastPage || _isLoadingMore.value || _uiState.value is AdminUiState.Loading) return
 
         _isLoadingMore.value = true
         currentPage++
@@ -91,10 +90,10 @@ class AdminBookingViewModel @Inject constructor(
                     page = currentPage,
                     limit = limit
                 )
-                _bookings.value = _bookings.value + response.data
+                _bookings.value += response.data
                 isLastPage = currentPage >= (response.meta?.lastPage ?: 1)
             } catch (e: Exception) {
-                // Giữ nguyên trang nếu lỗi
+                Log.d("AdminBookingViewModel", "Load more error: ${e.message}")
                 currentPage--
             } finally {
                 _isLoadingMore.value = false
@@ -104,22 +103,29 @@ class AdminBookingViewModel @Inject constructor(
 
     fun cancelBooking(bookingId: String) {
         viewModelScope.launch {
-            _uiState.value = AdminBookingUiState.Loading
+            _uiState.value = AdminUiState.Loading
             try {
                 val response = bookingRepository.cancelBooking(bookingId)
                 if (response.isSuccessful) {
-                    _uiState.value = AdminBookingUiState.Success(response.body()?.message ?: "Hủy đơn thành công")
-                    fetchAdminBookings(branchId = currentBranchId, status = currentStatus, refresh = true)
+                    _uiState.value = AdminUiState.Success(
+                        response.body()?.message ?: "Hủy đơn thành công"
+                    )
+                    fetchAdminBookings(
+                        branchId = currentBranchId,
+                        status = currentStatus,
+                        refresh = true
+                    )
                 } else {
-                    _uiState.value = AdminBookingUiState.Error("Hủy đơn thất bại: ${response.code()}")
+                    _uiState.value =
+                        AdminUiState.Error("Hủy đơn thất bại: ${response.code()}")
                 }
             } catch (e: Exception) {
-                _uiState.value = AdminBookingUiState.Error("Lỗi kết nối: ${e.message}")
+                _uiState.value = AdminUiState.Error("Lỗi kết nối: ${e.message}")
             }
         }
     }
 
     fun resetUiState() {
-        _uiState.value = AdminBookingUiState.Idle
+        _uiState.value = AdminUiState.Idle
     }
 }
